@@ -50,9 +50,9 @@
         </nav>
 
         <div class="bar-actions">
-          <form class="search" role="search" onsubmit="return false">
+          <form class="search" role="search" action="recherche.html" method="get">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-            <input type="search" placeholder="RECHERCHER" aria-label="Rechercher des produits">
+            <input type="search" name="q" placeholder="RECHERCHER" aria-label="Rechercher des produits" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="searchList">
           </form>
           <button type="button" class="cart-btn" id="cartBtn" aria-label="Panier, 0 article" aria-haspopup="dialog" aria-controls="cartDrawer" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2.2 10.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/><circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/><circle cx="17.5" cy="19.5" r="1.4" fill="currentColor"/></svg>
@@ -221,6 +221,7 @@ Avec des partenaires commerciaux et marketing afin de vous fournir des services 
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span class="toast-txt"></span>
   </div>
+  <script src="assets/search-index.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
