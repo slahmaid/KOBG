@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Knockout Boxing Gear — Gants de boxe pro</title>
-  <meta name="description" content="Knockout Boxing Gear : gants de boxe pro, équipement et vêtements.">
+  <title>Knockout Boxing Gear — Distributeur officiel Rival au Maroc</title>
+  <meta name="description" content="Knockout Boxing Gear, distributeur officiel Rival au Maroc : gants de sac, gants de sparring et protecteurs corporels. Paiement à la livraison, livraison partout au Maroc, offerte dès 500 DH.">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
+  <div class="page" id="top">
     <!-- ============ HEADER ============ -->
     <header class="header">
       <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mainNav">
@@ -20,28 +20,30 @@
       </button>
 
       <div class="bar">
-        <a href="#" class="bar-logo" aria-label="Knockout Boxing Gear, accueil"><img src="assets/kobg-mark.svg" alt="Knockout Boxing Gear"></a>
+        <a href="#top" class="bar-logo" aria-label="Knockout Boxing Gear, accueil"><img src="assets/kobg-mark.svg" alt="Knockout Boxing Gear"></a>
         <nav class="nav" id="mainNav" aria-label="Navigation principale">
-          <a href="#" class="nav-logo" aria-label="Knockout Boxing Gear, accueil"><img src="assets/kobg-mark.svg" alt="Knockout Boxing Gear"></a>
-          <a href="#" class="nav-link"><span class="nav-num" aria-hidden="true">01</span>Produits</a>
+          <a href="#top" class="nav-logo" aria-label="Knockout Boxing Gear, accueil"><img src="assets/kobg-mark.svg" alt="Knockout Boxing Gear"></a>
           <div class="nav-drop">
-            <button class="nav-link drop-toggle" aria-expanded="false">
-              <span class="nav-num" aria-hidden="true">02</span>Collections
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <ul class="drop-menu">
-              <li><a href="#best-sellers">Best-sellers</a></li>
-              <li><a href="#">Bandes de boxe</a></li>
-              <li><a href="#">Casques</a></li>
-              <li><a href="#">Vêtements</a></li>
+            <div class="drop-head">
+              <a href="gants.html" class="nav-link drop-link"><span class="nav-num" aria-hidden="true">01</span>Gants</a>
+              <button type="button" class="drop-toggle" aria-expanded="false" aria-controls="dropGants" aria-label="Catégories de gants">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <ul class="drop-menu" id="dropGants">
+              <li class="drop-li-all"><a href="gants.html" class="drop-all"><img class="drop-thumb" src="assets/cat/best-sellers.jpg" alt="" width="584" height="584" loading="lazy" decoding="async"><span class="drop-lbl">Tous les gants</span></a></li>
+              <li><a href="gants.html#gants-de-sac"><img class="drop-thumb" src="assets/cat/gants-de-sac.jpg" alt="" width="584" height="584" loading="lazy" decoding="async"><span class="drop-lbl">Gants de sac</span></a></li>
+              <li><a href="gants.html#gants-de-sparring"><img class="drop-thumb" src="assets/cat/gants-de-sparring.jpg" alt="" width="584" height="584" loading="lazy" decoding="async"><span class="drop-lbl">Gants de sparring</span></a></li>
             </ul>
           </div>
-          <a href="#" class="nav-link"><span class="nav-num" aria-hidden="true">03</span>Contact</a>
+          <a href="#plastrons" class="nav-link"><span class="nav-num" aria-hidden="true">02</span>Protecteur corporel</a>
+          <a href="a-propos.html" class="nav-link"><span class="nav-num" aria-hidden="true">03</span>À propos</a>
+          <a href="contact.html" class="nav-link"><span class="nav-num" aria-hidden="true">04</span>Contact</a>
 
           <!-- mobile menu only -->
-          <a href="#" class="nav-promo">
-            <span class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Offre du moment</span>
-            <span class="nav-promo-txt"><strong>&minus;20&nbsp;%</strong>sur tous les produits</span>
+          <a href="#faq-livraison" class="nav-promo">
+            <span class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Livraison offerte</span>
+            <span class="nav-promo-txt"><strong>Dès 500&nbsp;DH</strong>partout au Maroc</span>
             <span class="nav-promo-go" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
@@ -65,12 +67,12 @@
     <main class="hero">
       <!-- Big feature panel -->
       <section class="panel panel--feature" style="--i: 0">
-        <h1 class="headline"><span class="line">Knockout</span> <span class="line">Pro</span></h1>
+        <h1 class="headline"><span class="line">Knockout</span> <span class="line">Rival</span></h1>
         <video class="feature-video" src="assets/hero-video.mp4" poster="assets/hero-poster.jpg" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
-        <h2 class="headline headline--side"><span class="line">Gants</span> <span class="line">de boxe</span></h2>
+        <h2 class="headline headline--side"><span class="line">Conçu pour</span> <span class="line">le ring</span></h2>
 
         <div class="notch notch--bl">
-          <a href="#" class="circle-btn arrow-btn" aria-label="Produit suivant">
+          <a href="#best-sellers" class="circle-btn arrow-btn" aria-label="Voir les best-sellers">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
@@ -81,7 +83,7 @@
       <!-- Tall product panel -->
       <section class="panel panel--tall panel--tall-white" style="--i: 1">
         <img src="assets/glove-rival-gold.jpg" width="960" height="1547" alt="Gant de sparring Rival RS100 blanc et or à scratch">
-        <a href="#gants-de-sac" class="discover-btn">
+        <a href="#gants-de-sparring" class="discover-btn">
           Découvrir
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -89,13 +91,13 @@
 
       <!-- Promo card -->
       <section class="panel panel--promo" style="--i: 2">
-        <span class="promo-deco" aria-hidden="true">%</span>
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Offre du moment</p>
-        <p class="promo-big">&minus;20&nbsp;%</p>
-        <p class="promo-sub">sur tous les produits<br>profitez-en maintenant</p>
+        <span class="promo-deco promo-deco--dh" aria-hidden="true">DH</span>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Livraison offerte</p>
+        <p class="promo-big">0&nbsp;DH</p>
+        <p class="promo-sub">de livraison dès 500&nbsp;DH d’achat<br>partout au Maroc</p>
 
         <div class="notch notch--br">
-          <a href="#" class="shop-btn">
+          <a href="#best-sellers" class="shop-btn">
             <span class="shop-txt"><small>Voir</small><strong>Tous les produits</strong></span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2.2 10.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor"/><circle cx="17.5" cy="19.5" r="1.3" fill="currentColor"/></svg>
           </a>
@@ -105,18 +107,18 @@
       </section>
 
       <!-- New stuff card -->
-      <a href="#" class="panel panel--new" style="--i: 3" aria-label="Revendeur officiel Rival Boxing au Maroc">
+      <a href="#faq-authenticite" class="panel panel--new" style="--i: 3" aria-label="Distributeur officiel Rival Boxing au Maroc">
         <span class="corner-arrow" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <div class="seal">
           <img src="assets/laurel.svg" alt="" aria-hidden="true">
-          <p class="seal-txt"><small>Revendeur officiel</small><strong>Rival Boxing</strong><small>au Maroc</small></p>
+          <p class="seal-txt"><small>Distributeur officiel</small><strong>Rival Boxing</strong><small>au Maroc</small></p>
         </div>
       </a>
 
       <!-- Center plus button -->
-      <button class="plus-btn" data-id="gants-pro-noir" data-name="Gants Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter les gants Knockout Pro noirs au panier">
+      <button class="plus-btn" data-id="gants-de-sparring-rival-rs100-professional-blanc" data-name="Gants de sparring Rival RS100 Professional" data-variant="Blanc · taille à confirmer" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" aria-label="Ajouter les gants de sparring Rival RS100 Professional blancs au panier">
         <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -127,35 +129,35 @@
   <section class="marquee" aria-label="Nos engagements">
     <div class="marquee-track">
       <ul class="marquee-group">
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Distributeur officiel Rival</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>&minus;20&nbsp;% sur tous les produits</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 7 jours</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Qualité pro</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Revendeur officiel Rival Boxing</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison offerte dès 500&nbsp;DH</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Expédition sous 24–48&nbsp;h</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 14&nbsp;jours</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Intelli-Shock™ · V-Strap Wrist Lock</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
       </ul>
       <ul class="marquee-group" aria-hidden="true">
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Distributeur officiel Rival</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>&minus;20&nbsp;% sur tous les produits</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 7 jours</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Qualité pro</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Revendeur officiel Rival Boxing</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison offerte dès 500&nbsp;DH</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Expédition sous 24–48&nbsp;h</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 14&nbsp;jours</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Intelli-Shock™ · V-Strap Wrist Lock</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
       </ul>
     </div>
   </section>
 
-  <!-- ============ PRODUCTS: Best-sellers collection (gloves, headgear, body protectors) ============ -->
+  <!-- ============ PRODUCTS: Best-sellers, one pick per Rival line (gloves + body protector; the original site sells no headgear) ============ -->
   <section class="products" id="best-sellers" aria-labelledby="productsTitle">
     <div class="products-head">
       <div class="products-title">
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur toute la collection</p>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Distributeur officiel Rival</p>
         <h2 class="products-h" id="productsTitle">Best-sellers</h2>
-        <p class="products-sub">Gants · Casques · Plastrons · 7 modèles</p>
+        <p class="products-sub">Gants de sac · Gants de sparring · Protecteur corporel · 6 modèles</p>
       </div>
       <div class="products-ctrl">
         <a href="#best-sellers" class="products-all">
@@ -171,22 +173,23 @@
       </div>
     </div>
 
-    <!-- Placeholder catalogue: names, prices and photos (glove-*, casque-*, plastron-*.jpg) stand in for real product data and photos -->
-    <ul class="carousel" id="gloveTrack" tabindex="0" aria-label="Best-sellers : gants, casques et plastrons, 7 produits">
+    <!-- Catalogue from knockoutboxinggear.com (products.json): names, prices, colours, sizes and photos are the real ones -->
+    <ul class="carousel" id="gloveTrack" tabindex="0" aria-label="Best-sellers : gants et protecteur corporel, 6 produits">
       <li class="product" style="--i: 0">
         <div class="product-media">
-          <img src="assets/glove-tall.jpg" alt="Gant de boxe Knockout Pro noir à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
-          <span class="product-idx" aria-hidden="true">01/07</span>
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-noir.jpg" alt="Gants de sparring Rival RS11V Evolution - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">01/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · 10–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-noir" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Noir"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-pro-noir" data-name="Gants Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter Gants de boxe Knockout Pro noir au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-noir" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Noir" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-noir.jpg" aria-label="Ajouter RS11V Evolution Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -194,21 +197,21 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-
       <li class="product" style="--i: 1">
         <div class="product-media">
-          <img src="assets/casque-noir.jpg" alt="Casque de boxe Knockout Pro noir avec protège-joues" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">02/07</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-rouge.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Noir/Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">02/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Casque</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>559&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>699&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-noir-rouge" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c8102e 50%)" aria-hidden="true"></span>Noir/Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Rouge"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="casque-pro-noir" data-name="Casque Knockout Pro" data-variant="Noir" data-price="559" data-img="assets/casque-noir.jpg" aria-label="Ajouter Casque Knockout Pro noir au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-noir-rouge" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Noir/Rouge" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-rouge.jpg" aria-label="Ajouter RB10 Intelli-Shock Noir/Rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -216,21 +219,21 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-
       <li class="product" style="--i: 2">
         <div class="product-media">
-          <img src="assets/plastron-noir.jpg" alt="Plastron de boxe Knockout Pro noir à sangles réglables" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">03/07</span>
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" alt="Gants de sparring Rival RS100 Professional - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">03/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Plastron</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–L</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>799&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>999&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-blanc" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Blanc"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="plastron-pro-noir" data-name="Plastron Knockout Pro" data-variant="Noir" data-price="799" data-img="assets/plastron-noir.jpg" aria-label="Ajouter Plastron Knockout Pro noir au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-blanc" data-name="Gants de sparring Rival RS100 Professional" data-variant="Blanc" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" aria-label="Ajouter RS100 Professional Blanc au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -238,21 +241,20 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-
       <li class="product" style="--i: 3">
         <div class="product-media">
-          <img src="assets/glove-rouge.jpg" alt="Gant de boxe Knockout Pro rouge à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">04/07</span>
+          <img src="assets/p/protecteur-corporel-rival-noir.jpg" alt="Protecteur corporel Rival - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">04/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · 10–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-noir" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-pro-rouge" data-name="Gants Knockout Pro" data-variant="Rouge" data-price="719" data-img="assets/glove-rouge.jpg" aria-label="Ajouter Gants de boxe Knockout Pro rouge au panier">
+          <button class="product-add" data-id="protecteur-corporel-rival-noir" data-name="Protecteur corporel Rival" data-variant="Noir" data-price="4559" data-img="assets/p/protecteur-corporel-rival-noir.jpg" aria-label="Ajouter Body Shield Rival Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -260,21 +262,21 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-
       <li class="product" style="--i: 4">
         <div class="product-media">
-          <img src="assets/casque-bleu.jpg" alt="Casque de boxe Knockout Elite bleu avec protège-joues" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">05/07</span>
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-noir.jpg" alt="Gants de sac Rival RB11 Evolution - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">05/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Casque</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · S–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-noir" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Noir"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="casque-elite-bleu" data-name="Casque Knockout Elite" data-variant="Bleu" data-price="719" data-img="assets/casque-bleu.jpg" aria-label="Ajouter Casque Knockout Elite bleu au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-noir" data-name="Gants de sac Rival RB11 Evolution" data-variant="Noir" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-noir.jpg" aria-label="Ajouter RB11 Evolution Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -282,43 +284,21 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-
       <li class="product" style="--i: 5">
         <div class="product-media">
-          <img src="assets/plastron-rouge.jpg" alt="Plastron de boxe Knockout Pro rouge à sangles réglables" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">06/07</span>
+          <img src="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-rouge.jpg" alt="Gants de sparring RS1 Pro - 20e anniversaire - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Édition limitée</span></div>
+          <span class="product-idx" aria-hidden="true">06/06</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Plastron</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · S–L</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>799&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>999&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rs1-pro-20e-anniversaire-rouge" class="product-link" target="_blank" rel="noopener">RS1 Pro 20e anniversaire</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;449&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="plastron-pro-rouge" data-name="Plastron Knockout Pro" data-variant="Rouge" data-price="799" data-img="assets/plastron-rouge.jpg" aria-label="Ajouter Plastron Knockout Pro rouge au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-
-      <li class="product" style="--i: 6">
-        <div class="product-media">
-          <img src="assets/glove-bleu.jpg" alt="Gant de boxe Knockout Elite bleu à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">07/07</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · 12–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>879&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;099&nbsp;DH</s></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-elite-bleu" data-name="Gants Knockout Elite" data-variant="Bleu" data-price="879" data-img="assets/glove-bleu.jpg" aria-label="Ajouter Gants de boxe Knockout Elite bleu au panier">
+          <button class="product-add" data-id="gants-de-sparring-rs1-pro-20e-anniversaire-rouge" data-name="Gants de sparring Rival RS1 Pro 20e anniversaire" data-variant="Rouge" data-price="2449" data-img="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-rouge.jpg" aria-label="Ajouter RS1 Pro 20e anniversaire Rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -331,32 +311,32 @@
     <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb" id="carouselThumb"></span></div>
   </section>
 
-  <!-- ============ GLOVES BANNER: CTA filters the Best-sellers carousel to gloves ============ -->
+  <!-- ============ GLOVES BANNER (photo: Rival RS100 from knockoutboxinggear.com) ============ -->
   <section class="glove-banner" id="gants-banner" aria-labelledby="gloveBannerTitle">
     <picture class="glove-banner-media">
-      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/gloves-banner-mobile.jpg" width="680" height="720">
-      <img src="assets/gloves-banner.jpg" width="1280" height="720" alt="Gants de boxe Knockout noir et rouge à scratch, frappés de l’emblème poing blanc, sur fond noir" loading="lazy" decoding="async">
+      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/banner-gants-mobile.jpg" width="680" height="720">
+      <img src="assets/banner-gants.jpg" width="1280" height="720" alt="Boxeur en garde avec gants et casque Rival noirs, sur fond noir" loading="lazy" decoding="async">
     </picture>
     <div class="glove-banner-body">
       <img class="glove-banner-mark" src="assets/kobg-mark.svg" alt="" aria-hidden="true">
-      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Collection gants · &minus;20&nbsp;%</p>
+      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Distributeur officiel Rival</p>
       <h2 class="glove-banner-h" id="gloveBannerTitle"><span class="line">Gants</span> <span class="line">de boxe</span></h2>
-      <p class="glove-banner-tagline">Frappe fort. Finis au KO.</p>
-      <p class="glove-banner-sub">Knockout Pro &amp; Elite · Noir, Rouge, Bleu · 10–16&nbsp;oz · Fermeture scratch</p>
+      <p class="glove-banner-tagline">Maintien du poignet. Absorption des chocs. Zéro compromis.</p>
+      <p class="glove-banner-sub">RB10 Intelli-Shock · RB11 · RS11V · RS100 · RS1 Pro · S à XL · 12 à 18&nbsp;oz</p>
       <div class="glove-banner-actions">
         <a href="#gants-de-sac" class="glove-banner-cta">Voir les gants <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        <p class="glove-banner-price"><span>Dès</span> <strong>719&nbsp;DH</strong> <s><span class="sr-only">au lieu de </span>899&nbsp;DH</s></p>
+        <p class="glove-banner-price"><span>Dès</span> <strong>1&nbsp;750&nbsp;DH</strong></p>
       </div>
     </div>
   </section>
 
-  <!-- ============ BAG GLOVES COLLECTION: 6 bag gloves, same card + carousel component ============ -->
+  <!-- ============ BAG GLOVES COLLECTION: Rival RB10 + RB11, same card + carousel component ============ -->
   <section class="products products--gloves products--bag" id="gants-de-sac" aria-labelledby="bagTitle">
     <div class="products-head">
       <div class="products-title">
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur les gants de sac</p>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Technologie de pointe</p>
         <h2 class="products-h" id="bagTitle">Gants de sac</h2>
-        <p class="products-sub">6 modèles · légers, pouce ouvert · tailles S à XL</p>
+        <p class="products-sub">RB10 Intelli-Shock &amp; RB11 Evolution · 12 modèles · S à XL · pour le sac et les pattes d’ours</p>
       </div>
       <div class="products-ctrl">
         <a href="#gants-de-sac" class="products-all">
@@ -372,22 +352,23 @@
       </div>
     </div>
 
-    <!-- Placeholder catalogue: names, prices and photos stand in for real product data -->
-    <ul class="carousel" id="bagTrack" tabindex="0" aria-label="Gants de sac, 6 produits">
+    <!-- Catalogue from knockoutboxinggear.com (products.json): names, prices, colours, sizes and photos are the real ones -->
+    <ul class="carousel" id="bagTrack" tabindex="0" aria-label="Gants de sac, 12 produits">
       <li class="product" style="--i: 0">
         <div class="product-media">
-          <img src="assets/bag-noir.jpg" alt="Gant de sac Knockout Bag noir, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
-          <span class="product-idx" aria-hidden="true">01/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-rouge.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Noir/Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">01/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-noir-rouge" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c8102e 50%)" aria-hidden="true"></span>Noir/Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Rouge"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-bag-noir" data-name="Gants de sac Knockout Bag" data-variant="Noir" data-price="359" data-img="assets/bag-noir.jpg" aria-label="Ajouter Gants de sac Knockout Bag noir au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-noir-rouge" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Noir/Rouge" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-rouge.jpg" aria-label="Ajouter RB10 Intelli-Shock Noir/Rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -397,18 +378,19 @@
       </li>
       <li class="product" style="--i: 1">
         <div class="product-media">
-          <img src="assets/bag-rouge.jpg" alt="Gant de sac Knockout Bag rouge, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">02/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">02/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · S–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-noir" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-bag-rouge" data-name="Gants de sac Knockout Bag" data-variant="Rouge" data-price="359" data-img="assets/bag-rouge.jpg" aria-label="Ajouter Gants de sac Knockout Bag rouge au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-noir" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Noir" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir.jpg" aria-label="Ajouter RB10 Intelli-Shock Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -418,18 +400,19 @@
       </li>
       <li class="product" style="--i: 2">
         <div class="product-media">
-          <img src="assets/bag-blanc.jpg" alt="Gant de sac Knockout Bag blanc, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">03/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-bleu.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Noir/Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">03/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #f4f4f2" aria-hidden="true"></span>Blanc · S–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-noir-bleu" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #1f3f9c 50%)" aria-hidden="true"></span>Noir/Bleu</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Bleu"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-bag-blanc" data-name="Gants de sac Knockout Bag" data-variant="Blanc" data-price="359" data-img="assets/bag-blanc.jpg" aria-label="Ajouter Gants de sac Knockout Bag blanc au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-noir-bleu" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Noir/Bleu" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-bleu.jpg" aria-label="Ajouter RB10 Intelli-Shock Noir/Bleu au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -439,18 +422,19 @@
       </li>
       <li class="product" style="--i: 3">
         <div class="product-media">
-          <img src="assets/bag-marine.jpg" alt="Gant de sac Knockout Bag Pro bleu marine, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">04/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-or.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Noir/Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">04/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1c2a55" aria-hidden="true"></span>Bleu marine · M–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>439&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>549&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-noir-or" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c9a227 50%)" aria-hidden="true"></span>Noir/Or</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Or"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-bagpro-marine" data-name="Gants de sac Knockout Bag Pro" data-variant="Bleu marine" data-price="439" data-img="assets/bag-marine.jpg" aria-label="Ajouter Gants de sac Knockout Bag Pro bleu marine au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-noir-or" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Noir/Or" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-noir-or.jpg" aria-label="Ajouter RB10 Intelli-Shock Noir/Or au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -460,18 +444,19 @@
       </li>
       <li class="product" style="--i: 4">
         <div class="product-media">
-          <img src="assets/bag-anthracite.jpg" alt="Gant de sac Knockout Bag Pro anthracite à surpiqûres rouges, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">05/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-blanc.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">05/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #3d3d3f" aria-hidden="true"></span>Anthracite · M–XL</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>439&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>549&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-blanc" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Blanc"><option value="S" selected>S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-bagpro-anthracite" data-name="Gants de sac Knockout Bag Pro" data-variant="Anthracite" data-price="439" data-img="assets/bag-anthracite.jpg" aria-label="Ajouter Gants de sac Knockout Bag Pro anthracite au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-blanc" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Blanc" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-blanc.jpg" aria-label="Ajouter RB10 Intelli-Shock Blanc au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -481,18 +466,151 @@
       </li>
       <li class="product" style="--i: 5">
         <div class="product-media">
-          <img src="assets/bag-noir-or.jpg" alt="Gant de sac Knockout Bag Gold noir à sangle dorée, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Édition limitée</span></div>
-          <span class="product-idx" aria-hidden="true">06/06</span>
+          <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-vert-noir.jpg" alt="Gants de sac Rival RB10 Intelli-Shock - Vert/Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">D3O</span></div>
+          <span class="product-idx" aria-hidden="true">06/12</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sac</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Gold</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c9a24a 50%)" aria-hidden="true"></span>Noir &amp; Or · S–L</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>519&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>649&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb10-intelli-shock-vert-noir" class="product-link" target="_blank" rel="noopener">RB10 Intelli-Shock</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #1e8f4e 50%, #141414 50%)" aria-hidden="true"></span>Vert/Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Vert/Noir"><option value="M" selected>M</option><option value="L">L</option></select></label>
+          <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sac-baggold-noir-or" data-name="Gants de sac Knockout Bag Gold" data-variant="Noir &amp; Or" data-price="519" data-img="assets/bag-noir-or.jpg" aria-label="Ajouter Gants de sac Knockout Bag Gold noir & or au panier">
+          <button class="product-add" data-id="gants-de-sac-rival-rb10-intelli-shock-vert-noir" data-name="Gants de sac Rival RB10 Intelli-Shock" data-variant="Vert/Noir" data-price="2390" data-img="assets/p/gants-de-sac-rival-rb10-intelli-shock-vert-noir.jpg" aria-label="Ajouter RB10 Intelli-Shock Vert/Noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 6">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-noir.jpg" alt="Gants de sac Rival RB11 Evolution - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">07/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-noir" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Noir"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-noir" data-name="Gants de sac Rival RB11 Evolution" data-variant="Noir" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-noir.jpg" aria-label="Ajouter RB11 Evolution Noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 7">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-blanc.jpg" alt="Gants de sac Rival RB11 Evolution - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">08/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-blanc" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Blanc"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-blanc" data-name="Gants de sac Rival RB11 Evolution" data-variant="Blanc" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-blanc.jpg" aria-label="Ajouter RB11 Evolution Blanc au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 8">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-rouge.jpg" alt="Gants de sac Rival RB11 Evolution - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">09/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-rouge" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Rouge"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-rouge" data-name="Gants de sac Rival RB11 Evolution" data-variant="Rouge" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-rouge.jpg" aria-label="Ajouter RB11 Evolution Rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 9">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-bleu.jpg" alt="Gants de sac Rival RB11 Evolution - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">10/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-bleu" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Bleu"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-bleu" data-name="Gants de sac Rival RB11 Evolution" data-variant="Bleu" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-bleu.jpg" aria-label="Ajouter RB11 Evolution Bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 10">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-or.jpg" alt="Gants de sac Rival RB11 Evolution - Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">11/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-or" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Or"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-or" data-name="Gants de sac Rival RB11 Evolution" data-variant="Or" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-or.jpg" aria-label="Ajouter RB11 Evolution Or au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 11">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sac-rival-rb11-evolution-argent.jpg" alt="Gants de sac Rival RB11 Evolution - Argent" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">12/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sac-rival-rb11-evolution-argent" class="product-link" target="_blank" rel="noopener">RB11 Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #b8bcc2" aria-hidden="true"></span>Argent</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Argent"><option value="M" selected>M</option><option value="L">L</option><option value="XL">XL</option></select></label>
+          <p class="product-price"><strong>1&nbsp;750&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sac-rival-rb11-evolution-argent" data-name="Gants de sac Rival RB11 Evolution" data-variant="Argent" data-price="1750" data-img="assets/p/gants-de-sac-rival-rb11-evolution-argent.jpg" aria-label="Ajouter RB11 Evolution Argent au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -506,13 +624,13 @@
   </section>
 
 
-  <!-- ============ SPARRING GLOVES COLLECTION: 6 gloves, same card + carousel component as Best-sellers ============ -->
+  <!-- ============ SPARRING GLOVES COLLECTION: Rival RS1 Pro, RS100, RS11V ============ -->
   <section class="products products--gloves" id="gants-de-sparring" aria-labelledby="sparringTitle">
     <div class="products-head">
       <div class="products-title">
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur les gants de sparring</p>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>L’art du sparring</p>
         <h2 class="products-h" id="sparringTitle">Gants de sparring</h2>
-        <p class="products-sub">6 modèles · du 10 au 16&nbsp;oz</p>
+        <p class="products-sub">RS1 Pro, RS100 &amp; RS11V · 13 modèles · 12 à 18&nbsp;oz</p>
       </div>
       <div class="products-ctrl">
         <a href="#gants-de-sparring" class="products-all">
@@ -528,22 +646,23 @@
       </div>
     </div>
 
-    <!-- Placeholder catalogue: names, prices and photos stand in for real product data -->
-    <ul class="carousel" id="sparringTrack" tabindex="0" aria-label="Gants de sparring, 6 produits">
+    <!-- Catalogue from knockoutboxinggear.com (products.json): names, prices, colours, sizes and photos are the real ones -->
+    <ul class="carousel" id="sparringTrack" tabindex="0" aria-label="Gants de sparring, 13 produits">
       <li class="product" style="--i: 0">
         <div class="product-media">
-          <img src="assets/glove-tall.jpg" alt="Gant de sparring Knockout Pro noir à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
-          <span class="product-idx" aria-hidden="true">01/06</span>
+          <img src="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-noir.jpg" alt="Gants de sparring RS1 Pro - 20e anniversaire - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Édition limitée</span></div>
+          <span class="product-idx" aria-hidden="true">01/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · 10–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rs1-pro-20e-anniversaire-noir" class="product-link" target="_blank" rel="noopener">RS1 Pro 20e anniversaire</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Noir"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;449&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-pro-noir" data-name="Gants de sparring Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter Gants de sparring Knockout Pro noir au panier">
+          <button class="product-add" data-id="gants-de-sparring-rs1-pro-20e-anniversaire-noir" data-name="Gants de sparring Rival RS1 Pro 20e anniversaire" data-variant="Noir" data-price="2449" data-img="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-noir.jpg" aria-label="Ajouter RS1 Pro 20e anniversaire Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -553,18 +672,19 @@
       </li>
       <li class="product" style="--i: 1">
         <div class="product-media">
-          <img src="assets/glove-rouge.jpg" alt="Gant de sparring Knockout Pro rouge à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">02/06</span>
+          <img src="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-rouge.jpg" alt="Gants de sparring RS1 Pro - 20e anniversaire - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Édition limitée</span></div>
+          <span class="product-idx" aria-hidden="true">02/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · 10–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rs1-pro-20e-anniversaire-rouge" class="product-link" target="_blank" rel="noopener">RS1 Pro 20e anniversaire</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;449&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-pro-rouge" data-name="Gants de sparring Knockout Pro" data-variant="Rouge" data-price="719" data-img="assets/glove-rouge.jpg" aria-label="Ajouter Gants de sparring Knockout Pro rouge au panier">
+          <button class="product-add" data-id="gants-de-sparring-rs1-pro-20e-anniversaire-rouge" data-name="Gants de sparring Rival RS1 Pro 20e anniversaire" data-variant="Rouge" data-price="2449" data-img="assets/p/gants-de-sparring-rs1-pro-20e-anniversaire-rouge.jpg" aria-label="Ajouter RS1 Pro 20e anniversaire Rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -574,18 +694,19 @@
       </li>
       <li class="product" style="--i: 2">
         <div class="product-media">
-          <img src="assets/glove-bleu.jpg" alt="Gant de sparring Knockout Elite bleu à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">03/06</span>
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-noir.jpg" alt="Gants de sparring Rival RS100 Professional - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">03/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · 12–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>879&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;099&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-noir" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Noir"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-elite-bleu" data-name="Gants de sparring Knockout Elite" data-variant="Bleu" data-price="879" data-img="assets/glove-bleu.jpg" aria-label="Ajouter Gants de sparring Knockout Elite bleu au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-noir" data-name="Gants de sparring Rival RS100 Professional" data-variant="Noir" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-noir.jpg" aria-label="Ajouter RS100 Professional Noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -595,18 +716,19 @@
       </li>
       <li class="product" style="--i: 3">
         <div class="product-media">
-          <img src="assets/glove-fight.jpg" alt="Gant de sparring Knockout Fight noir à manchette rouge, à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">04/06</span>
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" alt="Gants de sparring Rival RS100 Professional - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">04/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Fight</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c41f28 50%)" aria-hidden="true"></span>Noir &amp; Rouge · 12–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>959&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;199&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-blanc" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Blanc"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-fight-noir-rouge" data-name="Gants de sparring Knockout Fight" data-variant="Noir &amp; Rouge" data-price="959" data-img="assets/glove-fight.jpg" aria-label="Ajouter Gants de sparring Knockout Fight noir & rouge au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-blanc" data-name="Gants de sparring Rival RS100 Professional" data-variant="Blanc" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" aria-label="Ajouter RS100 Professional Blanc au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -616,18 +738,19 @@
       </li>
       <li class="product" style="--i: 4">
         <div class="product-media">
-          <img src="assets/glove-kaki.jpg" alt="Gant de sparring Knockout Sparring kaki à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">05/06</span>
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-rouge.jpg" alt="Gants de sparring Rival RS100 Professional - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">05/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Sparring</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #5b6142" aria-hidden="true"></span>Kaki · 14–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>599&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>749&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-rouge" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-sparring-kaki" data-name="Gants de sparring Knockout Sparring" data-variant="Kaki" data-price="599" data-img="assets/glove-kaki.jpg" aria-label="Ajouter Gants de sparring Knockout Sparring kaki au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-rouge" data-name="Gants de sparring Rival RS100 Professional" data-variant="Rouge" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-rouge.jpg" aria-label="Ajouter RS100 Professional Rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -637,18 +760,173 @@
       </li>
       <li class="product" style="--i: 5">
         <div class="product-media">
-          <img src="assets/glove-or.jpg" alt="Gant de sparring Knockout Gold doré à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Édition limitée</span></div>
-          <span class="product-idx" aria-hidden="true">06/06</span>
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-bleu.jpg" alt="Gants de sparring Rival RS100 Professional - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">06/13</span>
         </div>
         <div class="product-info">
-          <p class="product-cat">Gants de sparring</p>
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Gold</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c9a24a" aria-hidden="true"></span>Or · 10–14 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>1&nbsp;039&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;299&nbsp;DH</s></p>
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-bleu" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Bleu"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-id="gants-gold-or" data-name="Gants de sparring Knockout Gold" data-variant="Or" data-price="1039" data-img="assets/glove-or.jpg" aria-label="Ajouter Gants de sparring Knockout Gold or au panier">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-bleu" data-name="Gants de sparring Rival RS100 Professional" data-variant="Bleu" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-bleu.jpg" aria-label="Ajouter RS100 Professional Bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 6">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs100-professional-vert.jpg" alt="Gants de sparring Rival RS100 Professional - Vert" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">À lacets</span></div>
+          <span class="product-idx" aria-hidden="true">07/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs100-professional-vert" class="product-link" target="_blank" rel="noopener">RS100 Professional</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1e8f4e" aria-hidden="true"></span>Vert</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Vert"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-vert" data-name="Gants de sparring Rival RS100 Professional" data-variant="Vert" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-vert.jpg" aria-label="Ajouter RS100 Professional Vert au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 7">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-noir.jpg" alt="Gants de sparring Rival RS11V Evolution - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">08/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-noir" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Noir"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-noir" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Noir" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-noir.jpg" aria-label="Ajouter RS11V Evolution Noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 8">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" alt="Gants de sparring Rival RS11V Evolution - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">09/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-blanc" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Blanc"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-blanc" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Blanc" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" aria-label="Ajouter RS11V Evolution Blanc au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 9">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" alt="Gants de sparring Rival RS11V Evolution - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">10/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-rouge" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Rouge"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-rouge" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Rouge" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" aria-label="Ajouter RS11V Evolution Rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 10">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" alt="Gants de sparring Rival RS11V Evolution - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">11/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-bleu" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Bleu"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-bleu" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Bleu" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" aria-label="Ajouter RS11V Evolution Bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 11">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" alt="Gants de sparring Rival RS11V Evolution - Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">12/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-or" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Or"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-or" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Or" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" aria-label="Ajouter RS11V Evolution Or au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 12">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" alt="Gants de sparring Rival RS11V Evolution - Argent" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">13/13</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/gants-de-sparring-rival-rs11v-evolution-argent" class="product-link" target="_blank" rel="noopener">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #b8bcc2" aria-hidden="true"></span>Argent</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Argent"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <p class="product-price"><strong>2&nbsp;005&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-argent" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Argent" data-price="2005" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" aria-label="Ajouter RS11V Evolution Argent au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -661,24 +939,564 @@
     <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
   </section>
 
-  <!-- ============ BODY PROTECTOR BANNER: mirrored twin of the gloves banner (photo left, copy right) ============ -->
+  <!-- ============ BODY PROTECTOR BANNER: mirrored twin of the gloves banner (photo: Protecteur corporel Rival) ============ -->
   <section class="glove-banner glove-banner--flip" id="plastrons-banner" aria-labelledby="plastronBannerTitle">
     <picture class="glove-banner-media">
-      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/plastron-banner-mobile.jpg" width="680" height="720">
-      <img src="assets/plastron-banner.jpg" width="1280" height="720" alt="Plastrons de boxe Knockout Pro noir et rouge à sangles réglables, frappés de l’emblème poing blanc, sur fond noir" loading="lazy" decoding="async">
+      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/banner-protecteur-mobile.jpg" width="680" height="720">
+      <img src="assets/banner-protecteur.jpg" width="1280" height="720" alt="Protecteurs corporels Rival rouge, bleu et noir sur fond noir" loading="lazy" decoding="async">
     </picture>
     <div class="glove-banner-body">
       <img class="glove-banner-mark" src="assets/kobg-mark.svg" alt="" aria-hidden="true">
-      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Collection plastrons · &minus;20&nbsp;%</p>
-      <h2 class="glove-banner-h" id="plastronBannerTitle"><span class="line">Plastrons</span> <span class="line">Body protector</span></h2>
-      <p class="glove-banner-tagline">Encaisse. Avance. Domine.</p>
-      <p class="glove-banner-sub">Knockout Pro · Noir, Rouge · S–L · Sangles réglables</p>
+      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Défense totale</p>
+      <h2 class="glove-banner-h" id="plastronBannerTitle"><span class="line">Protecteur</span> <span class="line">corporel</span></h2>
+      <p class="glove-banner-tagline">L’armure des entraîneurs. Protection maximale.</p>
+      <p class="glove-banner-sub">Rival Body Shield · 6 coloris · plaque de renfort 2,5&nbsp;mm · sangles réglables</p>
       <div class="glove-banner-actions">
-        <a href="#best-sellers" class="glove-banner-cta" data-show-product="plastron-pro-noir">Voir les plastrons <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        <p class="glove-banner-price"><span>Dès</span> <strong>799&nbsp;DH</strong> <s><span class="sr-only">au lieu de </span>999&nbsp;DH</s></p>
+        <a href="#plastrons" class="glove-banner-cta">Voir les protecteurs <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="glove-banner-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
       </div>
     </div>
   </section>
+
+  <!-- ============ BODY PROTECTOR COLLECTION: Protecteur corporel Rival, 6 colours ============ -->
+  <section class="products products--gloves products--plastrons" id="plastrons" aria-labelledby="plastronsTitle">
+    <div class="products-head">
+      <div class="products-title">
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Entraînement au quotidien</p>
+        <h2 class="products-h" id="plastronsTitle">Protecteur corporel</h2>
+        <p class="products-sub">Rival Body Shield · 6 coloris · microfibre et rembourrage multicouche</p>
+      </div>
+      <div class="products-ctrl">
+        <a href="#plastrons" class="products-all">
+          Voir tout
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <button class="carousel-btn" id="plastronPrev" data-dir="prev" aria-label="Protecteurs précédents" aria-controls="plastronTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-btn" id="plastronNext" data-dir="next" aria-label="Protecteurs suivants" aria-controls="plastronTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Catalogue from knockoutboxinggear.com (products.json): names, prices, colours, sizes and photos are the real ones -->
+    <ul class="carousel" id="plastronTrack" tabindex="0" aria-label="Protecteur corporel, 6 produits">
+      <li class="product" style="--i: 0">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-noir.jpg" alt="Protecteur corporel Rival - Noir" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">01/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-noir" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-noir" data-name="Protecteur corporel Rival" data-variant="Noir" data-price="4559" data-img="assets/p/protecteur-corporel-rival-noir.jpg" aria-label="Ajouter Body Shield Rival Noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 1">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-blanc.jpg" alt="Protecteur corporel Rival - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">02/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-blanc" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-blanc" data-name="Protecteur corporel Rival" data-variant="Blanc" data-price="4559" data-img="assets/p/protecteur-corporel-rival-blanc.jpg" aria-label="Ajouter Body Shield Rival Blanc au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 2">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-rouge.jpg" alt="Protecteur corporel Rival - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">03/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-rouge" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-rouge" data-name="Protecteur corporel Rival" data-variant="Rouge" data-price="4559" data-img="assets/p/protecteur-corporel-rival-rouge.jpg" aria-label="Ajouter Body Shield Rival Rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 3">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-bleu.jpg" alt="Protecteur corporel Rival - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">04/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-bleu" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-bleu" data-name="Protecteur corporel Rival" data-variant="Bleu" data-price="4559" data-img="assets/p/protecteur-corporel-rival-bleu.jpg" aria-label="Ajouter Body Shield Rival Bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 4">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-or.jpg" alt="Protecteur corporel Rival - Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">05/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-or" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-or" data-name="Protecteur corporel Rival" data-variant="Or" data-price="4559" data-img="assets/p/protecteur-corporel-rival-or.jpg" aria-label="Ajouter Body Shield Rival Or au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 5">
+        <div class="product-media">
+          <img src="assets/p/protecteur-corporel-rival-neon.jpg" alt="Protecteur corporel Rival - Neon" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"></div>
+          <span class="product-idx" aria-hidden="true">06/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Protecteur corporel · Rival</p>
+          <h3 class="product-name"><a href="https://knockoutboxinggear.com/products/protecteur-corporel-rival-neon" class="product-link" target="_blank" rel="noopener">Body Shield Rival</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c6f000" aria-hidden="true"></span>Neon</p>
+          <p class="product-price"><strong>4&nbsp;559&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="protecteur-corporel-rival-neon" data-name="Protecteur corporel Rival" data-variant="Neon" data-price="4559" data-img="assets/p/protecteur-corporel-rival-neon.jpg" aria-label="Ajouter Body Shield Rival Neon au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+    </ul>
+
+    <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
+  </section>
+
+  <!-- ============ FEATURES: Rival technologies, claims and photos from the product pages on knockoutboxinggear.com ============ -->
+  <section class="features" id="pourquoi-knockout" aria-labelledby="featuresTitle">
+    <div class="features-head">
+      <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Innovation Rival</p>
+      <h2 class="features-h" id="featuresTitle">Des gens de boxe</h2>
+      <p class="features-sub">Rival réinvente l’équipement de combat depuis 2003. Knockout, distributeur officiel, l’apporte au Maroc.</p>
+    </div>
+    <ul class="features-grid" aria-label="Technologies Rival">
+      <li class="feature" style="--i: 0">
+        <img class="feature-img" src="assets/feature-intellishock.jpg" alt="Gant de sac Rival RB10 Intelli-Shock noir et rouge, logo D3O sur le dessus" width="720" height="960" loading="lazy" decoding="async">
+        <span class="feature-idx" aria-hidden="true">01</span>
+        <div class="feature-body">
+          <h3 class="feature-h">Intelli-Shock™ D3O</h3>
+          <p class="feature-txt">Une protection qui durcit à l’impact&nbsp;: 40&nbsp;% d’énergie absorbée en plus que la plupart des gants de sac (RB10).</p>
+        </div>
+      </li>
+      <li class="feature" style="--i: 1">
+        <img class="feature-img" src="assets/feature-vstrap.jpg" alt="Sangle Wrist Lock 2 d’un gant Rival RB11 Evolution blanc et noir" width="720" height="960" loading="lazy" decoding="async">
+        <span class="feature-idx" aria-hidden="true">02</span>
+        <div class="feature-body">
+          <h3 class="feature-h">V-Strap Wrist Lock 2</h3>
+          <p class="feature-txt">Sangle en V à double angle et manchette à 15°&nbsp;: un maintien du poignet proche d’un gant à lacets.</p>
+        </div>
+      </li>
+      <li class="feature" style="--i: 2">
+        <img class="feature-img" src="assets/feature-multicouche.jpg" alt="Étiquette 20 Year Original sur un gant de sparring Rival RS1 Pro rouge en cuir" width="720" height="960" loading="lazy" decoding="async">
+        <span class="feature-idx" aria-hidden="true">03</span>
+        <div class="feature-body">
+          <h3 class="feature-h">Mousse multicouche</h3>
+          <p class="feature-txt">Jusqu’à 50&nbsp;mm de mousse haute densité pour protéger vos mains et votre partenaire, round après round.</p>
+        </div>
+      </li>
+      <li class="feature" style="--i: 3">
+        <img class="feature-img" src="assets/feature-protection.jpg" alt="Protecteur corporel Rival noir sur fond noir" width="720" height="960" loading="lazy" decoding="async">
+        <span class="feature-idx" aria-hidden="true">04</span>
+        <div class="feature-body">
+          <h3 class="feature-h">Défense totale</h3>
+          <p class="feature-txt">Rembourrage multicouche, plaque de renfort de 2,5&nbsp;mm et sangles réglables aux épaules, au dos et aux côtés.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ============ REVIEWS: customer testimonials slider (same carousel as the product sections) ============ -->
+  <!-- PLACEHOLDER REVIEWS: the 8 reviews below (names, cities, ratings, text) are sample copy, not real customer reviews.
+       Replace them with genuine reviews before going live. Photos review-1..8.jpg are generated illustrations (no real customers). -->
+  <section class="products products--reviews" id="avis" aria-labelledby="reviewsTitle">
+    <div class="products-head">
+      <div class="products-title">
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Avis clients</p>
+        <h2 class="products-h" id="reviewsTitle">Ils nous font confiance</h2>
+        <p class="products-sub">Ce que disent nos boxeurs, de Tanger à Agadir</p>
+      </div>
+      <div class="products-ctrl">
+        <button class="carousel-btn" id="reviewPrev" data-dir="prev" aria-label="Avis précédents" aria-controls="reviewTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-btn" id="reviewNext" data-dir="next" aria-label="Avis suivants" aria-controls="reviewTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <ul class="carousel" id="reviewTrack" tabindex="0" aria-label="Avis clients, 8 avis">
+      <li class="review" style="--i:0">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-1.jpg" alt="Gants de sac noirs Knockout frappant un sac de frappe" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Yassine B.</span> <span class="review-city">Casablanca</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Je tape au sac 4 fois par semaine et les gants tiennent super bien. Le poignet est bien maintenu, aucune douleur après la séance. »</p></blockquote>
+          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag · Noir</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:1">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-2.jpg" alt="Plastron Knockout Pro rouge déballé sur un lit à côté de son carton" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Salma E.</span> <span class="review-city">Rabat</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Commande passée sur WhatsApp, livrée en deux jours. Le plastron est léger et les sangles se règlent facilement. »</p></blockquote>
+          <p class="review-product"><a href="#plastrons">Plastron Knockout Pro · Rouge</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:2">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-3.jpg" alt="Gants de sparring rouges Knockout posés sur un banc de salle de boxe" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Mehdi A.</span> <span class="review-city">Marrakech</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Très bon rembourrage pour le sparring, mes partenaires sentent la différence. Finitions propres, je recommande. »</p></blockquote>
+          <p class="review-product"><a href="#gants-de-sparring">Gants de sparring Knockout Pro · Rouge</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:3">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-4.jpg" alt="Casque de boxe Knockout Pro noir posé sur un tapis de salle" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Imane K.</span> <span class="review-city">Tanger</span></p>
+              <p class="review-stars" role="img" aria-label="4 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Casque confortable et bien protégé au niveau des joues. Il m’a fallu quelques séances pour le faire à ma tête. »</p></blockquote>
+          <p class="review-product"><a href="#best-sellers">Casque Knockout Pro · Noir</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:4">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-5.jpg" alt="Boxeur de dos portant des gants Knockout anthracite devant un sac" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Hamza R.</span> <span class="review-city">Fès</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« La couleur anthracite est encore plus belle en vrai. Livraison gratuite et paiement à la livraison, rien à redire. »</p></blockquote>
+          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag Pro · Anthracite</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:5">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-6.jpg" alt="Plastron Knockout Elite bleu suspendu dans un vestiaire" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Omar T.</span> <span class="review-city">Agadir</span></p>
+              <p class="review-stars" role="img" aria-label="4 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Bonne protection pour les entraînements de mon club. J’aurais aimé un peu plus de choix de tailles, mais la qualité est là. »</p></blockquote>
+          <p class="review-product"><a href="#plastrons">Plastron Knockout Elite · Bleu</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:6">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-7.jpg" alt="Boxeuse de dos appuyée aux cordes avec des gants Knockout bleus" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Nadia M.</span> <span class="review-city">Meknès</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Enfin des gants qui tiennent la distance sur des rounds longs. Le bleu est superbe et le cuir ne bouge pas. »</p></blockquote>
+          <p class="review-product"><a href="#gants-de-sparring">Gants de sparring Knockout Elite · Bleu</a></p>
+        </article>
+      </li>
+      <li class="review" style="--i:7">
+        <article class="review-card">
+          <header class="review-head">
+            <div class="review-media">
+              <img src="assets/review-8.jpg" alt="Gants Knockout Bag Gold noir et or déballés sur une table" width="200" height="200" loading="lazy" decoding="async" draggable="false">
+            </div>
+            <div class="review-id">
+              <p class="review-who"><span class="review-name">Karim L.</span> <span class="review-city">Oujda</span></p>
+              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
+            </div>
+          </header>
+          <blockquote class="review-txt"><p>« Offerts à mon frère pour son anniversaire, il ne les quitte plus. Emballage soigné et livraison rapide jusqu’à Oujda. »</p></blockquote>
+          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag Gold · Noir &amp; Or</a></p>
+        </article>
+      </li>
+    </ul>
+    <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
+  </section>
+
+  <!-- ============ FAQ: accordion (script.js); answers from the FAQ, shipping and refund policies of knockoutboxinggear.com ============ -->
+  <section class="faq" id="faq" aria-labelledby="faqTitle">
+    <div class="faq-head">
+      <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>FAQ</p>
+      <h2 class="faq-h" id="faqTitle">Questions fréquentes</h2>
+      <p class="faq-sub">Commande, livraison, paiement, retours et tailles&nbsp;: tout ce qu’il faut savoir avant de monter sur le ring. Nous répondons du lundi au vendredi, de 9&nbsp;h à 19&nbsp;h, sous 24&nbsp;h.</p>
+      <div class="faq-cta">
+        <p class="faq-cta-txt">Une autre question&nbsp;?</p>
+        <a href="#" class="faq-wa" id="faqWhatsapp" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>
+          Écrivez-nous sur WhatsApp
+        </a>
+        <a href="mailto:info@knockoutboxinggear.com" class="faq-mail">ou par e-mail&nbsp;: info@knockoutboxinggear.com</a>
+      </div>
+    </div>
+
+    <ul class="faq-list">
+      <li class="faq-item" id="faq-commande" style="--i:0">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ1" aria-expanded="false" aria-controls="faqA1">
+            <span class="faq-q-txt">Comment passer commande ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA1" role="region" aria-labelledby="faqQ1">
+          <div class="faq-a-inner"><p>Choisissez la taille sur la fiche, ajoutez vos articles au panier, puis appuyez sur «&nbsp;Commander sur WhatsApp&nbsp;»&nbsp;: votre commande s’ouvre dans un message déjà rempli. Aucun compte n’est nécessaire. Un membre de l’équipe vous contacte par téléphone ou WhatsApp pour confirmer vos informations&nbsp;; la commande n’est expédiée qu’après cette confirmation.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" id="faq-livraison" style="--i:1">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ2" aria-expanded="false" aria-controls="faqA2">
+            <span class="faq-q-txt">Où livrez-vous ? Combien coûte la livraison ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA2" role="region" aria-labelledby="faqQ2">
+          <div class="faq-a-inner"><p>Nous livrons partout au Maroc. La livraison standard coûte 25&nbsp;DH, et elle est offerte pour toute commande de plus de 500&nbsp;DH.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" style="--i:2">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ3" aria-expanded="false" aria-controls="faqA3">
+            <span class="faq-q-txt">Quels sont les délais de livraison ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA3" role="region" aria-labelledby="faqQ3">
+          <div class="faq-a-inner"><p>Votre commande est préparée sous 24 à 48&nbsp;h (1 à 2 jours ouvrables). Une fois expédiée, elle arrive généralement sous 24 à 72&nbsp;h selon votre ville. Le livreur vous appelle le jour de la livraison&nbsp;; en cas d’absence, une seconde tentative est faite.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" id="faq-paiement" style="--i:3">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ4" aria-expanded="false" aria-controls="faqA4">
+            <span class="faq-q-txt">Comment se passe le paiement ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA4" role="region" aria-labelledby="faqQ4">
+          <div class="faq-a-inner"><p>Paiement à la livraison&nbsp;: vous réglez directement le livreur à la réception du colis. Merci de préparer le montant exact. Pour des raisons de sécurité, nos transporteurs n’autorisent généralement pas l’ouverture du colis avant le paiement.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" id="faq-retours" style="--i:4">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ5" aria-expanded="false" aria-controls="faqA5">
+            <span class="faq-q-txt">Puis-je retourner un article ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA5" role="region" aria-labelledby="faqQ5">
+          <div class="faq-a-inner"><p>Oui, sous 14&nbsp;jours, pour un produit non utilisé dans son emballage d’origine. Écrivez-nous à <a href="mailto:info@knockoutboxinggear.com">info@knockoutboxinggear.com</a> avant tout renvoi&nbsp;: les colis renvoyés sans demande préalable ne sont pas acceptés. Les articles soldés ne sont ni repris ni remboursés.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" id="faq-tailles" style="--i:5">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ6" aria-expanded="false" aria-controls="faqA6">
+            <span class="faq-q-txt">Quelle taille de gants choisir ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA6" role="region" aria-labelledby="faqQ6">
+          <div class="faq-a-inner"><p>Les gants de sac se choisissent en S, M, L ou XL, les gants de sparring en onces. Repérez votre ligne selon votre poids et le tour de votre main&nbsp;:</p><div class="faq-table-wrap"><table class="faq-table">
+              <caption class="sr-only">Guide des tailles Rival</caption>
+              <thead><tr><th scope="col">Gants de sac</th><th scope="col">Sparring</th><th scope="col">Poids</th><th scope="col">Tour de main</th></tr></thead>
+              <tbody>
+                <tr><td>S</td><td>12&nbsp;oz</td><td>jusqu’à 60&nbsp;kg</td><td>19&nbsp;cm</td></tr>
+                <tr><td>M</td><td>14&nbsp;oz</td><td>60–74&nbsp;kg</td><td>21&nbsp;cm</td></tr>
+                <tr><td>L</td><td>16&nbsp;oz-s / 16&nbsp;oz</td><td>75–90&nbsp;kg</td><td>24&nbsp;cm</td></tr>
+                <tr><td>XL</td><td>18&nbsp;oz</td><td>91&nbsp;kg et +</td><td>26&nbsp;cm</td></tr>
+              </tbody>
+            </table></div><p>Un doute entre deux tailles&nbsp;? Écrivez-nous, nous vous conseillons.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" style="--i:6">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ7" aria-expanded="false" aria-controls="faqA7">
+            <span class="faq-q-txt">Gants de sac ou gants de sparring ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA7" role="region" aria-labelledby="faqQ7">
+          <div class="faq-a-inner"><p>Les gants de sac (RB10, RB11) sont réservés au sac de frappe et aux pattes d’ours&nbsp;: leur mousse haute densité n’est pas faite pour frapper un partenaire, ne les utilisez jamais en sparring. Les gants de sparring (RS1 Pro, RS100, RS11V) protègent vos mains et votre partenaire&nbsp;; évitez de les user au sac lourd pour préserver leur rembourrage.</p></div>
+        </div>
+      </li>
+      <li class="faq-item" id="faq-authenticite" style="--i:7">
+        <h3 class="faq-q-wrap">
+          <button class="faq-q" id="faqQ8" aria-expanded="false" aria-controls="faqA8">
+            <span class="faq-q-txt">Vos produits sont-ils authentiques ?</span><span class="faq-icon" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="faq-a" id="faqA8" role="region" aria-labelledby="faqQ8">
+          <div class="faq-a-inner"><p>Oui. Knockout Boxing Gear est distributeur officiel Rival Boxing au Maroc&nbsp;: chaque article est 100&nbsp;% original, issu des gammes professionnelles Rival.</p></div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ============ FOOTER: compact bento grid, same tiles/gaps/radius as the hero. Contact, socials and policies from knockoutboxinggear.com;
+       the WhatsApp links get their href from WHATSAPP_NUMBER in script.js. ============ -->
+  <footer class="site-footer" id="footer">
+    <div class="footer-grid">
+      <div class="footer-tile footer-tile--brand">
+        <a href="#top" class="footer-brand" aria-label="Knockout Boxing Gear, retour en haut">
+          <img src="assets/kobg-mark-light.svg" alt="" width="160" height="79">
+          <span class="footer-brand-name">Knockout<br>Boxing Gear</span>
+        </a>
+        <p class="footer-tagline">Distributeur officiel Rival au Maroc. Équipement de combat haute performance, conçu pour le ring.</p>
+        <p class="footer-contact"><a href="mailto:info@knockoutboxinggear.com">info@knockoutboxinggear.com</a><span>Lun–ven · 9&nbsp;h–19&nbsp;h · réponse sous 24&nbsp;h</span></p>
+        <a href="#" class="footer-wa js-wa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>Commander sur WhatsApp</a>
+      </div>
+
+        <nav class="footer-tile footer-tile--links footer-col" aria-labelledby="footCol1">
+          <h2 class="footer-col-h" id="footCol1">Boutique</h2>
+          <ul>
+            <li><a href="gants.html">Tous les gants</a></li>
+            <li><a href="gants.html#gants-de-sac">Gants de sac</a></li>
+            <li><a href="gants.html#gants-de-sparring">Gants de sparring</a></li>
+            <li><a href="#plastrons">Protecteur corporel</a></li>
+            <li><a href="#best-sellers">Best-sellers</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-tile footer-tile--links footer-col" aria-labelledby="footCol2">
+          <h2 class="footer-col-h" id="footCol2">Aide</h2>
+          <ul>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#faq-livraison">Livraison</a></li>
+            <li><a href="#faq-retours">Retours</a></li>
+            <li><a href="#faq-tailles">Guide des tailles</a></li>
+            <li><a href="#" class="js-wa" target="_blank" rel="noopener">Contact WhatsApp</a></li>
+            <li><a href="contact.html">Nous contacter</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-tile footer-tile--about footer-col" aria-labelledby="footCol3">
+          <div class="footer-about-links">
+            <h2 class="footer-col-h" id="footCol3">À propos</h2>
+            <ul>
+              <li><a href="a-propos.html">Qui sommes-nous</a></li>
+              <li><a href="#pourquoi-knockout">Innovation Rival</a></li>
+              <li><a href="#avis">Avis clients</a></li>
+              <li><a href="#faq-authenticite">Distributeur officiel Rival</a></li>
+            </ul>
+          </div>
+          <div class="footer-follow">
+            <h2 class="footer-col-h" id="footCol4">Suivez-nous</h2>
+            <ul class="footer-social" aria-labelledby="footCol4">
+              <li><a href="https://www.instagram.com/knockoutboxing.gear" class="footer-social-link" target="_blank" rel="noopener" aria-label="Instagram @knockoutboxing.gear"><svg viewBox="0 0 24 24" aria-hidden="true"><rect fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" x="3.5" y="3.5" width="17" height="17" rx="5"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/></svg></a></li>
+              <li><a href="https://www.facebook.com/share/1KHccg4H4c/?mibextid=wwXIfr" class="footer-social-link" target="_blank" rel="noopener" aria-label="Facebook Knockout Boxing Gear"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3a21 21 0 0 0-2.4-.1c-2.3 0-3.9 1.4-3.9 4v2.2H7.9v3h2.6V21z"/></svg></a></li>
+            </ul>
+          </div>
+        </nav>
+
+      <ul class="footer-tile footer-tile--perks footer-perks" aria-label="Nos engagements">
+        <li class="footer-perk">
+          <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.2v2.8h-7"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="6.5" cy="17.5" r="1.8"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="17" cy="17.5" r="1.8"/></svg></span>
+          <span><strong>Livraison offerte</strong><small>Dès 500&nbsp;DH, partout au Maroc</small></span>
+        </li>
+        <li class="footer-perk">
+          <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" x="2.5" y="6" width="19" height="12" rx="2"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M6 9.5v5M18 9.5v5"/></svg></span>
+          <span><strong>Paiement à la livraison</strong><small>Vous payez à la réception</small></span>
+        </li>
+        <li class="footer-perk">
+          <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l1.2-3.6A8 8 0 1 1 8.6 18.6z"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M9 10.5h6M9 13.5h4"/></svg></span>
+          <span><strong>Commande WhatsApp</strong><small>Commande facile, message prêt</small></span>
+        </li>
+        <li class="footer-perk">
+          <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5h11a5 5 0 0 1 0 10H9"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7.5 5L4 8.5 7.5 12"/></svg></span>
+          <span><strong>Retours sous 14&nbsp;jours</strong><small>Produit non utilisé</small></span>
+        </li>
+      </ul>
+
+      <div class="footer-tile footer-tile--bottom footer-bottom">
+        <p class="footer-copy">© 2026 Knockout Boxing Gear. Tous droits réservés.</p>
+        <ul class="footer-legal" aria-label="Informations légales">
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
+          <li><a href="cgv.html">CGV</a></li>
+          <li><a href="confidentialite.html">Confidentialité</a></li>
+        </ul>
+        <a href="#faq" class="footer-faq-link">Une question&nbsp;? Consultez la FAQ</a>
+        <button type="button" class="footer-top-btn" id="backToTop" aria-label="Retour en haut de la page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </footer>
 
   <!-- ============ CART DRAWER (client-side, saved in localStorage; checkout via WhatsApp) ============ -->
   <div class="cart-overlay" id="cartOverlay" aria-hidden="true"></div>
@@ -697,7 +1515,7 @@
 
     <div class="cart-empty" id="cartEmpty">
       <p class="cart-empty-big">Votre panier est vide</p>
-      <p class="cart-empty-sub">Gants, casques, plastrons&nbsp;: découvrez nos best-sellers.</p>
+      <p class="cart-empty-sub">Gants de sac, gants de sparring, protecteur corporel&nbsp;: découvrez nos best-sellers.</p>
       <a href="#best-sellers" class="cart-empty-btn" id="cartShop">
         Voir les best-sellers
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -706,7 +1524,7 @@
 
     <div class="cart-foot" id="cartFoot">
       <p class="cart-subtotal"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
-      <p class="cart-note">Livraison et paiement confirmés avec vous sur WhatsApp.</p>
+      <p class="cart-note">Livraison 25&nbsp;DH, offerte dès 500&nbsp;DH. Paiement à la livraison, commande confirmée avec vous par téléphone ou WhatsApp.</p>
       <a href="#" class="cart-checkout" id="cartCheckout" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.6 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.1.2-.2.4 0 .6.4.7 1 1.4 1.6 1.9.7.6 1.3.9 1.6 1 .2.1.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .4-.1 1.1-.6 1.6-.5.5-1.4.9-2.2.8-1.1-.1-2.6-.6-4.1-1.9-1.8-1.6-2.8-3.4-3-4.3-.2-.9.2-1.9.5-2.2z" fill="currentColor"/></svg>
         Commander sur WhatsApp

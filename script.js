@@ -13,7 +13,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   const nav = document.getElementById('mainNav');
   const dropToggle = document.querySelector('.drop-toggle');
   const drop = document.querySelector('.nav-drop');
-  const behindMenu = document.querySelectorAll('.hero, .marquee, .products, .glove-banner');
+  const behindMenu = document.querySelectorAll('.hero, .marquee, .products, .glove-banner, .features, .faq, .site-footer, .sub-main, .legal-wrap');
   const video = document.querySelector('.feature-video');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   // keep in sync with the responsive @media query in styles.css
@@ -32,8 +32,6 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
 
   function setMenu(open) {
     if (open) {
-      // the sheet hangs off the header: jump (not scroll) back to the top first
-      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' });
       // it opens with the collection tiles showing, laid out before it fades in
       // so the expand animation doesn't play on top of the entrance
       nav.classList.add('is-instant');
@@ -51,6 +49,18 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     syncVideo();
   }
 
+  // sticky header: compact frosted state once the page has scrolled
+  const header = document.querySelector('.header');
+  let headerTick = false;
+  const syncHeader = () => {
+    headerTick = false;
+    header.classList.toggle('is-scrolled', window.scrollY > 8);
+  };
+  window.addEventListener('scroll', () => {
+    if (!headerTick) { headerTick = true; requestAnimationFrame(syncHeader); }
+  }, { passive: true });
+  syncHeader();
+
   burger.addEventListener('click', (e) => {
     e.stopPropagation();
     setMenu(!isMenuOpen());
@@ -58,6 +68,8 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
 
   dropToggle.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (hoverOpened && !mobile.matches) { hoverOpened = false; return; }
+    hoverOpened = false;
     setDrop(!drop.classList.contains('is-open'));
   });
 
@@ -77,9 +89,27 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     if (e.target.closest('a')) setMenu(false);
   });
 
-  // desktop dropdown: tabbing out of it closes it
+  // desktop dropdown: opens on hover and on keyboard focus (aria-expanded follows);
+  // tabbing out of it closes it. Escape closes it and keeps it shut until focus leaves.
+  let dropDismissed = false;
+  let hoverOpened = false;   // a click (or tap) on the chevron right after hover-open keeps it open
+  drop.addEventListener('mouseenter', () => {
+    if (mobile.matches || drop.classList.contains('is-open')) return;
+    setDrop(true);
+    hoverOpened = true;
+  });
+  drop.addEventListener('mouseleave', () => {
+    hoverOpened = false;
+    if (!mobile.matches && !drop.querySelector(':focus-visible')) setDrop(false);   // keyboard focus inside keeps it open
+  });
+  drop.addEventListener('focusin', (e) => {
+    if (mobile.matches || dropDismissed || e.target === dropToggle) return;
+    setDrop(true);
+  });
   drop.addEventListener('focusout', (e) => {
-    if (!isMenuOpen() && !drop.contains(e.relatedTarget)) setDrop(false);
+    if (drop.contains(e.relatedTarget)) return;
+    dropDismissed = false;
+    if (!isMenuOpen()) setDrop(false);
   });
 
   // rotating into the desktop layout drops the mobile menu state
@@ -94,6 +124,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
       burger.focus();
     } else if (drop.classList.contains('is-open')) {
       const hadFocus = drop.contains(document.activeElement);
+      dropDismissed = hadFocus;
       setDrop(false);
       if (hadFocus) dropToggle.focus();
     }
@@ -104,12 +135,13 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   const videoShouldPlay = () => videoOnScreen && !isMenuOpen() && !reduceMotion.matches;
   function syncVideo() {
     const play = videoShouldPlay();
+    if (!video) return;
     if (play && video.paused) video.play().catch(() => {});
     else if (!play && !video.paused) video.pause();
   }
   // the autoplay attribute can start it after this script has run
-  video.addEventListener('play', () => { if (!videoShouldPlay()) video.pause(); });
-  if ('IntersectionObserver' in window) {
+  video?.addEventListener('play', () => { if (!videoShouldPlay()) video.pause(); });
+  if (video && 'IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       videoOnScreen = entry.isIntersecting;
       syncVideo();
@@ -135,7 +167,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   const cartClose = document.getElementById('cartClose');
   const toast = document.getElementById('toast');
   const toastTxt = toast.querySelector('.toast-txt');
-  const behindCart = document.querySelectorAll('.page, .marquee, .products, .glove-banner');
+  const behindCart = document.querySelectorAll('.page, .marquee, .products, .glove-banner, .features, .faq, .site-footer, .sub-main, .legal-wrap, .header');
   const addedTimers = new WeakMap();
   const MAX_QTY = 99;
   let toastTimer;
@@ -233,9 +265,14 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   function addToCart(btn) {
     const d = btn.dataset;
     if (!d.id) return;
-    const line = cart.find((it) => it.id === d.id);
+    // the card's size picker (gloves) turns into part of the line: its own id + "Couleur · Taille"
+    const sizeSel = btn.closest('.product')?.querySelector('.product-size');
+    const size = sizeSel ? sizeSel.value : '';
+    const id = size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id;
+    const variant = [d.variant || '', size].filter(Boolean).join(' · ');
+    const line = cart.find((it) => it.id === id);
     if (line) line.qty = Math.min(MAX_QTY, line.qty + 1);
-    else cart.push({ id: d.id, name: d.name, variant: d.variant || '', price: +d.price || 0, img: d.img || '', qty: 1 });
+    else cart.push({ id, name: d.name, variant, price: +d.price || 0, img: d.img || '', qty: 1 });
     saveCart();
     render();
     bumpBadge();
@@ -245,7 +282,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     addedTimers.set(btn, setTimeout(() => btn.classList.remove('is-added'), 1400));
 
     const qty = totalQty();
-    const label = `${d.name}${d.variant ? ` ${d.variant.toLowerCase()}` : ''}`;
+    const label = `${d.name}${variant ? ` ${variant.toLowerCase()}` : ''}`;
     showToast(qty > 1 ? `${label} ajouté · ${plural(qty)} au panier` : `${label} ajouté au panier`);
   }
 
@@ -345,18 +382,11 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
 
   render();
 
-  // Carousels: every .products section (Best-sellers, Gants de sac, Gants de sparring) gets its own
+  // Carousels: every .products section (Best-sellers, Gants de sac, Gants de sparring, Plastrons, Avis) gets its own
   // native scroll-snap track (touch and trackpads just work), arrows that step one
   // card, mouse drag and a thin progress bar. Each instance keeps its own state.
   const glide = () => (reduceMotion.matches ? 'auto' : 'smooth');
   document.querySelectorAll('.products').forEach(setupCarousel);
-  // banner CTAs like "Voir les plastrons": scroll to the section, then bring that product's card in
-  document.querySelectorAll('[data-show-product]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const card = document.querySelector(`.product-add[data-id="${link.dataset.showProduct}"]`)?.closest('.product');
-      card?.closest('.products')?.goToCard?.(card);
-    });
-  });
 
   function setupCarousel(section) {
     const track = section.querySelector('.carousel');
@@ -418,7 +448,6 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     nextBtn.addEventListener('click', () => goTo(Math.floor(position()) + 1));
     // "Voir tout": the section's own anchor scroll, plus the track back to its first card
     if (allLink) allLink.addEventListener('click', () => goTo(0));
-    section.goToCard = (card) => goTo([...cards].indexOf(card));
     track.addEventListener('scroll', queueSync, { passive: true });
     track.addEventListener('scrollend', () => { clearTimeout(targetTimer); settle(); });
     new ResizeObserver(measure).observe(track);
@@ -428,7 +457,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     let drag = null;
     let swallowClick = false;
     track.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('.product-add')) return;
+      if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('.product-add, .product-opt')) return;
       drag = { x: e.clientX, left: track.scrollLeft, dx: 0, moved: false };
     });
     window.addEventListener('pointermove', (e) => {
@@ -480,4 +509,153 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
       io.observe(section);
     }
   }
+
+  // Features: blocks rise in once, the first time the section scrolls into view
+  document.querySelectorAll('.features').forEach((section) => {
+    if (!('IntersectionObserver' in window) || reduceMotion.matches) return;
+    section.classList.add('will-reveal');
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      section.classList.remove('will-reveal');
+      section.classList.add('is-in');
+      io.disconnect();
+      // phones swipe this row: snapping waits until the cards have landed
+      const done = () => { section.classList.add('is-revealed'); clearTimeout(fallback); };
+      const fallback = setTimeout(done, 2000);
+      section.querySelector('.features-grid')?.lastElementChild?.addEventListener('animationend', done, { once: true });
+    }, { threshold: .15 });
+    io.observe(section);
+  });
+
+  // FAQ: accordion, one answer open at a time. Without JS every answer stays visible
+  // (the collapsed state only applies under .faq--js). Height animates in CSS (grid rows).
+  document.querySelectorAll('.faq').forEach((section) => {
+    const qs = [...section.querySelectorAll('.faq-q')];
+    const panel = (q) => document.getElementById(q.getAttribute('aria-controls'));
+    function set(q, open) {
+      q.setAttribute('aria-expanded', String(open));
+      q.closest('.faq-item').classList.toggle('is-open', open);
+      panel(q).inert = !open;
+    }
+    qs.forEach((q, i) => set(q, i === 0));      // first answer open by default
+    section.classList.add('faq--js');
+    qs.forEach((q, i) => {
+      q.addEventListener('click', () => {
+        const open = q.getAttribute('aria-expanded') !== 'true';
+        qs.forEach((o) => { if (o !== q) set(o, false); });
+        set(q, open);
+      });
+      // arrow keys / Home / End move between questions
+      q.addEventListener('keydown', (e) => {
+        const to = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: qs.length - 1 }[e.key];
+        if (to === undefined) return;
+        e.preventDefault();
+        qs[(to + qs.length) % qs.length].focus();
+      });
+    });
+
+    // links to a question (e.g. footer "Guide des tailles" -> #faq-tailles) open that answer
+    function openFromHash(hash) {
+      const item = hash && hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
+      const q = item && section.contains(item) ? item.querySelector('.faq-q') : null;
+      if (!q) return;
+      // swap instantly: an answer collapsing above the target would shift it mid-scroll
+      section.classList.add('faq--instant');
+      qs.forEach((o) => set(o, o === q));
+      void section.offsetHeight;
+      requestAnimationFrame(() => requestAnimationFrame(() => section.classList.remove('faq--instant')));
+    }
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="#faq-"]');
+      if (a) openFromHash(a.getAttribute('href'));
+    });
+    window.addEventListener('hashchange', () => openFromHash(location.hash));
+    openFromHash(location.hash);
+
+    const wa = section.querySelector('#faqWhatsapp');
+    if (wa) {
+      const msg = 'Bonjour Knockout Boxing Gear, j’ai une question :';
+      wa.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    }
+
+    if (!('IntersectionObserver' in window) || reduceMotion.matches) return;
+    section.classList.add('will-reveal');
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      section.classList.remove('will-reveal');
+      section.classList.add('is-in');
+      io.disconnect();
+    }, { threshold: .1 });
+    io.observe(section);
+  });
+
+  // Footer: WhatsApp links + back-to-top
+  document.querySelectorAll('.js-wa').forEach((a) => {
+    const msg = 'Bonjour Knockout Boxing Gear, je souhaite passer une commande.';
+    a.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+  });
+  document.getElementById('backToTop')?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    // keyboard users land back at the top too (first visible logo link)
+    [...document.querySelectorAll('.bar-logo, .nav-logo')].find((l) => l.offsetParent && !l.closest('[inert]'))?.focus({ preventScroll: true });
+  });
+  // ---------------------------------------------------------
+  // Gants page (gants.html): filter chips + price sort + #hash filters
+  // ---------------------------------------------------------
+  const shop = document.querySelector('[data-shop]');
+  if (shop) {
+    const groups = [...shop.querySelectorAll('.cat-group')];
+    const chips = [...shop.querySelectorAll('.chip[data-filter]')];
+    const sortSel = shop.querySelector('#gantsSort');
+    const count = shop.querySelector('#gantsCount');
+    groups.forEach((g) => [...g.querySelectorAll('.product')].forEach((li, i) => { li.dataset.order = i; }));
+    function applyFilter(f, { scroll = false } = {}) {
+      if (!groups.some((g) => g.id === f)) f = 'tous';
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === f)));
+      let n = 0;
+      groups.forEach((g) => {
+        const show = f === 'tous' || g.id === f;
+        g.hidden = !show;
+        if (show) n += g.querySelectorAll('.product').length;
+      });
+      count.textContent = `${n} produit${n > 1 ? 's' : ''}`;
+      if (scroll && f !== 'tous') {
+        document.getElementById(f).scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+      }
+    }
+    function applySort() {
+      const v = sortSel ? sortSel.value : 'default';
+      groups.forEach((g) => {
+        const list = g.querySelector('.product-grid');
+        const items = [...list.children];
+        const key = (li) => Number(li.querySelector('[data-price]').dataset.price);
+        items.sort((a, b) => v === 'asc' ? key(a) - key(b) : v === 'desc' ? key(b) - key(a) : a.dataset.order - b.dataset.order);
+        items.forEach((li) => list.appendChild(li));
+      });
+    }
+    chips.forEach((c) => c.addEventListener('click', () => {
+      const f = c.dataset.filter;
+      applyFilter(f);
+      // keep the URL shareable without jumping the page
+      history.replaceState(null, '', f === 'tous' ? location.pathname : `#${f}`);
+    }));
+    sortSel?.addEventListener('change', applySort);
+    const fromHash = (scroll) => applyFilter(decodeURIComponent(location.hash.slice(1)) || 'tous', { scroll });
+    window.addEventListener('hashchange', () => fromHash(true));
+    fromHash(false);
+    // arriving with #gants-de-sparring: the other group just got hidden, so land on it again
+    const target = groups.find((g) => `#${g.id}` === location.hash);
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+  }
+
+  // Contact page: the form composes an e-mail in the visitor's mail app (static site, no server)
+  const contactForm = document.getElementById('contactForm');
+  contactForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!contactForm.reportValidity()) return;
+    const d = new FormData(contactForm);
+    const subject = `Contact site — ${d.get('nom')}`;
+    const body = `${d.get('message')}\n\n${d.get('nom')}\n${d.get('email')}`;
+    location.href = `mailto:info@knockoutboxinggear.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
 })();
