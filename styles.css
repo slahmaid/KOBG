@@ -1763,3 +1763,41 @@ body.cart-open { overflow: hidden; }
   .glove-banner-actions { width: 100%; }
   .glove-banner-cta { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ---------------------------------------------------------
+   Body protector banner: the gloves banner mirrored so the page doesn't repeat
+   itself. Photo on the left, copy on the right; red tag pill, white CTA,
+   "KO" watermark on the right.
+   --------------------------------------------------------- */
+.glove-banner--flip { justify-items: end; }
+.glove-banner--flip .glove-banner-media img { object-position: 20% 50%; }
+.glove-banner--flip::before {
+  background: linear-gradient(270deg, #000 0%, rgba(0,0,0,.92) 32%, rgba(0,0,0,.35) 55%, transparent 70%);
+}
+.glove-banner--flip::after { left: auto; right: -.04em; }
+.glove-banner--flip .glove-banner-tag { background: var(--accent); color: var(--white); }
+.glove-banner--flip .glove-banner-tag .promo-dot,
+.glove-banner--flip .glove-banner-tag .promo-dot::after { background: var(--white); }
+.glove-banner--flip .glove-banner-h { font-size: clamp(48px, 5.8vw, 88px); }
+.glove-banner--flip .glove-banner-h .line + .line { font-size: .5em; line-height: 1; margin-top: .12em; }
+.glove-banner--flip .glove-banner-cta { background: var(--white); color: var(--black); }
+.glove-banner--flip .glove-banner-cta:hover { background: #e6e6e6; }
+.glove-banner--flip .glove-banner-cta:focus-visible { outline-color: var(--accent); }
+
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .glove-banner--flip { justify-items: normal; }
+  .glove-banner--flip .glove-banner-media img { object-position: 50% 40%; }
+  .glove-banner--flip::before { background: linear-gradient(180deg, transparent 55%, #000 100%); }
+  .glove-banner--flip::after { right: -.04em; }
+  .glove-banner--flip .glove-banner-h { font-size: clamp(46px, 15vw, 88px); }
+  .glove-banner--flip .glove-banner-h .line + .line { font-size: .52em; }
+}
+
+/* Hero tall panel with a white-background product shot (Rival RS100):
+   white panel + contain, so the whole glove shows at every panel ratio */
+.panel--tall-white { background: #fff; }
+.panel--tall-white img { object-fit: contain; object-position: 50% 40%; }
+.panel--tall-white::after { background: none; }
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .panel--tall-white img { object-position: 50% 38%; }
+}

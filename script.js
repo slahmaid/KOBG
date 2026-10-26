@@ -350,6 +350,13 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   // card, mouse drag and a thin progress bar. Each instance keeps its own state.
   const glide = () => (reduceMotion.matches ? 'auto' : 'smooth');
   document.querySelectorAll('.products').forEach(setupCarousel);
+  // banner CTAs like "Voir les plastrons": scroll to the section, then bring that product's card in
+  document.querySelectorAll('[data-show-product]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const card = document.querySelector(`.product-add[data-id="${link.dataset.showProduct}"]`)?.closest('.product');
+      card?.closest('.products')?.goToCard?.(card);
+    });
+  });
 
   function setupCarousel(section) {
     const track = section.querySelector('.carousel');
@@ -411,6 +418,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     nextBtn.addEventListener('click', () => goTo(Math.floor(position()) + 1));
     // "Voir tout": the section's own anchor scroll, plus the track back to its first card
     if (allLink) allLink.addEventListener('click', () => goTo(0));
+    section.goToCard = (card) => goTo([...cards].indexOf(card));
     track.addEventListener('scroll', queueSync, { passive: true });
     track.addEventListener('scrollend', () => { clearTimeout(targetTimer); settle(); });
     new ResizeObserver(measure).observe(track);

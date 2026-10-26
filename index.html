@@ -79,8 +79,8 @@
       </section>
 
       <!-- Tall product panel -->
-      <section class="panel panel--tall" style="--i: 1">
-        <img src="assets/glove-tall.jpg" alt="Gant de boxe Knockout noir à scratch avec emblème de poing blanc">
+      <section class="panel panel--tall panel--tall-white" style="--i: 1">
+        <img src="assets/glove-rival-gold.jpg" width="960" height="1547" alt="Gant de sparring Rival RS100 blanc et or à scratch">
         <a href="#gants-de-sac" class="discover-btn">
           Découvrir
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -659,6 +659,25 @@
     </ul>
 
     <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
+  </section>
+
+  <!-- ============ BODY PROTECTOR BANNER: mirrored twin of the gloves banner (photo left, copy right) ============ -->
+  <section class="glove-banner glove-banner--flip" id="plastrons-banner" aria-labelledby="plastronBannerTitle">
+    <picture class="glove-banner-media">
+      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/plastron-banner-mobile.jpg" width="680" height="720">
+      <img src="assets/plastron-banner.jpg" width="1280" height="720" alt="Plastrons de boxe Knockout Pro noir et rouge à sangles réglables, frappés de l’emblème poing blanc, sur fond noir" loading="lazy" decoding="async">
+    </picture>
+    <div class="glove-banner-body">
+      <img class="glove-banner-mark" src="assets/kobg-mark.svg" alt="" aria-hidden="true">
+      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Collection plastrons · &minus;20&nbsp;%</p>
+      <h2 class="glove-banner-h" id="plastronBannerTitle"><span class="line">Plastrons</span> <span class="line">Body protector</span></h2>
+      <p class="glove-banner-tagline">Encaisse. Avance. Domine.</p>
+      <p class="glove-banner-sub">Knockout Pro · Noir, Rouge · S–L · Sangles réglables</p>
+      <div class="glove-banner-actions">
+        <a href="#best-sellers" class="glove-banner-cta" data-show-product="plastron-pro-noir">Voir les plastrons <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="glove-banner-price"><span>Dès</span> <strong>799&nbsp;DH</strong> <s><span class="sr-only">au lieu de </span>999&nbsp;DH</s></p>
+      </div>
+    </div>
   </section>
 
   <!-- ============ CART DRAWER (client-side, saved in localStorage; checkout via WhatsApp) ============ -->
