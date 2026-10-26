@@ -30,7 +30,7 @@
               <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <ul class="drop-menu">
-              <li><a href="#gants">Gants de boxe</a></li>
+              <li><a href="#best-sellers">Best-sellers</a></li>
               <li><a href="#">Bandes de boxe</a></li>
               <li><a href="#">Casques</a></li>
               <li><a href="#">Vêtements</a></li>
@@ -53,10 +53,10 @@
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
             <input type="search" placeholder="RECHERCHER" aria-label="Rechercher des produits">
           </form>
-          <a href="#" class="cart-btn" id="cartBtn" aria-label="Panier, 0 article">
+          <button type="button" class="cart-btn" id="cartBtn" aria-label="Panier, 0 article" aria-haspopup="dialog" aria-controls="cartDrawer" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2.2 10.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/><circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/><circle cx="17.5" cy="19.5" r="1.4" fill="currentColor"/></svg>
             <span class="cart-count" id="cartCount" aria-hidden="true">0</span>
-          </a>
+          </button>
         </div>
       </div>
     </header>
@@ -81,7 +81,7 @@
       <!-- Tall product panel -->
       <section class="panel panel--tall" style="--i: 1">
         <img src="assets/glove-tall.jpg" alt="Gant de boxe Knockout noir à scratch avec emblème de poing blanc">
-        <a href="#gants" class="discover-btn">
+        <a href="#gants-de-sac" class="discover-btn">
           Découvrir
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -116,50 +116,77 @@
       </a>
 
       <!-- Center plus button -->
-      <button class="plus-btn" aria-label="Ajouter les gants Knockout Pro au panier">
+      <button class="plus-btn" data-id="gants-pro-noir" data-name="Gants Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter les gants Knockout Pro noirs au panier">
         <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </main>
   </div>
 
-  <!-- ============ PRODUCTS: gloves carousel ============ -->
-  <section class="products" id="gants" aria-labelledby="productsTitle">
+  <!-- ============ MARQUEE: store perks (2nd list is a copy for the seamless loop, hidden from screen readers) ============ -->
+  <section class="marquee" aria-label="Nos engagements">
+    <div class="marquee-track">
+      <ul class="marquee-group">
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>&minus;20&nbsp;% sur tous les produits</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 7 jours</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Qualité pro</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Revendeur officiel Rival Boxing</span></li>
+      </ul>
+      <ul class="marquee-group" aria-hidden="true">
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Commande facile sur WhatsApp</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>&minus;20&nbsp;% sur tous les produits</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 7 jours</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Qualité pro</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Revendeur officiel Rival Boxing</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCTS: Best-sellers collection (gloves, headgear, body protectors) ============ -->
+  <section class="products" id="best-sellers" aria-labelledby="productsTitle">
     <div class="products-head">
       <div class="products-title">
         <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur toute la collection</p>
-        <h2 class="products-h" id="productsTitle">Gants de boxe</h2>
-        <p class="products-sub">5 modèles · du 10 au 16 oz</p>
+        <h2 class="products-h" id="productsTitle">Best-sellers</h2>
+        <p class="products-sub">Gants · Casques · Plastrons · 7 modèles</p>
       </div>
       <div class="products-ctrl">
-        <a href="#" class="products-all">
+        <a href="#best-sellers" class="products-all">
           Voir tout
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
-        <button class="carousel-btn" id="carouselPrev" aria-label="Produits précédents" aria-controls="gloveTrack">
+        <button class="carousel-btn" id="carouselPrev" data-dir="prev" aria-label="Produits précédents" aria-controls="gloveTrack">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="carousel-btn" id="carouselNext" aria-label="Produits suivants" aria-controls="gloveTrack">
+        <button class="carousel-btn" id="carouselNext" data-dir="next" aria-label="Produits suivants" aria-controls="gloveTrack">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
 
-    <!-- Placeholder catalogue: names, prices and the recoloured glove-*.jpg photos stand in for real product data and photos -->
-    <ul class="carousel" id="gloveTrack" tabindex="0" aria-label="Gants de boxe, 5 produits">
+    <!-- Placeholder catalogue: names, prices and photos (glove-*, casque-*, plastron-*.jpg) stand in for real product data and photos -->
+    <ul class="carousel" id="gloveTrack" tabindex="0" aria-label="Best-sellers : gants, casques et plastrons, 7 produits">
       <li class="product" style="--i: 0">
         <div class="product-media">
           <img src="assets/glove-tall.jpg" alt="Gant de boxe Knockout Pro noir à scratch" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
-          <span class="product-idx" aria-hidden="true">01/05</span>
+          <span class="product-idx" aria-hidden="true">01/07</span>
         </div>
         <div class="product-info">
+          <p class="product-cat">Gants</p>
           <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · 10–16 oz</p>
           <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-name="Knockout Pro Noir" aria-label="Ajouter Knockout Pro noir au panier">
+          <button class="product-add" data-id="gants-pro-noir" data-name="Gants Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter Gants de boxe Knockout Pro noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -170,17 +197,18 @@
 
       <li class="product" style="--i: 1">
         <div class="product-media">
-          <img src="assets/glove-rouge.jpg" alt="Gant de boxe Knockout Pro rouge à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
-          <span class="product-idx" aria-hidden="true">02/05</span>
+          <img src="assets/casque-noir.jpg" alt="Casque de boxe Knockout Pro noir avec protège-joues" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">02/07</span>
         </div>
         <div class="product-info">
+          <p class="product-cat">Casque</p>
           <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · 10–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>559&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>699&nbsp;DH</s></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-name="Knockout Pro Rouge" aria-label="Ajouter Knockout Pro rouge au panier">
+          <button class="product-add" data-id="casque-pro-noir" data-name="Casque Knockout Pro" data-variant="Noir" data-price="559" data-img="assets/casque-noir.jpg" aria-label="Ajouter Casque Knockout Pro noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -191,17 +219,18 @@
 
       <li class="product" style="--i: 2">
         <div class="product-media">
-          <img src="assets/glove-bleu.jpg" alt="Gant de boxe Knockout Elite bleu à scratch" loading="lazy" decoding="async" draggable="false">
+          <img src="assets/plastron-noir.jpg" alt="Plastron de boxe Knockout Pro noir à sangles réglables" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">03/05</span>
+          <span class="product-idx" aria-hidden="true">03/07</span>
         </div>
         <div class="product-info">
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · 12–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>879&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;099&nbsp;DH</s></p>
+          <p class="product-cat">Plastron</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–L</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>799&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>999&nbsp;DH</s></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-name="Knockout Elite Bleu" aria-label="Ajouter Knockout Elite bleu au panier">
+          <button class="product-add" data-id="plastron-pro-noir" data-name="Plastron Knockout Pro" data-variant="Noir" data-price="799" data-img="assets/plastron-noir.jpg" aria-label="Ajouter Plastron Knockout Pro noir au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -212,17 +241,18 @@
 
       <li class="product" style="--i: 3">
         <div class="product-media">
-          <img src="assets/glove-kaki.jpg" alt="Gant de boxe Knockout Sparring kaki à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
-          <span class="product-idx" aria-hidden="true">04/05</span>
+          <img src="assets/glove-rouge.jpg" alt="Gant de boxe Knockout Pro rouge à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">04/07</span>
         </div>
         <div class="product-info">
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Sparring</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #5b6142" aria-hidden="true"></span>Kaki · 14–16 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>599&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>749&nbsp;DH</s></p>
+          <p class="product-cat">Gants</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · 10–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-name="Knockout Sparring Kaki" aria-label="Ajouter Knockout Sparring kaki au panier">
+          <button class="product-add" data-id="gants-pro-rouge" data-name="Gants Knockout Pro" data-variant="Rouge" data-price="719" data-img="assets/glove-rouge.jpg" aria-label="Ajouter Gants de boxe Knockout Pro rouge au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -233,17 +263,62 @@
 
       <li class="product" style="--i: 4">
         <div class="product-media">
-          <img src="assets/glove-or.jpg" alt="Gant de boxe Knockout Gold doré à scratch" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Édition limitée</span></div>
-          <span class="product-idx" aria-hidden="true">05/05</span>
+          <img src="assets/casque-bleu.jpg" alt="Casque de boxe Knockout Elite bleu avec protège-joues" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">05/07</span>
         </div>
         <div class="product-info">
-          <h3 class="product-name"><a href="#" class="product-link">Knockout Gold</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c9a24a" aria-hidden="true"></span>Or · 10–14 oz</p>
-          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>1&nbsp;039&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;299&nbsp;DH</s></p>
+          <p class="product-cat">Casque</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · S–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
         </div>
         <div class="notch notch--card">
-          <button class="product-add" data-name="Knockout Gold Or" aria-label="Ajouter Knockout Gold or au panier">
+          <button class="product-add" data-id="casque-elite-bleu" data-name="Casque Knockout Elite" data-variant="Bleu" data-price="719" data-img="assets/casque-bleu.jpg" aria-label="Ajouter Casque Knockout Elite bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+
+      <li class="product" style="--i: 5">
+        <div class="product-media">
+          <img src="assets/plastron-rouge.jpg" alt="Plastron de boxe Knockout Pro rouge à sangles réglables" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">06/07</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Plastron</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · S–L</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>799&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>999&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="plastron-pro-rouge" data-name="Plastron Knockout Pro" data-variant="Rouge" data-price="799" data-img="assets/plastron-rouge.jpg" aria-label="Ajouter Plastron Knockout Pro rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+
+      <li class="product" style="--i: 6">
+        <div class="product-media">
+          <img src="assets/glove-bleu.jpg" alt="Gant de boxe Knockout Elite bleu à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">07/07</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · 12–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>879&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;099&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-elite-bleu" data-name="Gants Knockout Elite" data-variant="Bleu" data-price="879" data-img="assets/glove-bleu.jpg" aria-label="Ajouter Gants de boxe Knockout Elite bleu au panier">
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -255,6 +330,371 @@
 
     <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb" id="carouselThumb"></span></div>
   </section>
+
+  <!-- ============ GLOVES BANNER: CTA filters the Best-sellers carousel to gloves ============ -->
+  <section class="glove-banner" id="gants-banner" aria-labelledby="gloveBannerTitle">
+    <picture class="glove-banner-media">
+      <source media="(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)" srcset="assets/gloves-banner-mobile.jpg" width="680" height="720">
+      <img src="assets/gloves-banner.jpg" width="1280" height="720" alt="Gants de boxe Knockout noir et rouge à scratch, frappés de l’emblème poing blanc, sur fond noir" loading="lazy" decoding="async">
+    </picture>
+    <div class="glove-banner-body">
+      <img class="glove-banner-mark" src="assets/kobg-mark.svg" alt="" aria-hidden="true">
+      <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Collection gants · &minus;20&nbsp;%</p>
+      <h2 class="glove-banner-h" id="gloveBannerTitle"><span class="line">Gants</span> <span class="line">de boxe</span></h2>
+      <p class="glove-banner-tagline">Frappe fort. Finis au KO.</p>
+      <p class="glove-banner-sub">Knockout Pro &amp; Elite · Noir, Rouge, Bleu · 10–16&nbsp;oz · Fermeture scratch</p>
+      <div class="glove-banner-actions">
+        <a href="#gants-de-sac" class="glove-banner-cta">Voir les gants <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <p class="glove-banner-price"><span>Dès</span> <strong>719&nbsp;DH</strong> <s><span class="sr-only">au lieu de </span>899&nbsp;DH</s></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BAG GLOVES COLLECTION: 6 bag gloves, same card + carousel component ============ -->
+  <section class="products products--gloves products--bag" id="gants-de-sac" aria-labelledby="bagTitle">
+    <div class="products-head">
+      <div class="products-title">
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur les gants de sac</p>
+        <h2 class="products-h" id="bagTitle">Gants de sac</h2>
+        <p class="products-sub">6 modèles · légers, pouce ouvert · tailles S à XL</p>
+      </div>
+      <div class="products-ctrl">
+        <a href="#gants-de-sac" class="products-all">
+          Voir tout
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <button class="carousel-btn" id="bagPrev" data-dir="prev" aria-label="Gants de sac précédents" aria-controls="bagTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-btn" id="bagNext" data-dir="next" aria-label="Gants de sac suivants" aria-controls="bagTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Placeholder catalogue: names, prices and photos stand in for real product data -->
+    <ul class="carousel" id="bagTrack" tabindex="0" aria-label="Gants de sac, 6 produits">
+      <li class="product" style="--i: 0">
+        <div class="product-media">
+          <img src="assets/bag-noir.jpg" alt="Gant de sac Knockout Bag noir, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
+          <span class="product-idx" aria-hidden="true">01/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · S–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-bag-noir" data-name="Gants de sac Knockout Bag" data-variant="Noir" data-price="359" data-img="assets/bag-noir.jpg" aria-label="Ajouter Gants de sac Knockout Bag noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 1">
+        <div class="product-media">
+          <img src="assets/bag-rouge.jpg" alt="Gant de sac Knockout Bag rouge, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">02/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · S–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-bag-rouge" data-name="Gants de sac Knockout Bag" data-variant="Rouge" data-price="359" data-img="assets/bag-rouge.jpg" aria-label="Ajouter Gants de sac Knockout Bag rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 2">
+        <div class="product-media">
+          <img src="assets/bag-blanc.jpg" alt="Gant de sac Knockout Bag blanc, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">03/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f4f4f2" aria-hidden="true"></span>Blanc · S–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>359&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>449&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-bag-blanc" data-name="Gants de sac Knockout Bag" data-variant="Blanc" data-price="359" data-img="assets/bag-blanc.jpg" aria-label="Ajouter Gants de sac Knockout Bag blanc au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 3">
+        <div class="product-media">
+          <img src="assets/bag-marine.jpg" alt="Gant de sac Knockout Bag Pro bleu marine, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">04/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1c2a55" aria-hidden="true"></span>Bleu marine · M–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>439&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>549&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-bagpro-marine" data-name="Gants de sac Knockout Bag Pro" data-variant="Bleu marine" data-price="439" data-img="assets/bag-marine.jpg" aria-label="Ajouter Gants de sac Knockout Bag Pro bleu marine au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 4">
+        <div class="product-media">
+          <img src="assets/bag-anthracite.jpg" alt="Gant de sac Knockout Bag Pro anthracite à surpiqûres rouges, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">05/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #3d3d3f" aria-hidden="true"></span>Anthracite · M–XL</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>439&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>549&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-bagpro-anthracite" data-name="Gants de sac Knockout Bag Pro" data-variant="Anthracite" data-price="439" data-img="assets/bag-anthracite.jpg" aria-label="Ajouter Gants de sac Knockout Bag Pro anthracite au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 5">
+        <div class="product-media">
+          <img src="assets/bag-noir-or.jpg" alt="Gant de sac Knockout Bag Gold noir à sangle dorée, pouce ouvert, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Édition limitée</span></div>
+          <span class="product-idx" aria-hidden="true">06/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sac</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Bag Gold</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c9a24a 50%)" aria-hidden="true"></span>Noir &amp; Or · S–L</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>519&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>649&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sac-baggold-noir-or" data-name="Gants de sac Knockout Bag Gold" data-variant="Noir &amp; Or" data-price="519" data-img="assets/bag-noir-or.jpg" aria-label="Ajouter Gants de sac Knockout Bag Gold noir & or au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+    </ul>
+
+    <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
+  </section>
+
+
+  <!-- ============ SPARRING GLOVES COLLECTION: 6 gloves, same card + carousel component as Best-sellers ============ -->
+  <section class="products products--gloves" id="gants-de-sparring" aria-labelledby="sparringTitle">
+    <div class="products-head">
+      <div class="products-title">
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>&minus;20&nbsp;% sur les gants de sparring</p>
+        <h2 class="products-h" id="sparringTitle">Gants de sparring</h2>
+        <p class="products-sub">6 modèles · du 10 au 16&nbsp;oz</p>
+      </div>
+      <div class="products-ctrl">
+        <a href="#gants-de-sparring" class="products-all">
+          Voir tout
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <button class="carousel-btn" id="sparringPrev" data-dir="prev" aria-label="Gants de sparring précédents" aria-controls="sparringTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-btn" id="sparringNext" data-dir="next" aria-label="Gants de sparring suivants" aria-controls="sparringTrack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Placeholder catalogue: names, prices and photos stand in for real product data -->
+    <ul class="carousel" id="sparringTrack" tabindex="0" aria-label="Gants de sparring, 6 produits">
+      <li class="product" style="--i: 0">
+        <div class="product-media">
+          <img src="assets/glove-tall.jpg" alt="Gant de sparring Knockout Pro noir à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Best-seller</span></div>
+          <span class="product-idx" aria-hidden="true">01/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir · 10–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-pro-noir" data-name="Gants de sparring Knockout Pro" data-variant="Noir" data-price="719" data-img="assets/glove-tall.jpg" aria-label="Ajouter Gants de sparring Knockout Pro noir au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 1">
+        <div class="product-media">
+          <img src="assets/glove-rouge.jpg" alt="Gant de sparring Knockout Pro rouge à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">02/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Pro</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c41f28" aria-hidden="true"></span>Rouge · 10–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>719&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>899&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-pro-rouge" data-name="Gants de sparring Knockout Pro" data-variant="Rouge" data-price="719" data-img="assets/glove-rouge.jpg" aria-label="Ajouter Gants de sparring Knockout Pro rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 2">
+        <div class="product-media">
+          <img src="assets/glove-bleu.jpg" alt="Gant de sparring Knockout Elite bleu à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">03/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Elite</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu · 12–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>879&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;099&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-elite-bleu" data-name="Gants de sparring Knockout Elite" data-variant="Bleu" data-price="879" data-img="assets/glove-bleu.jpg" aria-label="Ajouter Gants de sparring Knockout Elite bleu au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 3">
+        <div class="product-media">
+          <img src="assets/glove-fight.jpg" alt="Gant de sparring Knockout Fight noir à manchette rouge, à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Nouveau</span></div>
+          <span class="product-idx" aria-hidden="true">04/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Fight</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c41f28 50%)" aria-hidden="true"></span>Noir &amp; Rouge · 12–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>959&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;199&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-fight-noir-rouge" data-name="Gants de sparring Knockout Fight" data-variant="Noir &amp; Rouge" data-price="959" data-img="assets/glove-fight.jpg" aria-label="Ajouter Gants de sparring Knockout Fight noir & rouge au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 4">
+        <div class="product-media">
+          <img src="assets/glove-kaki.jpg" alt="Gant de sparring Knockout Sparring kaki à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span></div>
+          <span class="product-idx" aria-hidden="true">05/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Sparring</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #5b6142" aria-hidden="true"></span>Kaki · 14–16 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>599&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>749&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-sparring-kaki" data-name="Gants de sparring Knockout Sparring" data-variant="Kaki" data-price="599" data-img="assets/glove-kaki.jpg" aria-label="Ajouter Gants de sparring Knockout Sparring kaki au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product" style="--i: 5">
+        <div class="product-media">
+          <img src="assets/glove-or.jpg" alt="Gant de sparring Knockout Gold doré à scratch" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--sale">&minus;20&nbsp;%</span><span class="tag">Édition limitée</span></div>
+          <span class="product-idx" aria-hidden="true">06/06</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring</p>
+          <h3 class="product-name"><a href="#" class="product-link">Knockout Gold</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c9a24a" aria-hidden="true"></span>Or · 10–14 oz</p>
+          <p class="product-price"><span class="sr-only">Prix réduit :</span><strong>1&nbsp;039&nbsp;DH</strong><span class="sr-only">au lieu de</span><s>1&nbsp;299&nbsp;DH</s></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-gold-or" data-name="Gants de sparring Knockout Gold" data-variant="Or" data-price="1039" data-img="assets/glove-or.jpg" aria-label="Ajouter Gants de sparring Knockout Gold or au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+    </ul>
+
+    <div class="carousel-progress" aria-hidden="true"><span class="carousel-thumb"></span></div>
+  </section>
+
+  <!-- ============ CART DRAWER (client-side, saved in localStorage; checkout via WhatsApp) ============ -->
+  <div class="cart-overlay" id="cartOverlay" aria-hidden="true"></div>
+  <aside class="cart" id="cartDrawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle" inert>
+    <div class="cart-head">
+      <div>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span><span id="cartHeadCount">0 article</span></p>
+        <h2 class="cart-title" id="cartTitle">Panier</h2>
+      </div>
+      <button type="button" class="cart-close" id="cartClose" aria-label="Fermer le panier">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <ul class="cart-list" id="cartList" aria-label="Articles du panier"></ul>
+
+    <div class="cart-empty" id="cartEmpty">
+      <p class="cart-empty-big">Votre panier est vide</p>
+      <p class="cart-empty-sub">Gants, casques, plastrons&nbsp;: découvrez nos best-sellers.</p>
+      <a href="#best-sellers" class="cart-empty-btn" id="cartShop">
+        Voir les best-sellers
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <div class="cart-foot" id="cartFoot">
+      <p class="cart-subtotal"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
+      <p class="cart-note">Livraison et paiement confirmés avec vous sur WhatsApp.</p>
+      <a href="#" class="cart-checkout" id="cartCheckout" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.6 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.1.2-.2.4 0 .6.4.7 1 1.4 1.6 1.9.7.6 1.3.9 1.6 1 .2.1.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .4-.1 1.1-.6 1.6-.5.5-1.4.9-2.2.8-1.1-.1-2.6-.6-4.1-1.9-1.8-1.6-2.8-3.4-3-4.3-.2-.9.2-1.9.5-2.2z" fill="currentColor"/></svg>
+        Commander sur WhatsApp
+      </a>
+      <button type="button" class="cart-continue" id="cartContinue">Continuer mes achats</button>
+    </div>
+  </aside>
 
   <div class="toast" id="toast" role="status" aria-live="polite">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
