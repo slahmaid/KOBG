@@ -5,6 +5,12 @@
 // PLACEHOLDER: replace with the shop's real WhatsApp number before going live.
 const WHATSAPP_NUMBER = '212600000000';
 const CART_STORAGE_KEY = 'kobg-cart-v1';
+// Promo codes accepted in the cart (static site: checked client-side, confirmed on WhatsApp).
+const PROMO_CODES = { KOBG26: 10 };          // code -> % off the subtotal
+const PROMO_STORAGE_KEY = 'kobg-promo-v1';
+// Delivery: 25 DH, free from 500 DH of products (threshold uses the subtotal BEFORE the discount).
+const SHIPPING_FEE = 25;
+const FREE_SHIPPING_FROM = 500;
 // =========================================================
 
 // Knockout Boxing Gear — header, hero and product carousel interactions
@@ -164,6 +170,17 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   const cartHeadCount = document.getElementById('cartHeadCount');
   const cartSubtotal = document.getElementById('cartSubtotal');
   const cartCheckout = document.getElementById('cartCheckout');
+  const discountLine = document.getElementById('cartDiscountLine');
+  const discountEl = document.getElementById('cartDiscount');
+  const discountCode = document.getElementById('cartDiscountCode');
+  const shippingEl = document.getElementById('cartShipping');
+  const totalEl = document.getElementById('cartTotal');
+  const promoForm = document.getElementById('cartPromo');
+  const promoInput = document.getElementById('cartPromoInput');
+  const promoInputRow = promoForm.querySelector('.cart-promo-row');
+  const promoOn = document.getElementById('cartPromoOn');
+  const promoCodeEl = document.getElementById('cartPromoCode');
+  const promoMsg = document.getElementById('cartPromoMsg');
   const cartClose = document.getElementById('cartClose');
   const toast = document.getElementById('toast');
   const toastTxt = toast.querySelector('.toast-txt');
@@ -195,14 +212,35 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
   const totalQty = () => cart.reduce((n, it) => n + it.qty, 0);
   const totalPrice = () => cart.reduce((n, it) => n + it.qty * it.price, 0);
 
+  // ---- promo code ----
+  const normCode = (v) => String(v || '').trim().toUpperCase().replace(/\s+/g, '');
+  let promo = (() => {
+    try { const c = normCode(localStorage.getItem(PROMO_STORAGE_KEY)); return PROMO_CODES[c] ? c : ''; } catch (err) { return ''; }
+  })();
+  function savePromo() {
+    try { promo ? localStorage.setItem(PROMO_STORAGE_KEY, promo) : localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
+  }
+  function totals() {
+    const sub = totalPrice();
+    const pct = promo ? PROMO_CODES[promo] : 0;
+    const discount = Math.round(sub * pct / 100);
+    const shipping = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
+    return { sub, pct, discount, shipping, total: sub - discount + shipping };
+  }
+  const plainDH = (n) => formatDH(n).replace(/\u00a0/g, ' ');
+
   function whatsappLink() {
-    const lines = cart.map((it) => `• ${it.qty} × ${it.name}${it.variant ? ` (${it.variant})` : ''} : ${formatDH(it.qty * it.price).replace(/\u00a0/g, ' ')}`);
+    const t = totals();
+    const lines = cart.map((it) => `• ${it.qty} × ${it.name}${it.variant ? ` (${it.variant})` : ''} : ${plainDH(it.qty * it.price)}`);
     const msg = [
       'Bonjour Knockout Boxing Gear, je souhaite passer commande :',
       '',
       ...lines,
       '',
-      `Total : ${formatDH(totalPrice()).replace(/\u00a0/g, ' ')} (${plural(totalQty())})`,
+      `Sous-total : ${plainDH(t.sub)} (${plural(totalQty())})`,
+      ...(t.pct ? [`Code promo : ${promo} (-${t.pct} %) : -${plainDH(t.discount)}`] : []),
+      `Livraison : ${t.shipping ? plainDH(t.shipping) : 'offerte'}`,
+      `Total : ${plainDH(t.total)}`,
       '',
       'Merci de me confirmer la disponibilité et la livraison.',
     ].join('\n');
@@ -215,7 +253,18 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     cartBtn.classList.toggle('has-items', qty > 0);
     cartBtn.setAttribute('aria-label', `Panier, ${plural(qty)}`);
     cartHeadCount.textContent = plural(qty);
-    cartSubtotal.textContent = formatDH(totalPrice());
+    const t = totals();
+    cartSubtotal.textContent = formatDH(t.sub);
+    discountLine.hidden = !t.pct;
+    if (t.pct) {
+      discountEl.textContent = `-${formatDH(t.discount)}`;
+      discountCode.textContent = promo;
+    }
+    shippingEl.textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+    totalEl.textContent = formatDH(t.total);
+    promoInputRow.hidden = !!promo;
+    promoOn.hidden = !promo;
+    promoCodeEl.textContent = promo;
     cartEmpty.hidden = qty > 0;
     cartFoot.hidden = qty === 0;
     cartList.hidden = qty === 0;
@@ -262,6 +311,80 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
 
+  function setPromoMsg(text, isError) {
+    promoMsg.textContent = text;
+    promoMsg.classList.toggle('is-error', !!isError);
+    promoInput.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  }
+  promoForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = normCode(promoInput.value);
+    if (!code) { setPromoMsg('Saisissez un code promo.', true); promoInput.focus(); return; }
+    if (!PROMO_CODES[code]) { setPromoMsg(`Le code « ${code} » n’est pas valide.`, true); promoInput.select(); return; }
+    promo = code;
+    savePromo();
+    promoInput.value = '';
+    render();
+    setPromoMsg(`Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
+    document.getElementById('cartPromoRemove').focus();
+  });
+  promoInput.addEventListener('input', () => { if (promoMsg.classList.contains('is-error')) setPromoMsg('', false); });
+  document.getElementById('cartPromoRemove').addEventListener('click', () => {
+    promo = '';
+    savePromo();
+    render();
+    setPromoMsg('Code promo retiré.', false);
+    promoInput.focus();
+  });
+  // another tab changed the cart or the code: stay in sync
+  window.addEventListener('storage', (e) => {
+    if (e.key === CART_STORAGE_KEY) cart = loadCart();
+    else if (e.key === PROMO_STORAGE_KEY) promo = PROMO_CODES[normCode(e.newValue)] ? normCode(e.newValue) : '';
+    else return;
+    render();
+  });
+
+  // ---- "copy the promo code" buttons (hero card) ----
+  function copyText(text) {
+    const legacy = () => new Promise((resolve, reject) => {
+      // http:// on a LAN address has no Clipboard API: hidden textarea + execCommand
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+      document.body.appendChild(ta);
+      const prev = document.activeElement;
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      ta.remove();
+      if (prev && prev.focus) prev.focus({ preventScroll: true });
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).catch(legacy);
+    }
+    return legacy();
+  }
+  const copyTimers = new WeakMap();
+  document.querySelectorAll('[data-copy-code]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const code = btn.dataset.copyCode;
+      copyText(code).then(() => {
+        document.querySelectorAll(`[data-copy-code="${code}"]`).forEach((b) => {
+          b.classList.add('is-copied');
+          clearTimeout(copyTimers.get(b));
+          copyTimers.set(b, setTimeout(() => b.classList.remove('is-copied'), 1800));
+        });
+        showToast(`Code ${code} copié !`);
+      }, () => {
+        showToast(`Copie impossible : notez le code ${code}`);
+      });
+    });
+  });
+
   function addToCart(btn) {
     const d = btn.dataset;
     if (!d.id) return;
@@ -286,7 +409,7 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
     showToast(qty > 1 ? `${label} ajouté · ${plural(qty)} au panier` : `${label} ajouté au panier`);
   }
 
-  document.querySelectorAll('.plus-btn, .product-add').forEach((btn) => {
+  document.querySelectorAll('.product-add').forEach((btn) => {
     btn.addEventListener('click', () => addToCart(btn));
   });
 

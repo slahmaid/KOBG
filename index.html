@@ -71,11 +71,7 @@
         <video class="feature-video" src="assets/hero-video.mp4" poster="assets/hero-poster.jpg" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
         <h2 class="headline headline--side"><span class="line">Conçu pour</span> <span class="line">le ring</span></h2>
 
-        <div class="notch notch--bl">
-          <a href="#best-sellers" class="circle-btn arrow-btn" aria-label="Voir les best-sellers">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-        </div>
+        <div class="notch notch--bl" aria-hidden="true"></div>
         <span class="fillet fillet--tr fillet--bl-a" aria-hidden="true"></span>
         <span class="fillet fillet--tr fillet--bl-b" aria-hidden="true"></span>
       </section>
@@ -89,12 +85,19 @@
         </a>
       </section>
 
+      <!-- Copy tab: grows out of the top of the promo card -->
+      <button type="button" class="copy-btn copy-tab" style="--i: 2" data-copy-code="KOBG26" aria-label="Copier le code KOBG26">
+        <svg class="copy-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7.5" width="12.5" height="12.5" rx="3.2" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M8 7.5V7a3.2 3.2 0 0 1 3.2-3.2H17A3.2 3.2 0 0 1 20.2 7v5.8A3.2 3.2 0 0 1 17 16h-1" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+        <svg class="check-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
       <!-- Promo card -->
       <section class="panel panel--promo" style="--i: 2">
-        <span class="promo-deco promo-deco--dh" aria-hidden="true">DH</span>
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Livraison offerte</p>
-        <p class="promo-big">0&nbsp;DH</p>
-        <p class="promo-sub">de livraison dès 500&nbsp;DH d’achat<br>partout au Maroc</p>
+        <span class="promo-deco promo-deco--pct" aria-hidden="true">%</span>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Code promo</p>
+        <p class="promo-big">-10&nbsp;%</p>
+        <p class="promo-sub">sur votre commande<br>avec le code</p>
+        <p class="promo-code-row"><button type="button" class="promo-code" data-copy-code="KOBG26" aria-label="Copier le code KOBG26"><span class="promo-code-txt">KOBG26</span><span class="promo-code-hint" aria-hidden="true"><span class="h-copy">Copier</span><span class="h-done">Copié</span></span></button></p>
 
         <div class="notch notch--br">
           <a href="#best-sellers" class="shop-btn">
@@ -116,12 +119,6 @@
           <p class="seal-txt"><small>Distributeur officiel</small><strong>Rival Boxing</strong><small>au Maroc</small></p>
         </div>
       </a>
-
-      <!-- Center plus button -->
-      <button class="plus-btn" data-id="gants-de-sparring-rival-rs100-professional-blanc" data-name="Gants de sparring Rival RS100 Professional" data-variant="Blanc · taille à confirmer" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" aria-label="Ajouter les gants de sparring Rival RS100 Professional blancs au panier">
-        <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
     </main>
   </div>
 
@@ -1523,8 +1520,23 @@
     </div>
 
     <div class="cart-foot" id="cartFoot">
-      <p class="cart-subtotal"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
-      <p class="cart-note">Livraison 25&nbsp;DH, offerte dès 500&nbsp;DH. Paiement à la livraison, commande confirmée avec vous par téléphone ou WhatsApp.</p>
+      <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
+      <form class="cart-promo" id="cartPromo" novalidate>
+        <label class="cart-promo-label" for="cartPromoInput">Code promo</label>
+        <div class="cart-promo-row">
+          <input class="cart-promo-input" id="cartPromoInput" type="text" name="promo" placeholder="Ex. KOBG26" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="cartPromoMsg">
+          <button type="submit" class="cart-promo-apply">Appliquer</button>
+        </div>
+        <div class="cart-promo-on" id="cartPromoOn" hidden>
+          <span class="cart-promo-chip"><span id="cartPromoCode">KOBG26</span> · -10&nbsp;%</span>
+          <button type="button" class="cart-promo-remove" id="cartPromoRemove">Retirer</button>
+        </div>
+        <p class="cart-promo-msg" id="cartPromoMsg" aria-live="polite"></p>
+      </form>
+      <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode">KOBG26</span> (-10&nbsp;%)</span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
+      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">25&nbsp;DH</strong></p>
+      <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
+      <p class="cart-note">Livraison 25&nbsp;DH, offerte dès 500&nbsp;DH d’achat (avant réduction). Paiement à la livraison, commande confirmée avec vous par téléphone ou WhatsApp.</p>
       <a href="#" class="cart-checkout" id="cartCheckout" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.6 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.1.2-.2.4 0 .6.4.7 1 1.4 1.6 1.9.7.6 1.3.9 1.6 1 .2.1.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .4-.1 1.1-.6 1.6-.5.5-1.4.9-2.2.8-1.1-.1-2.6-.6-4.1-1.9-1.8-1.6-2.8-3.4-3-4.3-.2-.9.2-1.9.5-2.2z" fill="currentColor"/></svg>
         Commander sur WhatsApp
