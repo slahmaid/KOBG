@@ -723,7 +723,7 @@ const FREE_SHIPPING_FROM = 500;
     [...document.querySelectorAll('.bar-logo, .nav-logo')].find((l) => l.offsetParent && !l.closest('[inert]'))?.focus({ preventScroll: true });
   });
   // ---------------------------------------------------------
-  // Gants page (gants.html): filter chips + price sort + #hash filters
+  // Shop pages (gants.html, protecteur-corporel.html): filter chips + price sort + #hash filters
   // ---------------------------------------------------------
   const shop = document.querySelector('[data-shop]');
   if (shop) {
@@ -732,17 +732,25 @@ const FREE_SHIPPING_FROM = 500;
     const sortSel = shop.querySelector('#gantsSort');
     const count = shop.querySelector('#gantsCount');
     groups.forEach((g) => [...g.querySelectorAll('.product')].forEach((li, i) => { li.dataset.order = i; }));
+    // a chip filters either a whole group (gants: #gants-de-sac) or single cards by tag
+    // (protecteur-corporel: data-tags="coloris-noir")
+    const hasTag = (li, f) => (li.dataset.tags || '').split(' ').includes(f);
     function applyFilter(f, { scroll = false } = {}) {
-      if (!groups.some((g) => g.id === f)) f = 'tous';
+      const isGroup = groups.some((g) => g.id === f);
+      const isTag = !isGroup && groups.some((g) => [...g.querySelectorAll('.product')].some((li) => hasTag(li, f)));
+      if (!isGroup && !isTag) f = 'tous';
       chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === f)));
       let n = 0;
       groups.forEach((g) => {
-        const show = f === 'tous' || g.id === f;
+        const show = f === 'tous' || isTag || g.id === f;
         g.hidden = !show;
-        if (show) n += g.querySelectorAll('.product').length;
+        [...g.querySelectorAll('.product')].forEach((li) => {
+          li.hidden = isTag && !hasTag(li, f);
+          if (show && !li.hidden) n += 1;
+        });
       });
       count.textContent = `${n} produit${n > 1 ? 's' : ''}`;
-      if (scroll && f !== 'tous') {
+      if (scroll && isGroup) {
         document.getElementById(f).scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
       }
     }
