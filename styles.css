@@ -2904,38 +2904,19 @@ a.contact-card--wa:hover { background: var(--accent); filter: brightness(1.06); 
 .promo-code {
   display: inline-flex;
   align-items: center;
-  gap: .7em;
-  padding: .42em .5em .42em .75em;
+  justify-content: center;
+  padding: .42em .63em .42em .75em; /* right side minus the trailing letter-spacing */
   border: 2px dashed var(--black);
   border-radius: 10px;
   background: var(--white);
   font-size: clamp(14px, min(2.9vh, 1.75vw), 26px);
   line-height: 1;
-  cursor: pointer;
-  transition: background-color .2s ease, border-color .2s ease, scale .2s ease;
 }
 .promo-code-txt {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   font-weight: 800;
   letter-spacing: .12em;
 }
-.promo-code-hint {
-  padding: .4em .6em .36em;
-  border-radius: 6px;
-  background: var(--black);
-  color: var(--white);
-  font-size: .5em;
-  font-weight: 800;
-  font-variation-settings: "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-.promo-code:active { scale: .97; }
-.promo-code.is-copied { border-color: var(--accent); }
-.promo-code.is-copied .promo-code-hint { background: var(--accent); }
-.promo-code-hint .h-done, .promo-code.is-copied .promo-code-hint .h-copy { display: none; }
-.promo-code.is-copied .promo-code-hint .h-done { display: inline; }
-@media (hover: hover) { .promo-code:hover { background: var(--panel-2); } }
 @media (max-width: 860px) {
   .promo-code { font-size: min(4.4vw, 2.5vh); border-radius: 8px; }
   .promo-code-row { margin-top: .55em; }
@@ -3109,12 +3090,7 @@ a.contact-card--wa:hover { background: var(--accent); filter: brightness(1.06); 
 .panel--promo .promo-deco { -webkit-text-stroke-color: #3a3a3a; }
 .panel--promo .promo-tag { background: var(--white); color: var(--black); }
 .panel--promo .promo-code { background: transparent; border-color: var(--white); color: var(--white); }
-.panel--promo .promo-code-hint { background: var(--white); color: var(--black); }
-.panel--promo .promo-code.is-copied { border-color: var(--accent-on-dark); }
-.panel--promo .promo-code.is-copied .promo-code-hint { background: var(--accent); color: var(--white); }
-.panel--promo .promo-code:focus-visible { outline-color: var(--white); }
 @media (hover: hover) {
-  .panel--promo .promo-code:hover { background: #1c1c1c; }
   .panel--promo:hover .promo-deco { -webkit-text-stroke-color: #555; }
 }
 
@@ -3130,10 +3106,8 @@ a.contact-card--wa:hover { background: var(--accent); filter: brightness(1.06); 
   /* header: burger + cart keep their look, the hit area grows to >= 44px */
   .burger::after, .cart-btn::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; }
 
-  /* hero: CTA and promo code are real 44px targets */
+  /* hero: CTA is a real 44px target (the promo code chip is display-only; the tab copies) */
   .discover-btn { height: clamp(44px, 5.2vh, 48px); }
-  .promo-code { min-height: 44px; }
-  @media (max-height: 700px) { .promo-code { min-height: 40px; } .panel--promo .promo-big { margin-top: .06em; } }
   .review-product a { display: inline-block; padding-block: 15px; margin-block: -15px; }
   .search input { height: 100%; }
   .faq-mail { margin-top: 0; padding: 15px 0; }
@@ -3235,4 +3209,45 @@ a.contact-card--wa:hover { background: var(--accent); filter: brightness(1.06); 
 @media (max-width: 860px) and (max-height: 700px) {
   .cart { overflow-y: auto; overscroll-behavior: contain; }
   .cart-list { flex: none; overflow: visible; }
+}
+
+/* =========================================================
+   Hero promo card, phones + portrait tablets (task 31)
+   The card's type is sized from the card's own box (container
+   units), not from vh, so it always fits whatever height the
+   bento row gets - including iOS Safari, where 1vh is the
+   *large* viewport and is taller than the 100dvh page.
+   ========================================================= */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .hero { grid-template-rows: minmax(0, 42fr) minmax(0, 33fr) minmax(0, 25fr); }
+  .hero .panel--promo {
+    container-type: size;
+    --nh: clamp(30px, 21cqh, 56px);   /* resolved on the children -> card units */
+    --pt: clamp(6px, 6.5cqh, 18px);
+    justify-content: center;
+    padding: 0 calc(var(--r) * .8);
+  }
+  .hero .panel--promo .promo-tag { margin: var(--pt) 0 0; font-size: clamp(8px, min(5.4cqh, 6.2cqw), 12px); }
+  .hero .panel--promo .promo-big { font-size: min(20cqh, 27cqw); margin-top: .1em; }
+  .hero .panel--promo .promo-sub { font-size: clamp(9px, min(6.2cqh, 7.8cqw), 15px); margin-top: .3em; }
+  .hero .panel--promo .promo-code-row { margin: clamp(4px, 3.6cqh, 12px) 0 calc(var(--nh) + var(--pt)); }
+  .hero .panel--promo .promo-code { font-size: clamp(11px, min(7.2cqh, 9.6cqw), 20px); min-height: 0; border-radius: 8px; }
+  .hero .panel--promo .promo-deco--pct { font-size: min(78cqh, 92cqw); }
+  /* very short cards (tiny / landscape-ish viewports): drop the small print first */
+  @container (max-height: 150px) {
+    .hero .panel--promo .promo-sub { display: none; }
+  }
+}
+/* landscape phones get the desktop bento with a very short promo row:
+   same idea, type sized from the card box so nothing is clipped */
+@media (min-width: 561px) and (orientation: landscape) and (max-height: 600px) {
+  .hero .panel--promo { container-type: size; padding-bottom: clamp(8px, 9cqh, 18px); }
+  .hero .panel--promo .promo-tag { margin-top: 0; font-size: clamp(7px, 6.4cqh, 12px); }
+  .hero .panel--promo .promo-big { font-size: min(23cqh, 15cqw); margin-top: .08em; }
+  .hero .panel--promo .promo-sub { font-size: clamp(8px, 6.6cqh, 14px); margin-top: .25em; }
+  .hero .panel--promo .promo-code-row { margin-top: clamp(3px, 4cqh, 10px); }
+  .hero .panel--promo .promo-code { font-size: clamp(10px, 8.4cqh, 18px); min-height: 0; }
+  .hero .panel--promo .promo-deco--pct { font-size: min(85cqh, 40cqw); }
+  @container (max-height: 135px) { .hero .panel--promo .promo-sub { display: none; } }
 }
