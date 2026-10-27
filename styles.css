@@ -3,6 +3,14 @@
    Pure static CSS, no build step.
    ========================================================= */
 
+/* Archivo (variable: wdth 62-125, wght 400-900), self-hosted from Google Fonts (OFL) — task 45 */
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 400 900; font-stretch: 70% 100%; font-display: swap;
+  src: url("assets/fonts/archivo-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 400 900; font-stretch: 70% 100%; font-display: swap;
+  src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 :root {
   --black: #000;
   --panel: #e6e6e6;
@@ -10,6 +18,7 @@
   --white: #fff;
   --frame: #fff;                          /* page, gaps and notches (light theme) */
   --accent: #d0202a;                     /* KO red, used sparingly  */
+  --accent-ink: #b01b24;                 /* same red, darker: small text on the grey panels (WCAG AA 4.5:1) */
   --gold: #8a6d24;
   --ease: cubic-bezier(.2, .7, .2, 1);
 
@@ -676,8 +685,9 @@ ul { list-style: none; }
   .panel--feature .headline--side .line + .line { animation-delay: .58s; }
 }
 @keyframes drop-in { from { opacity: 0; translate: 0 -12px; } }
-@keyframes rise    { from { opacity: 0; translate: 0 28px; scale: .97; } }
-@keyframes line-up { from { opacity: 0; translate: 0 .45em; } }
+/* start at .01, not 0: Chrome ignores opacity-0 paints for LCP, so the hero would never report one */
+@keyframes rise    { from { opacity: .01; translate: 0 28px; scale: .97; } }
+@keyframes line-up { from { opacity: .01; translate: 0 .45em; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
@@ -882,7 +892,7 @@ ul { list-style: none; }
 }
 .product-price { margin-top: auto; padding-top: 4px; display: flex; align-items: baseline; gap: 10px; }
 .product-price strong { font-size: clamp(19px, 1.6vw, 24px); font-weight: 800; font-variation-settings: "wdth" 84; white-space: nowrap; }
-.product-price s { font-size: 14px; font-weight: 600; color: #8c8c8c; white-space: nowrap; }
+.product-price s { font-size: 14px; font-weight: 600; color: #5c5c5c; white-space: nowrap; }
 
 /* bottom-right notch with the add button, same cut-out as the hero panels */
 .notch--card {
@@ -1257,7 +1267,7 @@ ul { list-style: none; }
   text-transform: uppercase;
   letter-spacing: .08em;
   line-height: 1;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* ---------------------------------------------------------
@@ -2222,11 +2232,12 @@ body.cart-open { overflow: hidden; }
 .footer-col-h {
   margin: 0 0 10px;
   font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .footer-col ul { margin: 0; padding: 0; list-style: none; }
-.footer-col li + li { margin-top: 6px; }
+.footer-col li + li { margin-top: 0; }
 .footer-col a:not(.footer-social-link) {
+  display: inline-block; padding: 3px 0; line-height: 18px; background-origin: content-box;   /* 24px tap target (WCAG 2.5.8) */
   font-size: 14px; font-weight: 700; font-variation-settings: "wdth" 88;
   background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
   transition: color .2s, background-size .3s var(--ease);
@@ -2266,7 +2277,7 @@ body.cart-open { overflow: hidden; }
 }
 .footer-perk-ico svg { width: 18px; height: 18px; }
 .footer-perk strong { display: block; font-size: 13px; font-weight: 800; line-height: 1.15; }
-.footer-perk small { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,.78); }
+.footer-perk small { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 600; color: #fff; }
 
 /* slim bottom bar */
 .footer-tile--bottom {
@@ -2342,7 +2353,7 @@ body.cart-open { overflow: hidden; }
   font-variation-settings: "wdth" 80;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: #8c8c8c;
+  color: #5c5c5c;
 }
 .product-size {
   appearance: none;
@@ -2365,7 +2376,7 @@ body.cart-open { overflow: hidden; }
 .faq-table-wrap { padding: 0 clamp(16px, 1.8vw, 26px) clamp(18px, 1.6vw, 24px); overflow-x: auto; }
 .faq-table { width: 100%; max-width: 40em; border-collapse: collapse; font-size: 14px; color: #333; }
 .faq-table th, .faq-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e3e3e3; white-space: nowrap; }
-.faq-table th { font-size: 11px; font-weight: 800; font-variation-settings: "wdth" 80; text-transform: uppercase; letter-spacing: .06em; color: #8c8c8c; }
+.faq-table th { font-size: 11px; font-weight: 800; font-variation-settings: "wdth" 80; text-transform: uppercase; letter-spacing: .06em; color: #5c5c5c; }
 .faq-table td:first-child { font-weight: 800; color: var(--black); }
 .faq-a-inner a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .faq-mail {
@@ -2662,7 +2673,7 @@ html { scroll-padding-top: calc(var(--header-h-s) + var(--g) * 2 + 10px); }
 .sub-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g); padding: 0 var(--g) calc(var(--g) * 2); }
 .subpage .site-footer { margin-top: 0; }
 
-.crumbs ol { display: flex; flex-wrap: wrap; gap: .5em; margin: 0 0 18px; padding: 0; list-style: none; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; color: #777; }
+.crumbs ol { display: flex; flex-wrap: wrap; gap: .5em; margin: 0 0 18px; padding: 0; list-style: none; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; color: #5c5c5c; }
 .crumbs li + li::before { content: "/"; margin-right: .5em; color: #aaa; }
 .crumbs a:hover { color: var(--black); text-decoration: underline; }
 .crumbs [aria-current] { color: var(--black); }
@@ -2753,7 +2764,7 @@ html { scroll-padding-top: calc(var(--header-h-s) + var(--g) * 2 + 10px); }
   font-weight: 800; font-variation-settings: "wdth" 80;
   text-transform: uppercase; line-height: .88; letter-spacing: -.01em;
 }
-.cat-group-n { font-size: .32em; line-height: 1; padding-top: .2em; color: var(--accent); }
+.cat-group-n { font-size: .32em; line-height: 1; padding-top: .2em; color: var(--accent-ink); }
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
@@ -3730,7 +3741,7 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
 .cod-total strong { font-size: clamp(24px, 2.2vw, 30px); }
 .cod-ship-note { font-size: 12px; font-weight: 600; font-variation-settings: "wdth" 88; color: #666; }
 .cod-pick {
-  padding: 0; border: 0; background: none; color: var(--accent);
+  padding: 0; border: 0; background: none; color: var(--accent-ink);
   font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
 }
 .cod-due { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-radius: calc(var(--r) * .6); background: var(--black); color: var(--white); font-size: 13px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .04em; }
@@ -3992,4 +4003,16 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
   #cartDrawer .cart-note { font-size: 11px; line-height: 1.35; }
   #cartDrawer .cart-checkout { height: 46px; }
   #cartDrawer .cart-continue { padding: 4px 10px; }
+}
+
+/* WhatsApp contact links: hidden until WHATSAPP_NUMBER is set in script.js (it adds html.has-wa) — task 45 */
+html:not(.has-wa) .contact-card--wa,
+html:not(.has-wa) li:has(> a.js-wa) { display: none !important; }
+html:not(.has-wa) .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) {
+  html:not(.has-wa) .contact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html:not(.has-wa) .contact-card--social { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  html:not(.has-wa) .contact-grid { grid-template-columns: minmax(0, 1fr); }
 }

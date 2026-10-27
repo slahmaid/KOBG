@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /KOBG/admin.html
+Disallow: /KOBG/commande.html
+Disallow: /KOBG/merci.html
+
+Sitemap: https://slahmaid.github.io/KOBG/sitemap.xml

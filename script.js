@@ -9,9 +9,10 @@
 const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlxT2m1l9jRQZQYQeIqsGXkxUw0GgKvOhk05uxn-eQwuQ4SzFYbBzZDWkN1MLoBUY42w/exec';
 const ORDER_ENDPOINT_FORMAT = 'json';   // 'json' = JSON text body (Apps Script) · 'form' = form-encoded (Formspree)
 // WhatsApp number used by the CONTACT links only (footer, FAQ, contact page). Orders never go through WhatsApp.
-// International format, digits only (212 = Morocco, without the leading 0).
-// PLACEHOLDER: replace with the shop's real WhatsApp number before going live.
-const WHATSAPP_NUMBER = '212600000000';
+// International format, digits only: 212 (Morocco) + the number without its leading 0, e.g. '2126XXXXXXXX'.
+// Left EMPTY on purpose (task 45): no real number yet, so every WhatsApp button stays HIDDEN on the whole site.
+// Fill it in here (this one line) and the buttons appear everywhere with the right link.
+const WHATSAPP_NUMBER = '';
 const CART_STORAGE_KEY = 'kobg-cart-v1';
 // Promo codes accepted in the cart and order forms (static site: checked client-side, the team confirms by phone).
 const PROMO_CODES = { KOBG26: 10 };          // code -> % off the subtotal
@@ -20,6 +21,11 @@ const PROMO_STORAGE_KEY = 'kobg-promo-v1';
 const SHIPPING_FEE = 25;
 const FREE_SHIPPING_FROM = 2000;
 // =========================================================
+
+// WhatsApp buttons are hidden by CSS until a valid number is set above (html.has-wa shows them).
+const WA_DIGITS = ((d) => (/^212[5-7]\d{8}$/.test(d) ? d : ''))(
+  String(WHATSAPP_NUMBER).replace(/\D/g, '').replace(/^00/, '').replace(/^0(?=[5-7]\d{8}$)/, '212'));
+if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
 // Knockout Boxing Gear — header, hero and product carousel interactions
 (function () {
@@ -1122,9 +1128,9 @@ const FREE_SHIPPING_FROM = 2000;
     openFromHash(location.hash);
 
     const wa = section.querySelector('#faqWhatsapp');
-    if (wa) {
+    if (wa && WA_DIGITS) {
       const msg = 'Bonjour Knockout Boxing Gear, j’ai une question :';
-      wa.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+      wa.href = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(msg)}`;
     }
 
     if (!('IntersectionObserver' in window) || reduceMotion.matches) return;
@@ -1139,10 +1145,23 @@ const FREE_SHIPPING_FROM = 2000;
   });
 
   // Footer: WhatsApp links + back-to-top
-  document.querySelectorAll('.js-wa').forEach((a) => {
+  if (WA_DIGITS) document.querySelectorAll('.js-wa').forEach((a) => {
     const msg = 'Bonjour Knockout Boxing Gear, j’ai une question.';
-    a.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    a.href = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(msg)}`;
   });
+  else {
+    // no WhatsApp number yet: the two big WhatsApp buttons (FAQ, footer) become "Nous contacter" -> contact.html;
+    // the small links and the contact-page card are hidden by CSS (html:not(.has-wa)).
+    document.querySelectorAll('#faqWhatsapp, .footer-wa').forEach((a) => {
+      a.href = 'contact.html';
+      a.removeAttribute('target');
+      a.removeAttribute('rel');
+      a.classList.remove('js-wa');
+      a.classList.add('is-contact');
+      a.querySelector('svg')?.remove();
+      a.textContent = 'Nous contacter';
+    });
+  }
   document.getElementById('backToTop')?.addEventListener('click', () => {
     smoothTo(0);
     // keyboard users land back at the top too (first visible logo link)
