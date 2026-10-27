@@ -1,0 +1,59 @@
+// Local preview with a FAKE order backend: serves the site at http://localhost:8080/KOBG/ and runs
+// order-apps-script.gs in memory (gas-mock.js), so orders and the admin panel can be tried without
+// touching the real Google Sheet. Nothing is sent to Google. Data is lost when the server stops.
+// Run: node _ops/dev-server.js [port]     Admin key: dev-admin-key-0123456789
+'use strict';
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { makeEnv } = require('./gas-mock');
+
+const ROOT = path.join(__dirname, '..');
+const PORT = Number(process.argv[2]) || 8080;
+const ADMIN_KEY = 'dev-admin-key-0123456789';
+const backend = makeEnv({ props: { ADMIN_KEY } });
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml' };
+// points script.js / admin.js at the fake backend (an external file: the pages' CSP blocks inline scripts)
+// and records Content-Security-Policy violations in window.__csp (also printed in the console)
+const DEV_JS = "window.KOBG_ORDER_ENDPOINT = '/__api'; window.KOBG_ADMIN_ENDPOINT = '/__api'; window.__csp = [];\n" +
+  "document.addEventListener('securitypolicyviolation', (e) => { window.__csp.push(e.effectiveDirective + ' ' + e.blockedURI); console.warn('CSP', e.effectiveDirective, e.blockedURI); });";
+
+function send(res, code, type, body) {
+  res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+  res.end(body);
+}
+
+http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  if (url.pathname === '/__api') {
+    if (req.method === 'GET') return send(res, 200, 'application/json', JSON.stringify(backend.get()));
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 1e6) req.destroy(); });
+    req.on('end', () => {
+      const out = backend.post(body);
+      if (out.ok && !body.includes('"action"')) console.log('order', out.orderId, out.total + ' DH', out.adjusted ? '(re-priced)' : '');
+      send(res, 200, 'application/json', JSON.stringify(out));
+    });
+    return;
+  }
+  if (url.pathname === '/__dev.js') return send(res, 200, TYPES['.js'], DEV_JS);
+  if (url.pathname === '/' ) { res.writeHead(302, { Location: '/KOBG/' }); return res.end(); }
+
+  let rel = decodeURIComponent(url.pathname).replace(/^\/KOBG(?=\/|$)/, '');
+  if (rel === '' || rel.endsWith('/')) rel += 'index.html';
+  const file = path.normalize(path.join(ROOT, rel));
+  const inside = file.startsWith(ROOT + path.sep);
+  const hidden = /[\\/](\.|_)/.test(file.slice(ROOT.length));       // _ops, _headers, .git... never served
+  if (!inside || hidden || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+    return send(res, 404, TYPES['.html'], inject(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8')));
+  }
+  const ext = path.extname(file);
+  const data = fs.readFileSync(file);
+  send(res, 200, TYPES[ext] || 'application/octet-stream', ext === '.html' ? inject(data.toString('utf8')) : data);
+}).listen(PORT, '127.0.0.1', () => {
+  console.log(`KOBG local preview: http://localhost:${PORT}/KOBG/  (fake backend, admin key: ${ADMIN_KEY})`);
+});
+
+function inject(html) { return html.replace('</head>', '  <script src="/__dev.js"></script>\n</head>'); }

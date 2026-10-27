@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+  // never usable inside a frame (clickjacking): GitHub Pages can't send X-Frame-Options / frame-ancestors
+  if (window.top !== window.self) { document.body.textContent = ''; return; }
+
   // same URL as ORDER_ENDPOINT in script.js
   const ADMIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlxT2m1l9jRQZQYQeIqsGXkxUw0GgKvOhk05uxn-eQwuQ4SzFYbBzZDWkN1MLoBUY42w/exec';
   const endpoint = () => (typeof window.KOBG_ADMIN_ENDPOINT === 'string' ? window.KOBG_ADMIN_ENDPOINT : ADMIN_ENDPOINT);
@@ -52,7 +55,8 @@
     if (d.length === 9) return '212' + d;
     return d;
   }
-  function split(s) { return String(s || '').split(' / '); }
+  // "A / B / " = 3 lines; also reads rows whose trailing " / " was trimmed. "Noir/Rouge" stays one colour.
+  function split(s) { return String(s || '').split(/\s+\/\s*|\s*\/\s+/); }
   function readSeen() { try { const v = JSON.parse(localStorage.getItem(LS_SEEN) || 'null'); return v && typeof v.ts === 'number' ? v : null; } catch (e) { return null; } }
   function saveSeen() { try { localStorage.setItem(LS_SEEN, JSON.stringify(S.seen)); } catch (e) {} }
 
@@ -78,7 +82,7 @@
     }
     // The new script always answers with a known admin error code or `version`; anything else
     // (e.g. the old script's {ok:false,error:'missing fields'} or {ok:true,service:…}) means old code.
-    const KNOWN = ['bad_key', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy'];
+    const KNOWN = ['bad_key', 'expired', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy'];
     if (!data || typeof data !== 'object') throw new ApiError('bad_reply');
     if (data.ok !== true) {
       const err = data.error;
@@ -93,6 +97,7 @@
     const c = e && e.code;
     switch (c) {
       case 'bad_key': return 'Clé incorrecte.' + (e.data.left != null ? ' Encore ' + e.data.left + ' essai' + (e.data.left > 1 ? 's' : '') + ' avant un blocage de 15 minutes.' : '');
+      case 'expired': return 'Session expirée : reconnectez-vous avec la clé admin.';
       case 'locked': return 'Trop de tentatives, réessayez dans ' + Math.max(1, Math.ceil((e.data.retryIn || 900) / 60)) + ' min.';
       case 'no_admin_key': return (e.data.reason === 'short' ? 'Clé admin trop courte dans les Propriétés du script (' + (e.data.min || 8) + ' caractères minimum).' : 'Clé admin non configurée dans les Propriétés du script.') + ' Apps Script › Paramètres du projet › Propriétés du script : ADMIN_KEY (' + (e.data.min || 8) + ' caractères minimum).';
       case 'old_script': return 'Script pas à jour : l\'adresse répond encore avec l\'ancien code (sans admin). Collez le nouveau order-apps-script.gs dans Apps Script, enregistrez, puis Déployer › Gérer les déploiements › crayon › Version : Nouvelle version › Déployer.';
@@ -119,6 +124,9 @@
   }
 
   // ---------- session ----------
+  // What is stored is the signed, expiring session token the script returns on 'auth' (12 h, or 30 days
+  // with "Rester connecté"), never the admin key itself. Changing ADMIN_KEY signs every device out.
+  const isToken = (k) => /^v1\.\d{10}\./.test(k);
   function storedKey() { return sessionStorage.getItem(LS_KEY) || localStorage.getItem(LS_KEY) || ''; }
   function keepKey(k, remember) {
     try { sessionStorage.setItem(LS_KEY, k); if (remember) localStorage.setItem(LS_KEY, k); else localStorage.removeItem(LS_KEY); } catch (e) {}
@@ -140,8 +148,9 @@
     el.loginBtn.disabled = true; el.loginBtn.textContent = 'Vérification…'; el.loginErr.hidden = true;
     S.key = k;
     try {
-      await api('auth');
-      keepKey(k, el.loginRemember.checked);
+      const d = await api('auth', { remember: el.loginRemember.checked });
+      S.key = isToken(d.token || '') ? d.token : k;      // an older script has no tokens: keep the key for this session
+      keepKey(S.key, el.loginRemember.checked && isToken(S.key));
       el.loginKey.value = '';
       startApp();
     } catch (e) {
@@ -177,7 +186,7 @@
       setSync('ok');
       if (manual) toast('Commandes à jour (' + list.length + ')');
     } catch (e) {
-      if (e.code === 'bad_key' || e.code === 'locked' || e.code === 'no_admin_key') { dropKey(); S.key = ''; showLogin(errText(e)); }
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked' || e.code === 'no_admin_key') { dropKey(); S.key = ''; showLogin(errText(e)); }
       else { S.failing = true; setSync('err', errText(e)); if (manual || !S.loaded) toast(errText(e), true); if (!S.loaded) renderEmptyError(errText(e)); }
     } finally { S.busy = false; el.refresh.classList.remove('spin'); }
   }
@@ -403,7 +412,7 @@
       const cur = byId(id);
       if (cur) Object.assign(cur, prev);
       toast('Échec, statut rétabli (' + prev.statut + '). ' + errText(e), true);
-      if (e.code === 'bad_key' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
     }
     render(); const cur = byId(id); if (S.open === id && cur) renderDrawer(cur);
   }
@@ -502,8 +511,17 @@
   }
 
   // ---------- boot ----------
+  // a raw key saved by an earlier version of this page is swapped for a token, then forgotten
+  async function upgradeStoredKey() {
+    if (isToken(S.key)) return;
+    const remember = !!localStorage.getItem(LS_KEY);
+    try {
+      const d = await api('auth', { remember: remember });
+      if (isToken(d.token || '')) { S.key = d.token; keepKey(S.key, remember); }
+    } catch (e) { /* load() reports it */ }
+  }
   S.key = storedKey();
-  if (S.key) startApp(); else showLogin('');
+  if (S.key) upgradeStoredKey().then(startApp); else showLogin('');
 
   window.__kobgAdmin = { get orders() { return S.orders; }, get view() { return { status: S.status, q: S.q, period: S.period, page: S.page, open: S.open }; }, reload: load, stats: stats, filtered: filtered, wa212: wa212 };    // for tests / console
 })();

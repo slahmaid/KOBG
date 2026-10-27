@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kobg-local",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["_ops/dev-server.js", "8080"],
+      "port": 8080
+    }
+  ]
+}

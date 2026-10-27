@@ -1,0 +1,17 @@
+# HTTP security headers for Netlify / Cloudflare Pages (ignored by GitHub Pages, which can't set headers;
+# there the <meta http-equiv="Content-Security-Policy"> of each page and the frame check in admin.js apply).
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+
+/admin.html
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/assets/*
+  Cache-Control: public, max-age=604800

@@ -300,13 +300,30 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   const formatDH = (n) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}\u00a0DH`;
   const plural = (n) => `${n} article${n > 1 ? 's' : ''}`;
   const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // a malformed #%E0 in a shared link must not stop the rest of the page's script
+  const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (err) { return s; } };
 
+  // the product index (assets/search-index.js) is the price list: a saved line whose price is stale
+  // (or was edited in the browser) gets today's price; a product or size that no longer exists is dropped.
+  // The server re-prices every order the same way, so this only keeps what the shopper sees honest.
+  const CATALOG = new Map((Array.isArray(window.KOBG_SEARCH) ? window.KOBG_SEARCH : []).map((p) => [p.id, p]));
+  const sizeSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  function fromCatalog(it) {
+    if (!CATALOG.size) return it;
+    const [base, slug = ''] = String(it.id).split('--');
+    const p = CATALOG.get(base);
+    if (!p) return null;
+    const size = (p.sizes || []).find((s) => sizeSlug(s) === slug) || '';
+    if ((p.sizes || []).length ? !size : slug) return null;
+    return { ...it, name: p.name, variant: [p.colour, size].filter(Boolean).join(' · '), price: p.price, img: p.img || it.img };
+  }
   function loadCart() {
     try {
       const data = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
       return Array.isArray(data)
         ? data.filter((it) => it && it.id && it.name && Number.isFinite(+it.price) && +it.qty > 0)
-          .map((it) => ({ ...it, price: +it.price, qty: Math.min(MAX_QTY, Math.floor(+it.qty)) }))
+          .map((it) => fromCatalog({ ...it, price: +it.price, qty: Math.min(MAX_QTY, Math.floor(+it.qty)) }))
+          .filter(Boolean)
         : [];
     } catch (err) { return []; }
   }
@@ -721,6 +738,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     network: 'Envoi impossible : vérifiez votre connexion internet puis réessayez.',
     http: 'Votre commande n’a pas pu être enregistrée. Réessayez dans un instant.',
     hp: 'Envoi impossible. Écrivez-nous à info@knockoutboxinggear.com.',
+    // refusals from the order server (_ops/order-apps-script.gs)
+    bad_field: 'Merci de corriger le champ indiqué en rouge.',
+    bad_item: 'Un article de votre commande n’est plus disponible (modèle ou taille). Actualisez la page, vérifiez votre panier puis réessayez.',
+    bad_order: 'Votre commande n’a pas pu être enregistrée : vérifiez les quantités puis réessayez.',
+    too_many: 'Plusieurs commandes ont déjà été envoyées avec ce numéro : nous vous appelons très vite pour les confirmer. Pour une autre demande, écrivez-nous à info@knockoutboxinggear.com.',
+    busy: 'Beaucoup de commandes en ce moment : réessayez dans une minute.',
   };
   // POST one order. 'json': text/plain JSON (Apps Script reads e.postData.contents); 'form': urlencoded.
   // Both are "simple" requests: no CORS preflight. Success = HTTP 2xx and the reply isn't {ok:false}.
@@ -747,7 +770,9 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       if (!res.ok) return { ok: false, error: 'http' };
       let data = null;
       try { data = await res.json(); } catch (err) { data = null; }
-      if (data && (data.ok === false || data.result === 'error')) return { ok: false, error: 'http' };
+      if (data && (data.ok === false || data.result === 'error')) {
+        return { ok: false, error: Object.prototype.hasOwnProperty.call(ORDER_ERRORS, data.error) ? data.error : 'http', field: data.field };
+      }
       return { ok: true, data };
     } catch (err) {
       return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
@@ -834,15 +859,26 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       const res = await sendOrder(payload);
       if (!res.ok) {
         setBusy(false);
+        const bad = res.error === 'bad_field' && fields.find((el) => el.name === res.field);
+        if (bad) setErr(bad, 'Vérifiez ce champ.');
         showAlert(ORDER_ERRORS[res.error] || ORDER_ERRORS.network);
         smoothTo(alertEl, { block: 'center' });
         return;
       }
-      try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...payload, test: !!res.test })); } catch (err) { /* private mode */ }
-      onSuccess(payload);
+      // the server re-prices the order from the catalog: its numbers (and its order number) are the ones that count
+      const srv = res.data && Number.isFinite(res.data.total) ? res.data : null;
+      const done = srv ? {
+        ...payload,
+        orderId: /^KOBG-\d{6}-[A-Z0-9]{4}$/.test(srv.orderId) ? srv.orderId : payload.orderId,
+        items: Array.isArray(srv.items) ? srv.items : payload.items,
+        subtotal: +srv.subtotal || 0, promoCode: srv.promoCode || '', discountPct: +srv.discountPct || 0,
+        discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total,
+      } : payload;
+      try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !!res.test })); } catch (err) { /* private mode */ }
+      onSuccess(done);
       form.reset();
       fields.forEach((el) => setErr(el, ''));
-      location.href = `merci.html?commande=${encodeURIComponent(payload.orderId)}${new URLSearchParams(location.search).get('test') === '1' ? '&test=1' : ''}`;
+      location.href = `merci.html?commande=${encodeURIComponent(done.orderId)}${new URLSearchParams(location.search).get('test') === '1' ? '&test=1' : ''}`;
     });
     return { showAlert };
   }
@@ -1111,7 +1147,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
     // links to a question (e.g. footer "Guide des tailles" -> #faq-tailles) open that answer
     function openFromHash(hash) {
-      const item = hash && hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
+      const item = hash && hash.length > 1 ? document.getElementById(safeDecode(hash.slice(1))) : null;
       const q = item && section.contains(item) ? item.querySelector('.faq-q') : null;
       if (!q) return;
       // swap instantly: an answer collapsing above the target would shift it mid-scroll
@@ -1216,7 +1252,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       history.replaceState(null, '', f === 'tous' ? location.pathname : `#${f}`);
     }));
     sortSel?.addEventListener('change', applySort);
-    const fromHash = (scroll) => applyFilter(decodeURIComponent(location.hash.slice(1)) || 'tous', { scroll });
+    const fromHash = (scroll) => applyFilter(safeDecode(location.hash.slice(1)) || 'tous', { scroll });
     window.addEventListener('hashchange', () => fromHash(true));
     fromHash(false);
     // arriving with #gants-de-sparring: the other group just got hidden, so land on it again
