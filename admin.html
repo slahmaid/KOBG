@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com http://localhost:* http://127.0.0.1:*; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <title>Admin · Commandes — Knockout Boxing Gear</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/admin.css">
+</head>
+<body class="adm-body">
+
+  <!-- ============ LOGIN ============ -->
+  <main class="login" id="login" hidden>
+    <form class="login-card" id="loginForm" novalidate>
+      <div class="login-top">
+        <img src="assets/kobg-mark-light.svg" alt="Knockout Boxing Gear" width="1798" height="890">
+        <span class="login-tag">Admin</span>
+      </div>
+      <h1 class="login-title">Gestion des commandes</h1>
+      <input type="text" name="username" value="admin" autocomplete="username" hidden>
+      <label class="fld"><span>Clé admin</span>
+        <input type="password" id="loginKey" name="password" autocomplete="current-password" required minlength="1" spellcheck="false">
+      </label>
+      <label class="chk"><input type="checkbox" id="loginRemember"><span>Rester connecté sur cet appareil</span></label>
+      <p class="login-err" id="loginErr" role="alert" hidden></p>
+      <button type="submit" class="btn btn-red btn-lg" id="loginBtn">Se connecter</button>
+    </form>
+  </main>
+
+  <!-- ============ APP ============ -->
+  <div class="adm" id="app" hidden>
+    <header class="top">
+      <a class="top-logo" href="index.html" title="Voir le site"><img src="assets/kobg-mark-light.svg" alt="Knockout Boxing Gear" width="1798" height="890"></a>
+      <div class="top-title"><span class="top-tag">Admin</span><strong>Commandes</strong></div>
+      <button type="button" class="top-new" id="newBadge" hidden></button>
+      <div class="top-sync" id="sync" aria-live="polite"><span class="dot"></span><span id="syncTxt">Chargement…</span></div>
+      <div class="top-act">
+        <button type="button" class="ibtn" id="refreshBtn" title="Actualiser (R)" aria-label="Actualiser">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="btn btn-ghost" id="logoutBtn" aria-label="Déconnexion"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lo-t">Déconnexion</span></button>
+      </div>
+    </header>
+
+    <section class="kpis" aria-label="Indicateurs">
+      <div class="kpi-head">
+        <h2>Vue d'ensemble</h2>
+        <div class="seg" id="period" role="tablist" aria-label="Période">
+          <button type="button" data-p="today" role="tab">Aujourd'hui</button>
+          <button type="button" data-p="7d" role="tab">7 jours</button>
+          <button type="button" data-p="30d" role="tab">30 jours</button>
+          <button type="button" data-p="all" role="tab">Tout</button>
+        </div>
+      </div>
+      <div class="kpi-grid" id="kpis"></div>
+    </section>
+
+    <section class="board" aria-label="Commandes">
+      <div class="tools">
+        <div class="chips" id="chips" role="tablist" aria-label="Filtrer par statut"></div>
+        <div class="filters">
+          <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            <input type="search" id="q" placeholder="Nom, téléphone, N°, ville, produit…  ( / )" aria-label="Rechercher" autocomplete="off" spellcheck="false"></label>
+          <label class="date"><span>Du</span><input type="date" id="from"></label>
+          <label class="date"><span>Au</span><input type="date" id="to"></label>
+          <label class="sel"><span class="sr">Trier</span>
+            <select id="sort" aria-label="Trier">
+              <option value="new">Plus récentes</option>
+              <option value="old">Plus anciennes</option>
+              <option value="tdesc">Total décroissant</option>
+              <option value="tasc">Total croissant</option>
+              <option value="name">Nom A → Z</option>
+              <option value="status">Par statut</option>
+            </select></label>
+          <button type="button" class="btn btn-ghost-d" id="resetBtn">Effacer</button>
+          <button type="button" class="btn btn-dark" id="csvBtn">Export CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="tableWrap">
+        <table class="otable" id="otable">
+          <thead><tr>
+            <th scope="col">N° commande</th><th scope="col">Reçue le</th><th scope="col">Client</th><th scope="col">Téléphone</th>
+            <th scope="col">Ville</th><th scope="col">Articles</th><th scope="col" class="num">Total</th><th scope="col">Statut</th><th scope="col" class="act-h">Actions</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" hidden></div>
+      </div>
+      <div class="pager" id="pager"></div>
+    </section>
+  </div>
+
+  <!-- ============ DETAIL DRAWER ============ -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" hidden tabindex="-1"></aside>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="assets/admin.js"></script>
+</body>
+</html>

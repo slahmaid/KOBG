@@ -1,16 +1,24 @@
 // =========================================================
 // CONFIG — edit here
-// WhatsApp number that receives orders from the cart's "Commander" button.
+// ORDERS (cash on delivery): the order forms (product pages + commande.html) POST each order here.
+// Paste the URL of your Google Apps Script web app (ends with /exec, see order-apps-script.gs),
+// or a Formspree form URL (https://formspree.io/f/xxxx, then set ORDER_ENDPOINT_FORMAT = 'form').
+// Set (task 38) to the shop's Apps Script web app: every order, from any host (localhost too), is REALLY sent.
+// If emptied: real visitors get "Commande indisponible pour le moment" and NO order is taken; only on
+// localhost / 127.0.0.1 or with ?test=1 is a success then SIMULATED (labelled on merci.html, nothing sent).
+const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlxT2m1l9jRQZQYQeIqsGXkxUw0GgKvOhk05uxn-eQwuQ4SzFYbBzZDWkN1MLoBUY42w/exec';
+const ORDER_ENDPOINT_FORMAT = 'json';   // 'json' = JSON text body (Apps Script) · 'form' = form-encoded (Formspree)
+// WhatsApp number used by the CONTACT links only (footer, FAQ, contact page). Orders never go through WhatsApp.
 // International format, digits only (212 = Morocco, without the leading 0).
 // PLACEHOLDER: replace with the shop's real WhatsApp number before going live.
 const WHATSAPP_NUMBER = '212600000000';
 const CART_STORAGE_KEY = 'kobg-cart-v1';
-// Promo codes accepted in the cart (static site: checked client-side, confirmed on WhatsApp).
+// Promo codes accepted in the cart and order forms (static site: checked client-side, the team confirms by phone).
 const PROMO_CODES = { KOBG26: 10 };          // code -> % off the subtotal
 const PROMO_STORAGE_KEY = 'kobg-promo-v1';
-// Delivery: 25 DH, free from 500 DH of products (threshold uses the subtotal BEFORE the discount).
+// Delivery: 25 DH, free from 2000 DH of products (threshold uses the subtotal BEFORE the discount).
 const SHIPPING_FEE = 25;
-const FREE_SHIPPING_FROM = 500;
+const FREE_SHIPPING_FROM = 2000;
 // =========================================================
 
 // Knockout Boxing Gear — header, hero and product carousel interactions
@@ -36,7 +44,7 @@ const FREE_SHIPPING_FROM = 500;
   const lenisMark = () => {
     document.querySelectorAll('.carousel, .pp-track, .pp-thumbs, .chips, .features-grid, .faq-table-wrap')
       .forEach((el) => el.setAttribute('data-lenis-prevent-horizontal', ''));
-    document.querySelectorAll('#mainNav, #cartDrawer, .cart-list, .search-panel')
+    document.querySelectorAll('#mainNav, #cartDrawer, #cartList, .search-panel')
       .forEach((el) => el.setAttribute('data-lenis-prevent', ''));
   };
   const lenisSync = () => {
@@ -252,8 +260,8 @@ const FREE_SHIPPING_FROM = 500;
   syncVideo();
 
   // ---------------------------------------------------------
-  // Cart: client-side only (no backend). Items live in localStorage;
-  // "Commander" opens WhatsApp with the order summary pre-filled.
+  // Cart: client-side only. Items live in localStorage;
+  // "Acheter maintenant" goes to commande.html (cash-on-delivery form + summary).
   // ---------------------------------------------------------
   const cartBtn = document.getElementById('cartBtn');
   const cartCount = document.getElementById('cartCount');
@@ -262,6 +270,9 @@ const FREE_SHIPPING_FROM = 500;
   const cartList = document.getElementById('cartList');
   const cartEmpty = document.getElementById('cartEmpty');
   const cartFoot = document.getElementById('cartFoot');
+  const cartHead = drawer.querySelector('.cart-head');
+  const cartDesk = window.matchMedia('(min-width: 1024px) and (min-aspect-ratio: 81/100)');
+  const CART_DENSITY = [['xl', 236], ['lg', 320], ['md', 284], ['sm', 252], ['xs', 226]];   // [name, card width px]
   const cartHeadCount = document.getElementById('cartHeadCount');
   const cartSubtotal = document.getElementById('cartSubtotal');
   const cartCheckout = document.getElementById('cartCheckout');
@@ -270,12 +281,6 @@ const FREE_SHIPPING_FROM = 500;
   const discountCode = document.getElementById('cartDiscountCode');
   const shippingEl = document.getElementById('cartShipping');
   const totalEl = document.getElementById('cartTotal');
-  const promoForm = document.getElementById('cartPromo');
-  const promoInput = document.getElementById('cartPromoInput');
-  const promoInputRow = promoForm.querySelector('.cart-promo-row');
-  const promoOn = document.getElementById('cartPromoOn');
-  const promoCodeEl = document.getElementById('cartPromoCode');
-  const promoMsg = document.getElementById('cartPromoMsg');
   const cartClose = document.getElementById('cartClose');
   const toast = document.getElementById('toast');
   const toastTxt = toast.querySelector('.toast-txt');
@@ -315,32 +320,17 @@ const FREE_SHIPPING_FROM = 500;
   function savePromo() {
     try { promo ? localStorage.setItem(PROMO_STORAGE_KEY, promo) : localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
   }
-  function totals() {
-    const sub = totalPrice();
+  // one rule everywhere (cart, checkout, product form): % off the subtotal; delivery free from 2000 DH of products
+  function calcTotals(sub) {
     const pct = promo ? PROMO_CODES[promo] : 0;
     const discount = Math.round(sub * pct / 100);
     const shipping = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
     return { sub, pct, discount, shipping, total: sub - discount + shipping };
   }
+  const totals = () => calcTotals(totalPrice());
   const plainDH = (n) => formatDH(n).replace(/\u00a0/g, ' ');
-
-  function whatsappLink() {
-    const t = totals();
-    const lines = cart.map((it) => `• ${it.qty} × ${it.name}${it.variant ? ` (${it.variant})` : ''} : ${plainDH(it.qty * it.price)}`);
-    const msg = [
-      'Bonjour Knockout Boxing Gear, je souhaite passer commande :',
-      '',
-      ...lines,
-      '',
-      `Sous-total : ${plainDH(t.sub)} (${plural(totalQty())})`,
-      ...(t.pct ? [`Code promo : ${promo} (-${t.pct} %) : -${plainDH(t.discount)}`] : []),
-      `Livraison : ${t.shipping ? plainDH(t.shipping) : 'offerte'}`,
-      `Total : ${plainDH(t.total)}`,
-      '',
-      'Merci de me confirmer la disponibilité et la livraison.',
-    ].join('\n');
-    return `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
-  }
+  const renderHooks = [];     // checkout summary, product order form: re-drawn with the cart
+  const promoWidgets = [];    // every promo field on the page (drawer, product form, checkout) stays in sync
 
   function render() {
     const qty = totalQty();
@@ -357,43 +347,99 @@ const FREE_SHIPPING_FROM = 500;
     }
     shippingEl.textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
     totalEl.textContent = formatDH(t.total);
-    promoInputRow.hidden = !!promo;
-    promoOn.hidden = !promo;
-    promoCodeEl.textContent = promo;
+    promoWidgets.forEach((w) => w.sync());
     cartEmpty.hidden = qty > 0;
     cartFoot.hidden = qty === 0;
     cartList.hidden = qty === 0;
-    cartCheckout.href = qty ? whatsappLink() : '#';
+    // "Acheter maintenant": disabled while the cart is empty
+    cartCheckout.classList.toggle('is-disabled', !qty);
+    if (qty) { cartCheckout.removeAttribute('aria-disabled'); cartCheckout.removeAttribute('tabindex'); }
+    else { cartCheckout.setAttribute('aria-disabled', 'true'); cartCheckout.setAttribute('tabindex', '-1'); }
 
-    cartList.innerHTML = cart.map((it) => {
-      const label = esc(`${it.name}${it.variant ? ` ${it.variant.toLowerCase()}` : ''}`);
-      // the name links to the product page (<id>.html) when the product is in the search index
-      const pageId = String(it.id).split('--')[0];
-      const hasPage = (window.KOBG_SEARCH || []).some((p) => p.id === pageId);
-      return `
-      <li class="cart-item" data-id="${esc(it.id)}">
-        <img class="cart-item-img" src="${esc(it.img || '')}" alt="" width="72" height="90" decoding="async">
-        <div class="cart-item-info">
-          <p class="cart-item-name">${hasPage ? `<a class="cart-item-link" href="${esc(pageId)}.html">${esc(it.name)}</a>` : esc(it.name)}</p>
-          <p class="cart-item-meta">${it.variant ? `${esc(it.variant)} · ` : ''}${formatDH(it.price)}</p>
-          <div class="qty" role="group" aria-label="Quantité, ${label}">
-            <button type="button" class="qty-btn" data-act="dec" aria-label="Retirer un ${label}"${it.qty <= 1 ? ' disabled' : ''}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-            </button>
-            <span class="qty-val" aria-live="polite">${it.qty}</span>
-            <button type="button" class="qty-btn" data-act="inc" aria-label="Ajouter un ${label}"${it.qty >= MAX_QTY ? ' disabled' : ''}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="cart-item-side">
-          <button type="button" class="cart-remove" data-act="remove" aria-label="Supprimer ${label} du panier">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    cartList.innerHTML = cart.map(itemHTML).join('');
+    fitCart();
+    renderHooks.forEach((fn) => fn());
+  }
+
+  // Desktop drawer (task 40): the lines are a grid of cards, never an inner scroll box.
+  // Try card densities from roomy to compact and, for each, from the preferred column count up to
+  // what the screen width allows; keep the first layout where every line fits the panel height.
+  // If even the most compact layout can't hold them all, the whole panel scrolls (.is-tall).
+  function fitCart() {
+    const n = cartList.children.length;
+    drawer.classList.toggle('is-empty', !n);
+    drawer.classList.remove('is-tall');
+    if (!cartDesk.matches || !n) {
+      drawer.style.removeProperty('--cols'); drawer.style.removeProperty('--cw'); drawer.style.removeProperty('--head-h');
+      delete cartList.dataset.density;
+      return;
+    }
+    const cs = getComputedStyle(drawer);
+    const outer = parseFloat(cs.right) || 0;
+    const pad = parseFloat(cs.paddingLeft) || 0;
+    const gap = parseFloat(cs.columnGap) || pad;
+    const sumW = cartHead.getBoundingClientRect().width;
+    const avail = window.innerWidth - outer * 2 - pad * 2 - gap - sumW;   // room for the card columns
+    const pref = n === 1 ? 1 : n <= 4 ? 2 : 3;
+    const fits = () => cartList.scrollHeight <= cartList.clientHeight + 1;
+    const set = (d, cw, cols) => {
+      cartList.dataset.density = d;
+      drawer.style.setProperty('--cw', cw + 'px');
+      drawer.style.setProperty('--cols', cols);
+    };
+    let done = false;
+    for (const [d, cw] of CART_DENSITY) {
+      const maxC = Math.max(1, Math.min(n, Math.floor((avail + gap) / (cw + gap))));
+      if (d === 'xl' && n > 6) continue;                    // tiles only for small carts
+      const p0 = d === 'xl' ? (n === 4 ? 2 : Math.min(n, 3)) : pref;
+      for (let c = Math.min(p0, maxC); c <= maxC && !done; c++) { set(d, cw, c); done = fits(); }
+      if (done) break;
+    }
+    const foot = cartFoot;
+    if (!done || foot.scrollHeight > foot.clientHeight + 1) {
+      if (!done) {
+        const cw = CART_DENSITY[CART_DENSITY.length - 1][1];
+        set('xs', cw, Math.max(1, Math.min(n, Math.floor((avail + gap) / (cw + gap)))));
+      }
+      drawer.classList.add('is-tall');
+      drawer.style.setProperty('--head-h', cartHead.offsetHeight + 'px');
+    }
+  }
+  let fitRaf = 0;
+  const refit = () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fitCart); };
+  window.addEventListener('resize', refit);
+  cartDesk.addEventListener?.('change', refit);
+  document.fonts?.ready.then(refit);
+
+  // one cart line (drawer + checkout summary): photo, name, variant, qty stepper, remove, line total
+  function itemHTML(it) {
+    const label = esc(`${it.name}${it.variant ? ` ${it.variant.toLowerCase()}` : ''}`);
+    // the name links to the product page (<id>.html) when the product is in the search index
+    const pageId = String(it.id).split('--')[0];
+    const hasPage = (window.KOBG_SEARCH || []).some((p) => p.id === pageId);
+    return `
+    <li class="cart-item" data-id="${esc(it.id)}">
+      <img class="cart-item-img" src="${esc(it.img || '')}" alt="" width="72" height="90" decoding="async">
+      <div class="cart-item-info">
+        <p class="cart-item-name">${hasPage ? `<a class="cart-item-link" href="${esc(pageId)}.html">${esc(it.name)}</a>` : esc(it.name)}</p>
+        <p class="cart-item-meta">${it.variant ? `${esc(it.variant)} · ` : ''}${formatDH(it.price)}</p>
+        <div class="qty" role="group" aria-label="Quantité, ${label}">
+          <button type="button" class="qty-btn" data-act="dec" aria-label="Retirer un ${label}"${it.qty <= 1 ? ' disabled' : ''}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
           </button>
-          <p class="cart-item-total">${formatDH(it.qty * it.price)}</p>
+          <span class="qty-val" aria-live="polite">${it.qty}</span>
+          <button type="button" class="qty-btn" data-act="inc" aria-label="Ajouter un ${label}"${it.qty >= MAX_QTY ? ' disabled' : ''}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
         </div>
-      </li>`;
-    }).join('');
+      </div>
+      <div class="cart-item-side">
+        <button type="button" class="cart-remove" data-act="remove" aria-label="Supprimer ${label} du panier">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="cart-item-total">${formatDH(it.qty * it.price)}</p>
+      </div>
+    </li>`;
   }
 
   function bumpBadge() {
@@ -409,31 +455,47 @@ const FREE_SHIPPING_FROM = 500;
     toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
 
-  function setPromoMsg(text, isError) {
-    promoMsg.textContent = text;
-    promoMsg.classList.toggle('is-error', !!isError);
-    promoInput.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  // promo fields: the drawer's is a <form>; the ones inside an order form are a group (no nested forms)
+  function bindPromo(root) {
+    const input = root.querySelector('.cart-promo-input');
+    const row = root.querySelector('.cart-promo-row');
+    const on = root.querySelector('.cart-promo-on');
+    const codeEl = root.querySelector('.cart-promo-code');
+    const msg = root.querySelector('.cart-promo-msg');
+    const remove = root.querySelector('.cart-promo-remove');
+    if (!input || !row || !on || !remove) return;
+    const setMsg = (text, isError) => {
+      if (msg) { msg.textContent = text; msg.classList.toggle('is-error', !!isError); }
+      input.setAttribute('aria-invalid', isError ? 'true' : 'false');
+    };
+    const apply = () => {
+      const code = normCode(input.value);
+      if (!code) { setMsg('Saisissez un code promo.', true); input.focus(); return; }
+      if (!PROMO_CODES[code]) { setMsg(`Le code « ${code} » n’est pas valide.`, true); input.select(); return; }
+      promo = code;
+      savePromo();
+      input.value = '';
+      render();
+      setMsg(`Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
+      remove.focus();
+    };
+    if (root.tagName === 'FORM') root.addEventListener('submit', (e) => { e.preventDefault(); apply(); });
+    else {
+      root.querySelector('.cart-promo-apply')?.addEventListener('click', apply);
+      // Enter applies the code instead of sending the order form around it
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+    }
+    input.addEventListener('input', () => { if (msg?.classList.contains('is-error')) setMsg('', false); });
+    remove.addEventListener('click', () => {
+      promo = '';
+      savePromo();
+      render();
+      setMsg('Code promo retiré.', false);
+      input.focus();
+    });
+    promoWidgets.push({ sync: () => { row.hidden = !!promo; on.hidden = !promo; if (codeEl) codeEl.textContent = promo; } });
   }
-  promoForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const code = normCode(promoInput.value);
-    if (!code) { setPromoMsg('Saisissez un code promo.', true); promoInput.focus(); return; }
-    if (!PROMO_CODES[code]) { setPromoMsg(`Le code « ${code} » n’est pas valide.`, true); promoInput.select(); return; }
-    promo = code;
-    savePromo();
-    promoInput.value = '';
-    render();
-    setPromoMsg(`Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
-    document.getElementById('cartPromoRemove').focus();
-  });
-  promoInput.addEventListener('input', () => { if (promoMsg.classList.contains('is-error')) setPromoMsg('', false); });
-  document.getElementById('cartPromoRemove').addEventListener('click', () => {
-    promo = '';
-    savePromo();
-    render();
-    setPromoMsg('Code promo retiré.', false);
-    promoInput.focus();
-  });
+  document.querySelectorAll('.js-promo').forEach(bindPromo);
   // another tab changed the cart or the code: stay in sync
   window.addEventListener('storage', (e) => {
     if (e.key === CART_STORAGE_KEY) cart = loadCart();
@@ -520,8 +582,9 @@ const FREE_SHIPPING_FROM = 500;
     btn.addEventListener('click', () => addToCart(btn));
   });
 
-  // quantity +/- and remove (event delegation; focus is put back after each re-render)
-  cartList.addEventListener('click', (e) => {
+  // quantity +/- and remove (event delegation; focus is put back after each re-render).
+  // Used by the drawer list and the checkout summary list.
+  function listAction(e, list, emptyFocus) {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     const row = btn.closest('.cart-item');
@@ -535,14 +598,15 @@ const FREE_SHIPPING_FROM = 500;
     saveCart();
     render();
     if (act === 'remove') {
-      const next = cartList.children[Math.min(idx, cartList.children.length - 1)];
-      (next ? next.querySelector('.cart-remove') : document.getElementById('cartShop')).focus();
+      const next = list.children[Math.min(idx, list.children.length - 1)];
+      (next ? next.querySelector('.cart-remove') : emptyFocus())?.focus();
     } else {
-      const again = cartList.querySelector(`.cart-item[data-id="${CSS.escape(id)}"] [data-act="${act}"]`);
+      const again = list.querySelector(`.cart-item[data-id="${CSS.escape(id)}"] [data-act="${act}"]`);
       if (again && !again.disabled) again.focus();
       else if (again) again.parentElement.querySelector(`[data-act="${act === 'inc' ? 'dec' : 'inc'}"]`).focus();
     }
-  });
+  }
+  cartList.addEventListener('click', (e) => listAction(e, cartList, () => document.getElementById('cartShop')));
 
   const isCartOpen = () => document.body.classList.contains('cart-open');
   function setCart(open) {
@@ -576,9 +640,16 @@ const FREE_SHIPPING_FROM = 500;
     lastFocus = null;
     setCart(false);
   });
+  // "Acheter maintenant" -> commande.html; already there: just close the drawer and go to the form
   cartCheckout.addEventListener('click', (e) => {
-    if (!cart.length) e.preventDefault();
-    else cartCheckout.href = whatsappLink();
+    if (!cart.length) { e.preventDefault(); return; }
+    if (document.querySelector('[data-checkout]')) {
+      e.preventDefault();
+      lastFocus = null;
+      setCart(false);
+      const f = document.getElementById('codForm');
+      if (f) { smoothTo(f, { block: 'start' }); document.getElementById('codTitle')?.focus({ preventScroll: true }); }
+    }
   });
 
   // Esc closes the cart; Tab stays inside it while it's open
@@ -612,6 +683,253 @@ const FREE_SHIPPING_FROM = 500;
   });
 
   render();
+
+  // =========================================================
+  // Orders: cash-on-delivery forms (product pages + commande.html). One send function: sendOrder().
+  // Never shows a success that didn't happen: no endpoint = "Commande indisponible", except in test mode.
+  // =========================================================
+  const ORDER_TEST = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+    || new URLSearchParams(location.search).get('test') === '1';
+  // window.KOBG_ORDER_ENDPOINT (tests): overrides ORDER_ENDPOINT; '' forces the no-endpoint path.
+  const orderEndpoint = () => String(('KOBG_ORDER_ENDPOINT' in window ? window.KOBG_ORDER_ENDPOINT : ORDER_ENDPOINT) || '').trim();
+  const LAST_ORDER_KEY = 'kobg-last-order';
+  const normPhone = (v) => String(v || '').replace(/[\s.\-()/]/g, '');
+  const phoneOK = (v) => /^(?:(?:\+|00)?212|0)[67]\d{8}$/.test(normPhone(v));
+  const phoneLocal = (v) => normPhone(v).replace(/^(?:\+|00)?212/, '0');          // +212612345678 -> 0612345678
+  const phonePretty = (v) => phoneLocal(v).replace(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4 $5');
+  function newOrderId() {
+    const d = new Date();
+    const p2 = (n) => String(n).padStart(2, '0');
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';           // no 0/O, 1/I
+    const buf = new Uint8Array(4);
+    if (window.crypto?.getRandomValues) window.crypto.getRandomValues(buf);
+    else buf.forEach((_, k) => { buf[k] = Math.floor(Math.random() * 256); });
+    return `KOBG-${String(d.getFullYear()).slice(2)}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${[...buf].map((b) => abc[b % 32]).join('')}`;
+  }
+  const splitVariant = (v) => { const [colour = '', size = ''] = String(v || '').split(' · '); return { colour, size }; };
+  const itemsText = (items) => items.map((it) => `${it.qty} × ${it.name}${[it.colour, it.size].filter(Boolean).length ? ` (${[it.colour, it.size].filter(Boolean).join(' · ')})` : ''} — ${plainDH(it.lineTotal)}`).join('\n');
+
+  const ORDER_ERRORS = {
+    unavailable: 'Commande indisponible pour le moment. Réessayez un peu plus tard ou écrivez-nous à info@knockoutboxinggear.com.',
+    timeout: 'Le serveur ne répond pas. Vérifiez votre connexion puis réessayez.',
+    network: 'Envoi impossible : vérifiez votre connexion internet puis réessayez.',
+    http: 'Votre commande n’a pas pu être enregistrée. Réessayez dans un instant.',
+    hp: 'Envoi impossible. Écrivez-nous à info@knockoutboxinggear.com.',
+  };
+  // POST one order. 'json': text/plain JSON (Apps Script reads e.postData.contents); 'form': urlencoded.
+  // Both are "simple" requests: no CORS preflight. Success = HTTP 2xx and the reply isn't {ok:false}.
+  async function sendOrder(payload) {
+    const url = orderEndpoint();
+    if (!url) {
+      if (!ORDER_TEST) return { ok: false, error: 'unavailable' };
+      await new Promise((r) => setTimeout(r, 700));
+      return { ok: true, test: true };                       // TEST MODE: nothing is sent
+    }
+    const ctrl = 'AbortController' in window ? new AbortController() : null;
+    const timer = setTimeout(() => ctrl?.abort(), 20000);
+    try {
+      let body;
+      const headers = { Accept: 'application/json' };
+      if (ORDER_ENDPOINT_FORMAT === 'form') {
+        const flat = { ...payload, items: itemsText(payload.items), items_json: JSON.stringify(payload.items) };
+        body = new URLSearchParams(Object.entries(flat).map(([k, v]) => [k, v == null ? '' : String(v)]));
+      } else {
+        body = JSON.stringify(payload);
+        headers['Content-Type'] = 'text/plain;charset=utf-8';
+      }
+      const res = await fetch(url, { method: 'POST', body, headers, signal: ctrl?.signal, redirect: 'follow', credentials: 'omit' });
+      if (!res.ok) return { ok: false, error: 'http' };
+      let data = null;
+      try { data = await res.json(); } catch (err) { data = null; }
+      if (data && (data.ok === false || data.result === 'error')) return { ok: false, error: 'http' };
+      return { ok: true, data };
+    } catch (err) {
+      return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  const COD_RULES = {
+    nom: (v) => (v.trim().length < 3 || !/\p{L}{2}/u.test(v) ? 'Indiquez votre nom complet.' : ''),
+    ville: (v) => (v.trim().length < 2 ? 'Indiquez votre ville.' : ''),
+    telephone: (v) => (!normPhone(v) ? 'Indiquez votre numéro de téléphone.'
+      : phoneOK(v) ? '' : 'Numéro invalide : 06 ou 07 suivi de 8 chiffres (ou +212 6… / +212 7…).'),
+  };
+  // wires one order form: inline French errors, honeypot, busy state (no double submit), send, then merci.html.
+  // getOrder() returns { items, sub, source } or { blocked: 'message' } (it shows its own hint, e.g. the size).
+  function codForm(form, { getOrder, onSuccess }) {
+    const submit = form.querySelector('.cod-submit');
+    const submitTxt = submit.querySelector('.cod-submit-txt');
+    const alertEl = form.querySelector('.cod-alert');
+    const fields = Object.keys(COD_RULES).map((n) => form.elements[n]).filter(Boolean);
+    const val = (n) => String(form.elements[n]?.value || '').trim().replace(/[ \t]+/g, ' ');
+    const setErr = (el, msg) => {
+      const err = document.getElementById(`${el.id}Err`);
+      el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      el.closest('.cod-field')?.classList.toggle('is-error', !!msg);
+      if (err) { err.textContent = msg; err.hidden = !msg; }
+    };
+    const check = (el) => { const msg = COD_RULES[el.name](el.value); setErr(el, msg); return !msg; };
+    const showAlert = (msg) => { alertEl.textContent = msg || ''; alertEl.hidden = !msg; };
+    fields.forEach((el) => {
+      el.addEventListener('blur', () => {
+        if (el.name === 'telephone' && phoneOK(el.value)) el.value = phonePretty(el.value);
+        if (el.value.trim() || el.getAttribute('aria-invalid') === 'true') check(el);
+      });
+      el.addEventListener('input', () => {
+        if (el.getAttribute('aria-invalid') === 'true') check(el);
+        if (!alertEl.hidden && !fields.some((f) => f.getAttribute('aria-invalid') === 'true')) showAlert('');
+      });
+    });
+    let busy = false;
+    const setBusy = (on) => {
+      busy = on;
+      submit.disabled = on;
+      submit.classList.toggle('is-loading', on);
+      submit.setAttribute('aria-busy', String(on));
+      submitTxt.textContent = on ? 'Envoi en cours…' : 'Confirmer la commande';
+    };
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci.html
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (busy) return;
+      showAlert('');
+      const order = getOrder();
+      if (order.blocked) { showAlert(order.blocked); return; }
+      const bad = fields.filter((el) => !check(el));
+      if (bad.length) {
+        showAlert(bad.length > 1 ? 'Merci de compléter les champs indiqués en rouge.' : 'Merci de corriger le champ indiqué en rouge.');
+        smoothTo(bad[0], { block: 'center' });
+        bad[0].focus({ preventScroll: true });
+        return;
+      }
+      if (val('kobg_hp')) { showAlert(ORDER_ERRORS.hp); return; }       // honeypot: bots fill every field
+      const t = calcTotals(order.sub);
+      const payload = {
+        orderId: newOrderId(),
+        date: new Date().toISOString(),
+        nom: val('nom'),
+        telephone: phoneLocal(val('telephone')),
+        ville: val('ville'),
+        items: order.items,
+        itemCount: order.items.reduce((n, it) => n + it.qty, 0),
+        subtotal: t.sub,
+        promoCode: t.pct ? promo : '',
+        discountPct: t.pct,
+        discount: t.discount,
+        delivery: t.shipping,
+        total: t.total,
+        currency: 'MAD',
+        source: order.source,
+        page: location.origin + location.pathname,
+      };
+      setBusy(true);
+      const res = await sendOrder(payload);
+      if (!res.ok) {
+        setBusy(false);
+        showAlert(ORDER_ERRORS[res.error] || ORDER_ERRORS.network);
+        smoothTo(alertEl, { block: 'center' });
+        return;
+      }
+      try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...payload, test: !!res.test })); } catch (err) { /* private mode */ }
+      onSuccess(payload);
+      form.reset();
+      fields.forEach((el) => setErr(el, ''));
+      location.href = `merci.html?commande=${encodeURIComponent(payload.orderId)}${new URLSearchParams(location.search).get('test') === '1' ? '&test=1' : ''}`;
+    });
+    return { showAlert };
+  }
+
+  // ---- commande.html: COD form + cart summary (collapsible on phones) ----
+  const coRoot = document.querySelector('[data-checkout]');
+  if (coRoot) {
+    const coGrid = document.getElementById('coGrid');
+    const coEmpty = document.getElementById('coEmpty');
+    const coList = document.getElementById('coList');
+    const coSum = document.getElementById('coSum');
+    const coToggle = document.getElementById('coSumToggle');
+    const $ = (id) => document.getElementById(id);
+    let coLeaving = false;
+    const coRender = () => {
+      if (coLeaving) return;
+      const qty = totalQty();
+      const t = totals();
+      const wasEmpty = coGrid.hidden;
+      coGrid.hidden = !qty;
+      coEmpty.hidden = !!qty;
+      coList.innerHTML = cart.map(itemHTML).join('');
+      $('coCount').textContent = plural(qty);
+      $('coSumCount').textContent = plural(qty);
+      $('coSub').textContent = formatDH(t.sub);
+      $('coDiscLine').hidden = !t.pct;
+      if (t.pct) {
+        $('coDisc').textContent = `-${formatDH(t.discount)}`;
+        coSum.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = promo; });
+        coSum.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
+      }
+      $('coShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+      $('coTotal').textContent = formatDH(t.total);
+      $('coSumToggleTotal').textContent = formatDH(t.total);
+      $('codDue').textContent = formatDH(t.total);
+      if (!qty && !wasEmpty && document.activeElement === document.body) $('coEmptyH')?.focus();
+    };
+    renderHooks.push(coRender);
+    coRender();
+    coList.addEventListener('click', (e) => listAction(e, coList, () => (cart.length ? null : $('coEmptyH'))));
+    coToggle.addEventListener('click', () => {
+      const open = coToggle.getAttribute('aria-expanded') !== 'true';
+      coToggle.setAttribute('aria-expanded', String(open));
+      coSum.classList.toggle('is-open', open);
+    });
+    codForm($('codForm'), {
+      getOrder: () => {
+        if (!cart.length) return { blocked: 'Votre panier est vide : ajoutez un article avant de commander.' };
+        return {
+          source: 'panier',
+          sub: totalPrice(),
+          items: cart.map((it) => ({
+            id: it.id, name: it.name, ...splitVariant(it.variant), qty: it.qty, unitPrice: it.price, lineTotal: it.qty * it.price,
+          })),
+        };
+      },
+      onSuccess: () => { coLeaving = true; cart = []; saveCart(); render(); },
+    });
+  }
+
+  // ---- merci.html: order number + recap (sessionStorage, this visit only) ----
+  const merciRoot = document.querySelector('[data-merci]');
+  if (merciRoot) {
+    const $ = (id) => document.getElementById(id);
+    const qid = new URLSearchParams(location.search).get('commande') || '';
+    let o = null;
+    try { o = JSON.parse(sessionStorage.getItem(LAST_ORDER_KEY) || 'null'); } catch (err) { o = null; }
+    if (o && (!o.orderId || (qid && o.orderId !== qid))) o = null;
+    const id = o ? o.orderId : (/^KOBG-\d{6}-[A-Z0-9]{4}$/.test(qid) ? qid : '');
+    if (id) {
+      $('merciId').textContent = id;
+      $('merciNumWrap').hidden = false;
+      document.title = `Merci, commande ${id} — Knockout Boxing Gear`;
+    } else {
+      $('merciTag').textContent = 'Commande';
+      $('merciTitle').textContent = 'Aucune commande récente';
+      $('merciLead').textContent = 'Le récapitulatif n’est gardé que pendant votre visite. Si vous venez de commander, nous vous appelons très vite pour confirmer.';
+    }
+    if (o) {
+      $('merciTest').hidden = !o.test;
+      $('merciItems').innerHTML = (o.items || []).map((it) => `
+        <li class="merci-item"><span class="merci-item-name"><strong>${esc(it.name)}</strong>${[it.colour, it.size].filter(Boolean).length ? `<small>${esc([it.colour, it.size].filter(Boolean).join(' · '))}</small>` : ''}</span>
+          <span class="merci-item-qty">${esc(it.qty)} × ${formatDH(+it.unitPrice || 0)}</span><strong class="merci-item-total">${formatDH(+it.lineTotal || 0)}</strong></li>`).join('');
+      $('merciTotals').innerHTML = `
+        <p class="cart-line cart-line--sub"><span>Sous-total</span><strong>${formatDH(o.subtotal || 0)}</strong></p>
+        ${o.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${esc(o.promoCode)} (-${esc(o.discountPct)}&nbsp;%)</span><strong>-${formatDH(o.discount)}</strong></p>` : ''}
+        <p class="cart-line"><span>Livraison</span><strong>${o.delivery ? formatDH(o.delivery) : 'Offerte'}</strong></p>
+        <p class="cart-total"><span>À payer à la livraison</span><strong>${formatDH(o.total || 0)}</strong></p>`;
+      $('merciCust').innerHTML = [['Nom', o.nom], ['Téléphone', o.telephone ? phonePretty(o.telephone) : ''], ['Ville', o.ville]]
+        .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+      $('merciRecap').hidden = false;
+    }
+  }
 
   // Carousels: every .products section (Best-sellers, Gants de sac, Gants de sparring, Plastrons, Avis) gets its own
   // native scroll-snap track (touch and trackpads just work), arrows that step one
@@ -822,7 +1140,7 @@ const FREE_SHIPPING_FROM = 500;
 
   // Footer: WhatsApp links + back-to-top
   document.querySelectorAll('.js-wa').forEach((a) => {
-    const msg = 'Bonjour Knockout Boxing Gear, je souhaite passer une commande.';
+    const msg = 'Bonjour Knockout Boxing Gear, j’ai une question.';
     a.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
   });
   document.getElementById('backToTop')?.addEventListener('click', () => {
@@ -1173,7 +1491,7 @@ const FREE_SHIPPING_FROM = 500;
 
   // =========================================================
   // Product pages (<id>.html, generated by tools/build33.py): gallery, size, quantity,
-  // direct WhatsApp order and the sticky mobile bar. Arrow functions only (one IIFE, no hoisting clashes).
+  // cash-on-delivery order form and the sticky mobile "Commander" bar. Arrow functions only (one IIFE, no hoisting clashes).
   // =========================================================
   const ppRoot = document.querySelector('[data-product]');
   if (ppRoot) {
@@ -1239,33 +1557,31 @@ const FREE_SHIPPING_FROM = 500;
     const ppBarMeta = document.getElementById('ppBarMeta');
     const ppSize = () => document.querySelector('.pp-size-input:checked')?.value || '';
     const ppQtyVal = () => Math.max(1, Math.min(MAX_QTY, parseInt(ppQty?.value, 10) || 1));
-    const ppWa = document.getElementById('ppWa');
     const ppAddBtn = document.getElementById('ppAdd');
-
-    const ppWaHref = () => {
+    const ppCod = document.getElementById('codForm');
+    const $c = (id) => document.getElementById(id);
+    // the order form's live summary: selection, unit price, qty, promo, delivery, total
+    const codSync = () => {
+      if (!ppCod || !ppAddBtn) return;
       const d = ppAddBtn.dataset;
       const size = ppSize();
       const qty = ppQtyVal();
-      const sub = qty * (+d.price || 0);
-      const pct = promo ? PROMO_CODES[promo] : 0;
-      const discount = Math.round(sub * pct / 100);
-      const shipping = sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
-      const variant = [d.variant || '', size].filter(Boolean).join(' · ');
-      const msg = [
-        'Bonjour Knockout Boxing Gear, je souhaite passer commande :',
-        '',
-        `• ${qty} × ${d.name}${variant ? ` (${variant})` : ''} : ${plainDH(sub)}`,
-        '',
-        ...(pct ? [`Code promo : ${promo} (-${pct} %) : -${plainDH(discount)}`] : []),
-        `Livraison : ${shipping ? plainDH(shipping) : 'offerte'}`,
-        `Total : ${plainDH(sub - discount + shipping)}`,
-        '',
-        `Produit : ${location.href.split('#')[0].split('?')[0]}`,
-        '',
-        'Merci de me confirmer la disponibilité et la livraison.',
-      ].join('\n');
-      return `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+      const t = calcTotals(qty * (+d.price || 0));
+      const needSize = ppBuy?.hasAttribute('data-need-size');
+      $c('codSel').innerHTML = `${esc(d.variant || '')}${needSize ? ` · ${size ? esc(size) : '<button type="button" class="cod-pick" id="codPick">Taille à choisir</button>'}` : ''}`;
+      $c('codUnit').textContent = formatDH(+d.price || 0);
+      $c('codQty').textContent = qty;
+      $c('codSub').textContent = formatDH(t.sub);
+      $c('codDiscLine').hidden = !t.pct;
+      if (t.pct) {
+        $c('codDisc').textContent = `-${formatDH(t.discount)}`;
+        ppCod.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = promo; });
+        ppCod.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
+      }
+      $c('codShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+      $c('codTotal').textContent = formatDH(t.total);
     };
+    renderHooks.push(codSync);
     const ppSync = () => {
       const size = ppSize();
       if (ppSizeVal) ppSizeVal.textContent = size || 'à choisir';
@@ -1278,7 +1594,7 @@ const FREE_SHIPPING_FROM = 500;
         });
       }
       if (ppBarMeta) ppBarMeta.textContent = [ppAddBtn.dataset.variant, size].filter(Boolean).join(' · ');
-      if (ppWa) ppWa.href = ppWaHref();
+      codSync();
     };
     const ppNeedSize = () => {
       if (!ppSizeErr) return;
@@ -1297,19 +1613,39 @@ const FREE_SHIPPING_FROM = 500;
     }));
     ppQty?.addEventListener('input', ppSync);
     ppQty?.addEventListener('change', () => { ppQty.value = ppQtyVal(); ppSync(); });
-    ppWa?.addEventListener('click', (e) => {
-      if (ppBuy?.hasAttribute('data-need-size') && !ppSize()) { e.preventDefault(); ppNeedSize(); return; }
-      ppWa.href = ppWaHref(); // promo may have changed in the cart
-    });
     ppSync();
+    if (ppCod && ppAddBtn) {
+      ppCod.addEventListener('click', (e) => { if (e.target.closest('#codPick')) ppNeedSize(); });
+      codForm(ppCod, {
+        getOrder: () => {
+          const d = ppAddBtn.dataset;
+          const size = ppSize();
+          if (ppBuy?.hasAttribute('data-need-size') && !size) { ppNeedSize(); return { blocked: 'Choisissez une taille (en haut du formulaire) pour continuer.' }; }
+          const qty = ppQtyVal();
+          const id = size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id;
+          return {
+            source: 'fiche produit',
+            sub: qty * (+d.price || 0),
+            items: [{ id, name: d.name, colour: d.variant || '', size, qty, unitPrice: +d.price || 0, lineTotal: qty * (+d.price || 0) }],
+          };
+        },
+        onSuccess: () => { if (ppQty) ppQty.value = 1; ppSync(); },
+      });
+    }
 
-    // ---- sticky add-to-cart bar (mobile): shown once the buy box's button has scrolled away ----
+    // ---- sticky "Commander" bar (mobile): shown once the buy box's button has scrolled away,
+    // hidden while the order form itself is on screen; it scrolls to the form ----
     const ppBar = document.getElementById('ppBar');
+    document.getElementById('ppBarGo')?.addEventListener('click', () => {
+      if (!ppCod) return;
+      smoothTo(ppCod, { block: 'start' });
+      $c('codTitle')?.focus({ preventScroll: true });
+    });
     if (ppBar && ppAddBtn && 'IntersectionObserver' in window) {
       const footer = document.querySelector('.site-footer');
-      let ppPast = false, ppAtFooter = false;
+      let ppPast = false, ppAtFooter = false, ppCodIn = false;
       const ppBarSet = () => {
-        const on = ppPast && !ppAtFooter;
+        const on = ppPast && !ppAtFooter && !ppCodIn;
         ppBar.classList.toggle('is-on', on);
         if (on) ppBar.removeAttribute('inert'); else ppBar.setAttribute('inert', '');
       };
@@ -1318,6 +1654,7 @@ const FREE_SHIPPING_FROM = 500;
         ppBarSet();
       }).observe(ppAddBtn);
       if (footer) new IntersectionObserver(([en]) => { ppAtFooter = en.isIntersecting; ppBarSet(); }).observe(footer);
+      if (ppCod) new IntersectionObserver(([en]) => { ppCodIn = en.isIntersecting; ppBarSet(); }).observe(ppCod);
       // an instant jump (End key, a link, scrollTo) can skip right past the button without the
       // observer firing: re-check on scroll, once per frame
       let ppTick = 0;
@@ -1328,7 +1665,9 @@ const FREE_SHIPPING_FROM = 500;
           const r = ppAddBtn.getBoundingClientRect();
           const past = r.bottom <= 0;
           const atFooter = !!footer && footer.getBoundingClientRect().top < window.innerHeight;
-          if (past !== ppPast || atFooter !== ppAtFooter) { ppPast = past; ppAtFooter = atFooter; ppBarSet(); }
+          const cr = ppCod ? ppCod.getBoundingClientRect() : null;
+          const codIn = !!cr && cr.top < window.innerHeight && cr.bottom > 0;
+          if (past !== ppPast || atFooter !== ppAtFooter || codIn !== ppCodIn) { ppPast = past; ppAtFooter = atFooter; ppCodIn = codIn; ppBarSet(); }
         });
       }, { passive: true });
       ppBarSet();
