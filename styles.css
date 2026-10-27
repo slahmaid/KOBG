@@ -125,7 +125,10 @@ ul { list-style: none; }
 .nav-num, .nav-promo { display: none; }   /* mobile menu only */
 
 .nav-logo, .bar-logo { display: flex; align-items: center; height: 100%; }
-.nav-logo img, .bar-logo img { height: 72%; width: auto; max-height: 44px; display: block; }
+/* A length, not a % of the bar: Safari sizes the logo's grid column before it resolves % heights,
+   which left the box out of the logo's proportions. aspect-ratio + contain keep the mark whole in any box. */
+.nav-logo img, .bar-logo img { height: min(44px, calc(var(--header-h) * .72)); width: auto; aspect-ratio: 1798 / 890; object-fit: contain; display: block; flex: none; }
+img[src*="kobg-mark"] { object-fit: contain; }
 .bar-logo { display: none; }
 
 /* desktop: no burger, the bar takes the full width */
@@ -976,7 +979,7 @@ ul { list-style: none; }
   .burger { display: grid; }
   .bar { margin-left: calc(var(--header-h) * -.5); }
   .bar-logo { display: flex; }
-  .bar-logo img { height: 74%; max-height: 40px; }
+  .bar-logo img { height: min(40px, calc(var(--header-h) * .74)); }
   .nav .nav-logo { display: none; }
   .search, .cart-btn { height: calc(var(--header-h) - var(--g) * 1.3); }
   .search { padding: 0 .85em; }
@@ -2401,22 +2404,6 @@ body.cart-open { overflow: hidden; }
   max-width: 1100px; margin: 0 auto; padding: var(--lg);
   display: grid; gap: var(--lg);
 }
-.legal-top {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 14px clamp(16px, 2.4vw, 30px);
-  background: var(--panel); border-radius: var(--lr);
-}
-.legal-logo img { display: block; width: clamp(84px, 10vw, 120px); height: auto; }
-.legal-back {
-  display: inline-flex; align-items: center; gap: .5em;
-  height: 40px; padding: 0 1.1em 0 .9em; border-radius: 99px;
-  background: var(--black); color: var(--white);
-  font-size: 13px; font-weight: 800; font-variation-settings: "wdth" 84;
-  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
-  transition: background .25s ease;
-}
-.legal-back svg { width: 18px; height: 18px; }
-.legal-back:hover { background: var(--accent); }
 .legal-hero {
   position: relative; overflow: hidden;
   padding: clamp(22px, 4vw, 52px) clamp(18px, 3.4vw, 46px);
@@ -2478,23 +2465,24 @@ body.cart-open { overflow: hidden; }
 .legal-toc ol { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 26px; }
 .legal-toc a { font-weight: 800; text-decoration: none; text-transform: uppercase; font-size: 13.5px; letter-spacing: .03em; }
 .legal-toc a:hover { color: var(--accent); }
-.legal-foot {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px;
-  padding: 16px clamp(16px, 2.4vw, 30px);
-  background: var(--black); color: rgba(255,255,255,.66); border-radius: var(--lr);
-  font-size: 12.5px; font-weight: 700;
-}
-.legal-foot p { margin: 0; }
-.legal-foot a { color: var(--white); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 @media (max-width: 560px) {
-  .legal-back { height: 36px; font-size: 11.5px; padding: 0 .9em 0 .7em; }
   .legal-body { font-size: 15px; }
 }
 .legal-body ul { list-style: disc; }
 .legal-body ol { list-style: decimal; }
 .legal-toc ol { list-style: none; padding: 0; counter-reset: toc; }
-.legal-toc li { margin: 0; counter-increment: toc; }
-.legal-toc li::before { content: "0" counter(toc) " "; color: var(--accent); font-weight: 900; }
+.legal-toc li { display: flex; align-items: baseline; gap: .45em; margin: 0; counter-increment: toc; }
+.legal-toc li::before { content: counter(toc, decimal-leading-zero); flex: none; color: var(--accent); font-weight: 900; }
+.legal-text { min-width: 0; max-width: 46em; }
+.legal-text > h2:first-child, .legal-text > section:first-child > h2:first-child { margin-top: 0; }
+/* desktop: sommaire in its own sticky column, text beside it (one grey tile, like the FAQ) */
+@media (min-width: 1100px) {
+  .legal-body { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); column-gap: clamp(32px, 4vw, 72px); align-items: start; }
+  .legal-body > .legal-toc { position: sticky; top: calc(var(--header-h) + var(--g) * 3); margin: 0; max-height: calc(100vh - var(--header-h) - var(--g) * 6); overflow-y: auto; }
+  .legal-toc ol { flex-direction: column; flex-wrap: nowrap; gap: 10px; }
+  .legal-toc a { display: inline; font-size: 13px; line-height: 1.3; }
+  .legal-toc li { font-size: 13px; }
+}
 @media (max-width: 560px) {
   .faq-table { font-size: 13px; }
   .faq-table th, .faq-table td { padding: 7px 5px; }
@@ -2580,25 +2568,6 @@ html { scroll-padding-top: calc(var(--header-h-s) + var(--g) * 2 + 10px); }
   .header::before { transition: opacity .3s ease; }
 }
 
-/* legal pages: their top bar sticks too (CSS only, they load no script) */
-.legal-top {
-  position: sticky; top: var(--lg); z-index: 30;
-  min-height: 68px;
-}
-.legal-top::before {
-  content: ""; position: absolute; z-index: -2; pointer-events: none;
-  left: calc(var(--lg) * -1); right: calc(var(--lg) * -1);
-  top: calc(var(--lg) * -1 - 1px); bottom: calc(var(--lg) * -1);
-  background: rgba(255, 255, 255, .82);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  box-shadow: 0 10px 28px -18px rgba(0, 0, 0, .45);
-}
-.legal-top { isolation: isolate; background: none; }
-.legal-top::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--panel); border-radius: var(--lr); pointer-events: none; }
-/* (legal pages now use the site header: the global scroll-padding applies) */
-
-
 /* =========================================================
    Menu (task 21): Gants (+ submenu) / Protecteur corporel / À propos / Contact
    ========================================================= */
@@ -2669,7 +2638,8 @@ html { scroll-padding-top: calc(var(--header-h-s) + var(--g) * 2 + 10px); }
    Sub pages (gants, à propos, contact, legal): fixed header + spacer
    ========================================================= */
 .subpage { padding-top: calc(var(--header-h) + var(--g) * 2); }
-.legal-page.subpage .legal-wrap { padding-top: 0; }
+/* legal pages share the sub-page geometry: full width, --g gaps, --r corners, site footer below */
+.legal-page.subpage .legal-wrap { --lg: var(--g); --lr: var(--r); max-width: none; padding: 0 var(--g) calc(var(--g) * 2); }
 .sub-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g); padding: 0 var(--g) calc(var(--g) * 2); }
 .subpage .site-footer { margin-top: 0; }
 
@@ -2717,7 +2687,24 @@ html { scroll-padding-top: calc(var(--header-h-s) + var(--g) * 2 + 10px); }
 .sub-hero--dark .crumbs ol { color: rgba(255,255,255,.55); }
 .sub-hero--dark .crumbs [aria-current], .sub-hero--dark .crumbs a:hover { color: var(--white); }
 .sub-hero--dark .sub-lead { color: rgba(255,255,255,.72); }
+.sub-hero--dark .promo-tag { background: var(--white); color: var(--black); }   /* white tag on black, like the gloves banner */
 .sub-hero--solo { grid-template-columns: minmax(0, 1fr); min-height: clamp(240px, 30vw, 400px); }
+
+/* outlined "KO" watermark — the mark of the footer, the gloves banner and the legal hero — on the
+   full-width dark heroes, the dark "next steps" tile (merci) and the product description tile */
+.sub-hero--dark.sub-hero--solo .sub-hero-txt, .merci-next { position: relative; overflow: hidden; isolation: isolate; }
+.sub-hero--dark.sub-hero--solo .sub-hero-txt::after, .merci-next::after, .pp-desc::after {
+  content: "KO"; position: absolute; right: -.06em; bottom: -.26em; z-index: -1;
+  font-size: clamp(140px, 22vw, 340px); font-weight: 900; font-variation-settings: "wdth" 70; line-height: 1;
+  color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.16); pointer-events: none;
+}
+.sub-hero--dark.nf-hero .sub-hero-txt::after { content: "404"; }
+.merci-next::after { font-size: clamp(140px, 16vw, 260px); }
+.pp-desc::after { display: none; font-size: clamp(150px, 15vw, 260px); -webkit-text-stroke-color: #bdbdbd; }
+@media (min-width: 700px) {        /* two columns: the description tile stretches beside the specs */
+  .pp-desc { position: relative; overflow: hidden; isolation: isolate; }
+  .pp-desc::after { display: block; }
+}
 
 /* gants: filters + grid */
 .shop-bar {
@@ -3858,13 +3845,13 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
   box-shadow: inset 0 0 0 2px #e0b74a; font-size: 14px; font-weight: 700; line-height: 1.45;
 }
 .merci-test[hidden] { display: none; }
-.merci-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g); align-items: start; }
+.merci-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g); }
 .merci-recap[hidden] { display: none; }
 .merci-recap, .merci-next { align-items: stretch; }
 .merci-items { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .merci-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 14px; border-radius: calc(var(--r) * .6); background: var(--white); }
 .merci-item-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
-.merci-item-name strong { font-size: 15px; line-height: 1.2; }
+.merci-item-name strong { font-size: 17px; font-weight: 800; font-variation-settings: "wdth" 80; text-transform: uppercase; line-height: 1.02; }   /* = .cart-item-name */
 .merci-item-name small { font-size: 13px; font-weight: 700; color: #666; }
 .merci-item-qty { grid-column: 1; font-size: 13px; font-weight: 700; color: #555; }
 .merci-item-total { grid-column: 2; grid-row: 1 / span 2; align-self: center; white-space: nowrap; }
