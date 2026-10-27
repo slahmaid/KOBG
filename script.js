@@ -26,6 +26,100 @@ const FREE_SHIPPING_FROM = 500;
   const mobile = window.matchMedia('(max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5)');
   const isMenuOpen = () => document.body.classList.contains('menu-open');
 
+  // ---- smooth (inertial) page scrolling: Lenis, vendored in assets/vendor ----
+  // Wheel / trackpad only; phones keep their native touch scrolling. Off for reduced motion
+  // (then the CSS scroll-behavior handles anchor jumps). Sideways gestures over a slider,
+  // and any gesture inside the menu, cart or search list, stay native.
+  let lenis = null;
+  const lenisEase = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));   // expo out
+  const lenisSrc = new URL('assets/vendor/lenis.min.js', document.currentScript?.src || location.href).href;
+  const lenisMark = () => {
+    document.querySelectorAll('.carousel, .pp-track, .pp-thumbs, .chips, .features-grid, .faq-table-wrap')
+      .forEach((el) => el.setAttribute('data-lenis-prevent-horizontal', ''));
+    document.querySelectorAll('#mainNav, #cartDrawer, .cart-list, .search-panel')
+      .forEach((el) => el.setAttribute('data-lenis-prevent', ''));
+  };
+  const lenisSync = () => {
+    if (!lenis) return;
+    if (document.body.classList.contains('menu-open') || document.body.classList.contains('cart-open')) lenis.stop();
+    else lenis.start();
+  };
+  function startLenis() {
+    if (lenis || reduceMotion.matches || typeof window.Lenis !== 'function') return;
+    lenisMark();
+    lenis = new window.Lenis({ lerp: .1, smoothWheel: true, syncTouch: false, wheelMultiplier: 1, autoRaf: true, anchors: false,
+      // shift + wheel means "sideways": leave it to the browser (and the slider under it)
+      virtualScroll: (d) => !(d.event.shiftKey && d.event.type === 'wheel') });
+    window.kobgLenis = lenis;
+    lenisSync();
+  }
+  if (!reduceMotion.matches && 'IntersectionObserver' in window) {
+    const ls = document.createElement('script');
+    ls.src = lenisSrc;
+    ls.async = true;
+    ls.onload = startLenis;
+    document.head.appendChild(ls);
+  }
+  reduceMotion.addEventListener?.('change', (e) => {
+    if (e.matches && lenis) { lenis.destroy(); lenis = null; window.kobgLenis = null; }
+    else if (!e.matches) startLenis();
+  });
+  // one way to scroll the page to something: eased by Lenis when it runs, native otherwise.
+  // block: 'start' lands below the sticky header (html scroll-padding-top), 'center' centres it.
+  let smoothAsked = 0;
+  function smoothTop(el, block) {
+    const r = el.getBoundingClientRect();
+    if (block === 'center') return window.scrollY + r.top - (window.innerHeight - r.height) / 2;
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    return window.scrollY + r.top - pad - margin;
+  }
+  function smoothTo(target, { block = 'start', immediate = false } = {}) {
+    smoothAsked += 1;
+    const ask = smoothAsked;
+    const el = typeof target === 'number' ? null : target;
+    if (typeof target !== 'number' && !el) return;
+    const top = Math.max(0, el ? smoothTop(el, block) : target);
+    if (lenis) {
+      // content can move while the page glides (an FAQ answer swapping, lazy images
+      // loading above the target): re-aim once or twice at the end if it drifted
+      let tries = 2;
+      const go = (y, duration) => lenis.scrollTo(y, {
+        immediate, duration, easing: lenisEase, force: true,
+        onComplete: () => {
+          if (!el || immediate || !lenis || ask !== smoothAsked || tries-- <= 0) return;
+          const again = Math.max(0, smoothTop(el, block));
+          if (Math.abs(again - window.scrollY) > 2) go(again, 0.45);
+        },
+      });
+      go(top, 1.1);
+    } else {
+      window.scrollTo({ top, behavior: immediate || reduceMotion.matches ? 'instant' : 'smooth' });
+    }
+  }
+  // same-page anchors (#faq-tailles, gants.html#gants-de-sac from gants.html, breadcrumb, footer...)
+  document.addEventListener('click', (e) => {
+    if (!lenis || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href*="#"]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+    const url = new URL(a.href, location.href);
+    const page = (path) => path.replace(/\/index\.html$/, '/');
+    if (url.origin !== location.origin || page(url.pathname) !== page(location.pathname) || url.search !== location.search || url.hash.length < 2) return;
+    let id = url.hash.slice(1);
+    try { id = decodeURIComponent(id); } catch (err) { /* keep raw */ }
+    e.preventDefault();
+    const oldURL = location.href;
+    if (url.hash !== location.hash) history.pushState(null, '', url.hash);
+    // the page's own hash handlers run first (FAQ opens the answer, shop filters a group,
+    // a product card gets highlighted); scroll a frame later, once the layout has settled,
+    // unless one of them already scrolled to its own target
+    const asked = smoothAsked;
+    if (oldURL !== location.href) window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL: location.href }));
+    requestAnimationFrame(() => {
+      if (smoothAsked === asked) smoothTo(document.getElementById(id));
+    });
+  });
+
   // Placeholder links (href="#") stay where they are instead of scrolling to the top
   document.addEventListener('click', (e) => {
     if (e.target.closest('a[href="#"]')) e.preventDefault();
@@ -51,6 +145,7 @@ const FREE_SHIPPING_FROM = 500;
     burger.setAttribute('aria-expanded', String(open));
     burger.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
     document.body.classList.toggle('menu-open', open);
+    lenisSync();
     behindMenu.forEach((el) => { el.inert = open; });
     syncVideo();
   }
@@ -457,6 +552,7 @@ const FREE_SHIPPING_FROM = 500;
       lastFocus = document.activeElement;
     }
     document.body.classList.toggle('cart-open', open);
+    lenisSync();
     drawer.inert = !open;
     cartBtn.setAttribute('aria-expanded', String(open));
     behindCart.forEach((el) => { el.inert = open; });
@@ -730,7 +826,7 @@ const FREE_SHIPPING_FROM = 500;
     a.href = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
   });
   document.getElementById('backToTop')?.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    smoothTo(0);
     // keyboard users land back at the top too (first visible logo link)
     [...document.querySelectorAll('.bar-logo, .nav-logo')].find((l) => l.offsetParent && !l.closest('[inert]'))?.focus({ preventScroll: true });
   });
@@ -763,7 +859,7 @@ const FREE_SHIPPING_FROM = 500;
       });
       count.textContent = `${n} produit${n > 1 ? 's' : ''}`;
       if (scroll && isGroup) {
-        document.getElementById(f).scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+        smoothTo(document.getElementById(f));
       }
     }
     function applySort() {
@@ -892,6 +988,7 @@ const FREE_SHIPPING_FROM = 500;
     const MAX_ROWS = 6;
     const panel = document.createElement('div');
     panel.className = 'search-panel';
+    panel.setAttribute('data-lenis-prevent', '');
     panel.hidden = true;
     panel.innerHTML = '<ul class="search-list" id="searchList" role="listbox" aria-label="Suggestions de produits"></ul><div class="search-none" hidden></div>';
     const live = document.createElement('p');
@@ -1062,7 +1159,7 @@ const FREE_SHIPPING_FROM = 500;
     const card = btn?.closest('.product');
     if (!card || card.hidden) return;
     requestAnimationFrame(() => {
-      card.scrollIntoView({ block: 'center', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+      smoothTo(card, { block: 'center' });
       card.classList.remove('is-found');
       void card.offsetWidth; // restart the highlight
       card.classList.add('is-found');
@@ -1189,7 +1286,7 @@ const FREE_SHIPPING_FROM = 500;
       ppSizeBox?.classList.remove('is-error');
       void ppSizeBox?.offsetWidth; // replay the shake
       ppSizeBox?.classList.add('is-error');
-      ppSizeBox?.scrollIntoView({ block: 'center', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+      if (ppSizeBox) smoothTo(ppSizeBox, { block: 'center' });
       document.querySelector('.pp-size-input')?.focus({ preventScroll: true });
     };
     ppBuy?.addEventListener('pp:needsize', ppNeedSize);
@@ -1221,6 +1318,19 @@ const FREE_SHIPPING_FROM = 500;
         ppBarSet();
       }).observe(ppAddBtn);
       if (footer) new IntersectionObserver(([en]) => { ppAtFooter = en.isIntersecting; ppBarSet(); }).observe(footer);
+      // an instant jump (End key, a link, scrollTo) can skip right past the button without the
+      // observer firing: re-check on scroll, once per frame
+      let ppTick = 0;
+      window.addEventListener('scroll', () => {
+        if (ppTick) return;
+        ppTick = requestAnimationFrame(() => {
+          ppTick = 0;
+          const r = ppAddBtn.getBoundingClientRect();
+          const past = r.bottom <= 0;
+          const atFooter = !!footer && footer.getBoundingClientRect().top < window.innerHeight;
+          if (past !== ppPast || atFooter !== ppAtFooter) { ppPast = past; ppAtFooter = atFooter; ppBarSet(); }
+        });
+      }, { passive: true });
       ppBarSet();
     }
   }

@@ -3642,3 +3642,25 @@ a.pp-coll:hover .promo-dot, a.pp-coll:hover .promo-dot::after { background: var(
 }
 .pp-slide { position: relative; }
 .pp-slide img { position: absolute; inset: 0; }
+
+/* Sliders scroll sideways only. overflow-x:auto silently makes overflow-y auto
+   too, so while the cards' entrance animation (rise: 28px down) poked out of
+   the bottom of a track, the track became vertically scrollable and caught the
+   wheel / finger: the page stopped until the animation ended. A track can't
+   take a vertical scroll now, so up/down always goes straight to the page. */
+.carousel, .pp-track, .pp-thumbs, .faq-table-wrap { overflow-y: hidden; overscroll-behavior-y: auto; }
+@media (max-width: 599px) {
+  .features-grid { overflow-y: hidden; overscroll-behavior-y: auto; }
+}
+@media (max-width: 560px) {
+  .chips { overflow-y: hidden; overscroll-behavior-y: auto; }
+}
+
+/* Smooth scrolling (Lenis, assets/vendor/lenis.min.js; required CSS from lenis 1.3.27).
+   Lenis eases the page itself, so the CSS smooth anchor scroll must not stack on top. */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent], .lenis [data-lenis-prevent-wheel], .lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
