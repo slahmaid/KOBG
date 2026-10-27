@@ -1172,145 +1172,139 @@
     </ul>
   </section>
 
-  <!-- ============ REVIEWS: customer testimonials slider (same carousel as the product sections) ============ -->
-  <!-- PLACEHOLDER REVIEWS: the 8 reviews below (names, cities, ratings, text) are sample copy, not real customer reviews.
-       Replace them with genuine reviews before going live. Photos review-1..8.jpg are generated illustrations (no real customers). -->
-  <section class="products products--reviews" id="avis" aria-labelledby="reviewsTitle">
+  <!-- ============ GUIDE D'ACHAT: one card per Rival model (same carousel as the product sections) ============ -->
+  <!-- Photos: close-ups from each product's own gallery (assets/guide, 640 px copies of assets/p/g/*); text: facts from
+       each product page. Real customer reviews can come back here later, with the customers' consent to publish. -->
+  <section class="products products--guide" id="guide" aria-labelledby="guideTitle">
     <div class="products-head">
       <div class="products-title">
-        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Avis clients</p>
-        <h2 class="products-h" id="reviewsTitle">Ils nous font confiance</h2>
-        <p class="products-sub">Ce que disent nos boxeurs, de Tanger à Agadir</p>
+        <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Guide d’achat</p>
+        <h2 class="products-h" id="guideTitle">Quel Rival pour vous&nbsp;?</h2>
+        <p class="products-sub">Sac, sparring ou coaching&nbsp;: 6 modèles, chacun pour un usage précis</p>
       </div>
       <div class="products-ctrl">
-        <button class="carousel-btn" id="reviewPrev" data-dir="prev" aria-label="Avis précédents" aria-controls="reviewTrack">
+        <button class="carousel-btn" id="guidePrev" data-dir="prev" aria-label="Modèles précédents" aria-controls="guideTrack">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="carousel-btn" id="reviewNext" data-dir="next" aria-label="Avis suivants" aria-controls="reviewTrack">
+        <button class="carousel-btn" id="guideNext" data-dir="next" aria-label="Modèles suivants" aria-controls="guideTrack">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
 
-    <ul class="carousel" id="reviewTrack" tabindex="0" aria-label="Avis clients, 8 avis">
-      <li class="review" style="--i:0">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-1.jpg" alt="Gants de sac noirs Knockout frappant un sac de frappe" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Yassine B.</span> <span class="review-city">Casablanca</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Je tape au sac 4 fois par semaine et les gants tiennent super bien. Le poignet est bien maintenu, aucune douleur après la séance. »</p></blockquote>
-          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag · Noir</a></p>
+    <ul class="carousel" id="guideTrack" tabindex="0" aria-label="Guide d’achat, 6 modèles Rival">
+      <li class="guide" style="--i:0">
+        <article class="guide-card">
+          <div class="guide-media">
+            <img src="assets/guide/rb10-intelli-shock.jpg" alt="Gros plan du gant de sac Rival RB10 Intelli-Shock noir et rouge" width="640" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Sac &amp; pao</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Gants de sac · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="gants-de-sac-rival-rb10-intelli-shock-noir-rouge.html">RB10 Intelli-Shock</a></h3>
+            <p class="guide-line">Le gant de sac haut de gamme de Rival, pour frapper fort séance après séance.</p>
+            <ul class="guide-facts">
+              <li>Compartiment Perfect Fit&nbsp;: le poing se ferme naturellement</li>
+              <li>Manchette inclinée à 15° pour aligner le poignet</li>
+              <li>3&nbsp;cm de mousse à cellules fermées et latex</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">S à XL · 6 coloris</span><strong>2&nbsp;390&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
-      <li class="review" style="--i:1">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-2.jpg" alt="Plastron Knockout Pro rouge déballé sur un lit à côté de son carton" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Salma E.</span> <span class="review-city">Rabat</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Commande passée sur le site, livrée en deux jours. Le plastron est léger et les sangles se règlent facilement. »</p></blockquote>
-          <p class="review-product"><a href="#plastrons">Plastron Knockout Pro · Rouge</a></p>
+      <li class="guide" style="--i:1">
+        <article class="guide-card">
+          <div class="guide-media">
+            <img src="assets/guide/rb11-evolution.jpg" alt="Gros plan de la fermeture Wrist Lock 2 du gant de sac Rival RB11 Evolution noir" width="640" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Sac &amp; pao</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Gants de sac · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="gants-de-sac-rival-rb11-evolution-noir.html">RB11 Evolution</a></h3>
+            <p class="guide-line">Le gant de sac polyvalent, pour le sac de frappe et les mitaines. Pas pour le sparring.</p>
+            <ul class="guide-facts">
+              <li>Fermeture V-Strap Wrist Lock&nbsp;2</li>
+              <li>3&nbsp;cm de mousse à cellules fermées et latex</li>
+              <li>Ventilation Air Flow Control</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">M à XL · 6 coloris</span><strong>1&nbsp;750&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
-      <li class="review" style="--i:2">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-3.jpg" alt="Gants de sparring rouges Knockout posés sur un banc de salle de boxe" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Mehdi A.</span> <span class="review-city">Marrakech</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Très bon rembourrage pour le sparring, mes partenaires sentent la différence. Finitions propres, je recommande. »</p></blockquote>
-          <p class="review-product"><a href="#gants-de-sparring">Gants de sparring Knockout Pro · Rouge</a></p>
+      <li class="guide" style="--i:2">
+        <article class="guide-card">
+          <div class="guide-media">
+            <img src="assets/guide/rs11v-evolution.jpg" alt="Gros plan du poignet du gant de sparring Rival RS11V Evolution noir" width="640" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Sparring</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Gants de sparring · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="gants-de-sparring-rival-rs11v-evolution-noir.html">RS11V Evolution</a></h3>
+            <p class="guide-line">Le gant de sparring à scratch, du 12 au 18&nbsp;oz, pour protéger vos mains et votre partenaire.</p>
+            <ul class="guide-facts">
+              <li>50&nbsp;mm de rembourrage pour le sparring</li>
+              <li>Fermeture V-Strap Wrist Lock&nbsp;2</li>
+              <li>Microfibre Super-Rich très résistante</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">12 à 18&nbsp;oz · 6 coloris</span><strong>2&nbsp;005&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
-      <li class="review" style="--i:3">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-4.jpg" alt="Casque de boxe Knockout Pro noir posé sur un tapis de salle" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Imane K.</span> <span class="review-city">Tanger</span></p>
-              <p class="review-stars" role="img" aria-label="4 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Casque confortable et bien protégé au niveau des joues. Il m’a fallu quelques séances pour le faire à ma tête. »</p></blockquote>
-          <p class="review-product"><a href="#best-sellers">Casque Knockout Pro · Noir</a></p>
+      <li class="guide" style="--i:3">
+        <article class="guide-card">
+          <div class="guide-media">
+            <img src="assets/guide/rs100-professional.jpg" alt="Gros plan des lacets et du marquage True-Fist du gant Rival RS100 Professional blanc et or" width="640" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Sparring</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Gants de sparring · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="gants-de-sparring-rival-rs100-professional-blanc.html">RS100 Professional</a></h3>
+            <p class="guide-line">Le gant de sparring à lacets, pour un maintien du poignet de niveau professionnel.</p>
+            <ul class="guide-facts">
+              <li>Lacets inclinés Angled Lace Track</li>
+              <li>Construction True-Fist pour un poing naturel</li>
+              <li>Mousse multicouche haute performance</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">14 et 16&nbsp;oz · 5 coloris</span><strong>2&nbsp;229&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
-      <li class="review" style="--i:4">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-5.jpg" alt="Boxeur de dos portant des gants Knockout anthracite devant un sac" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Hamza R.</span> <span class="review-city">Fès</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« La couleur anthracite est encore plus belle en vrai. Livraison gratuite et paiement à la livraison, rien à redire. »</p></blockquote>
-          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag Pro · Anthracite</a></p>
+      <li class="guide" style="--i:4">
+        <article class="guide-card">
+          <div class="guide-media">
+            <img src="assets/guide/rs1-pro-20e.jpg" alt="Gros plan du badge 20e anniversaire du gant de sparring Rival RS1 Pro rouge" width="640" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Édition limitée</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Gants de sparring · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="gants-de-sparring-rs1-pro-20e-anniversaire-rouge.html">RS1 Pro 20e anniversaire</a></h3>
+            <p class="guide-line">L’édition limitée des 20 ans de Rival, en cuir pleine fleur et à lacets.</p>
+            <ul class="guide-facts">
+              <li>Cuir pleine fleur de 1,0&nbsp;mm</li>
+              <li>Plus de 40&nbsp;mm de mousse multicouche haute densité</li>
+              <li>Laçage Ergo Lace Track</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">14 à 18&nbsp;oz · 2 coloris</span><strong>2&nbsp;449&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
-      <li class="review" style="--i:5">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-6.jpg" alt="Plastron Knockout Elite bleu suspendu dans un vestiaire" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Omar T.</span> <span class="review-city">Agadir</span></p>
-              <p class="review-stars" role="img" aria-label="4 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Bonne protection pour les entraînements de mon club. J’aurais aimé un peu plus de choix de tailles, mais la qualité est là. »</p></blockquote>
-          <p class="review-product"><a href="#plastrons">Plastron Knockout Elite · Bleu</a></p>
-        </article>
-      </li>
-      <li class="review" style="--i:6">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-7.jpg" alt="Boxeuse de dos appuyée aux cordes avec des gants Knockout bleus" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Nadia M.</span> <span class="review-city">Meknès</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Enfin des gants qui tiennent la distance sur des rounds longs. Le bleu est superbe et le cuir ne bouge pas. »</p></blockquote>
-          <p class="review-product"><a href="#gants-de-sparring">Gants de sparring Knockout Elite · Bleu</a></p>
-        </article>
-      </li>
-      <li class="review" style="--i:7">
-        <article class="review-card">
-          <header class="review-head">
-            <div class="review-media">
-              <img src="assets/review-8.jpg" alt="Gants Knockout Bag Gold noir et or déballés sur une table" width="200" height="200" loading="lazy" decoding="async" draggable="false">
-            </div>
-            <div class="review-id">
-              <p class="review-who"><span class="review-name">Karim L.</span> <span class="review-city">Oujda</span></p>
-              <p class="review-stars" role="img" aria-label="5 sur 5"><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg class="is-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></p>
-            </div>
-          </header>
-          <blockquote class="review-txt"><p>« Offerts à mon frère pour son anniversaire, il ne les quitte plus. Emballage soigné et livraison rapide jusqu’à Oujda. »</p></blockquote>
-          <p class="review-product"><a href="#gants-de-sac">Gants de sac Knockout Bag Gold · Noir &amp; Or</a></p>
+      <li class="guide" style="--i:5">
+        <article class="guide-card">
+          <div class="guide-media guide-media--contain">
+            <img src="assets/guide/body-shield.jpg" alt="Protecteur corporel Rival Body Shield noir" width="427" height="640" loading="lazy" decoding="async" draggable="false">
+            <span class="tag guide-use">Coach</span>
+          </div>
+          <div class="guide-info">
+            <p class="product-cat">Protecteur corporel · Rival</p>
+            <h3 class="guide-name"><a class="guide-link" href="protecteur-corporel-rival-noir.html">Body Shield</a></h3>
+            <p class="guide-line">Le plastron des entraîneurs, pour tenir les frappes au corps pendant les mitaines.</p>
+            <ul class="guide-facts">
+              <li>Plaque de renfort en plastique de 2,5&nbsp;mm</li>
+              <li>Sangles réglables aux épaules, au dos et sur les côtés</li>
+              <li>Poids réparti sur les épaules</li>
+            </ul>
+            <p class="guide-foot"><span class="guide-meta">Réglable · 6 coloris</span><strong>4&nbsp;559&nbsp;DH</strong></p>
+          </div>
         </article>
       </li>
     </ul>
@@ -1467,7 +1461,7 @@
             <ul>
               <li><a href="a-propos.html">Qui sommes-nous</a></li>
               <li><a href="#pourquoi-knockout">Innovation Rival</a></li>
-              <li><a href="#avis">Avis clients</a></li>
+              <li><a href="#guide">Guide d’achat</a></li>
               <li><a href="#faq-authenticite">Distributeur officiel Rival</a></li>
             </ul>
           </div>

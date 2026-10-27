@@ -1936,77 +1936,77 @@ body.cart-open { overflow: hidden; }
 }
 
 /* ---------------------------------------------------------
-   Reviews (#avis): compact testimonial cards in the shared product carousel.
-   Header: small square thumbnail beside name · city and stars; then quote and product.
+   Guide d'achat (#guide): one card per Rival model in the shared product carousel.
+   Close-up from the product's own gallery, what it is for, three facts from its page.
    --------------------------------------------------------- */
-.products--reviews { --per: 1.3; }
-@media (min-width: 600px)  { .products--reviews { --per: 2.5; } }
-@media (min-width: 1000px) { .products--reviews { --per: 4.6; } }
-@media (min-width: 1680px) { .products--reviews { --per: 6.2; } }
-@media (min-width: 2200px) { .products--reviews { --per: 7.4; } }
-.review {
+.products--guide { --per: 1.25; }
+@media (min-width: 600px)  { .products--guide { --per: 2.3; } }
+@media (min-width: 1000px) { .products--guide { --per: 3.6; } }
+@media (min-width: 1680px) { .products--guide { --per: 4.6; } }
+@media (min-width: 2200px) { .products--guide { --per: 6; } }
+.guide {
   display: flex;
   min-width: 0;
   scroll-snap-align: start;
 }
-.review-card {
+.guide-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   width: 100%;
-  padding: 16px;
+  padding: calc(var(--g) * .9);
   background: var(--panel);
   border-radius: var(--r);
-}
-.review-head { display: flex; align-items: center; gap: 12px; }
-.review-media {
-  flex: none;
-  width: 72px;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
   overflow: hidden;
-  background: var(--panel-2);
 }
-.review-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.review-id { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.review-who {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.25;
+.guide-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: calc(var(--r) - var(--g) * .45);
+  overflow: hidden;
+  background: var(--white);
+}
+.guide-media img { width: 100%; height: 100%; object-fit: cover; }
+.guide-media--contain { background: #ebeae6; }   /* = the edges of the Body Shield photo: no box-in-box */
+.guide-media--contain img { object-fit: contain; }
+.guide-use { position: absolute; top: 12px; left: 12px; }
+.guide-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 6px 4px;
+}
+.guide-name {
+  font-size: clamp(19px, 1.7vw, 26px);
+  font-weight: 800;
+  font-variation-settings: "wdth" 80;
   text-transform: uppercase;
-  letter-spacing: .02em;
-  color: rgba(0,0,0,.6);
+  line-height: 1;
+  transition: color .2s ease;
 }
-.review-name, .review-city { display: block; }
-.review-name { font-size: 14px; font-weight: 800; color: var(--black); }
-.review-stars { display: flex; gap: 2px; margin: 0; }
-.review-stars svg { width: 14px; height: 14px; fill: rgba(0,0,0,.16); }
-.review-stars svg.is-on { fill: var(--accent); }
-.review-txt { flex: 1; margin: 0; }
-.review-txt p { margin: 0; font-size: 15px; line-height: 1.42; font-weight: 500; }
-.review-product { margin: 0; font-size: 12px; }
-.review-product a {
-  display: inline-flex;
-  align-items: center;
-  gap: .4em;
-  color: var(--black);
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+.guide-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }   /* whole card opens the product */
+.guide-link:focus-visible { outline: none; }
+.guide-card:has(.guide-link:focus-visible) { outline: 2px solid var(--black); outline-offset: -5px; }
+.guide-line { font-size: 14px; font-weight: 600; line-height: 1.4; color: #333; }
+.guide-facts { display: grid; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 13px; font-weight: 600; line-height: 1.35; color: #444; }
+.guide-facts li { position: relative; padding-left: 16px; }
+.guide-facts li::before { content: ""; position: absolute; left: 1px; top: .42em; width: 6px; height: 6px; border-radius: 1px; background: var(--accent); transform: rotate(45deg); }
+.guide-foot {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-top: auto; padding-top: 12px;
+  border-top: 1px solid #cfcfcf;
 }
-.review-product a::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex: none;
+.guide-meta { font-size: 12px; font-weight: 700; font-variation-settings: "wdth" 86; text-transform: uppercase; letter-spacing: .04em; color: #5c5c5c; }
+.guide-foot strong { font-size: clamp(18px, 1.5vw, 22px); font-weight: 800; font-variation-settings: "wdth" 84; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) {
+  .guide-media img { transition: transform .5s var(--ease); }
+  .guide-card:hover .guide-media img { transform: scale(1.04); }
+  .guide-card:hover .guide-name { color: var(--accent-ink); }
 }
-.review-product a:hover { color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) {
-  .products.will-reveal .review { opacity: 0; }
-  .products.is-in .review { animation: rise .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
+  .products.will-reveal .guide { opacity: 0; }
+  .products.is-in .guide { animation: rise .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
 }
 
 /* ---------------------------------------------------------
@@ -3106,7 +3106,6 @@ a.contact-card--wa:hover { background: var(--accent); filter: brightness(1.06); 
 
   /* hero: CTA is a real 44px target (the promo code chip is display-only; the tab copies) */
   .discover-btn { height: clamp(44px, 5.2vh, 48px); }
-  .review-product a { display: inline-block; padding-block: 15px; margin-block: -15px; }
   .search input { height: 100%; }
   .faq-mail { margin-top: 0; padding: 15px 0; }
 

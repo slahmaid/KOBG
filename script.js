@@ -973,7 +973,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     }
   }
 
-  // Carousels: every .products section (Best-sellers, Gants de sac, Gants de sparring, Plastrons, Avis) gets its own
+  // Carousels: every .products section (Best-sellers, Gants de sac, Gants de sparring, Plastrons, Guide d’achat) gets its own
   // native scroll-snap track (touch and trackpads just work), arrows that step one
   // card, mouse drag and a thin progress bar. Each instance keeps its own state.
   const glide = () => (reduceMotion.matches ? 'auto' : 'smooth');
