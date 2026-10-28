@@ -5,7 +5,7 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | File | What it is |
 |---|---|
 | `order-apps-script.gs` | The order + admin backend (Google Apps Script web app). **Must be deployed — see step 1.** |
-| `test-backend.js` | 46 automated tests for the backend (orders, admin, customer accounts, loyalty points). Run `node _ops/test-backend.js`. |
+| `test-backend.js` | 50 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view). Run `node _ops/test-backend.js`. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
 | `dev-server.js` | Local preview at `http://localhost:8080/KOBG/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
 
@@ -61,6 +61,25 @@ Customers with an account earn **50 points per full 1 500 DH** of delivered purc
 - **Admin:** the order drawer shows a **Fidélité** card (balance, purchases counted, next step, last 25 movements with their reason) and a manual **adjustment** form (+/− points and a mandatory reason, written to the ledger as `ajustement`; the customer only sees "Ajustement par notre équipe"). The totals show "Points fidélité utilisés" and the CSV export has 3 new columns.
 - **Negative balance:** if a returned order's points were already spent, the balance goes below 0 and redeeming is blocked until new purchases (or an adjustment) bring it back.
 - **Changing the rate:** edit `LOYALTY` in `order-apps-script.gs` **and** `LOYALTY` in `script.js` (display only), and the texts in `cgv.html` (article 9 bis) and the product/cart notes. Past ledger rows are not recalculated.
+
+### Clients view in `admin.html` (points per customer)
+
+The admin has two tabs at the top: **Commandes** (unchanged) and **Clients**. The URL `admin.html#clients` opens Clients directly.
+
+**Go-live (on top of the loyalty-points version):**
+
+1. Apps Script → select all → paste the new `order-apps-script.gs` → **Save** (no new tab or column, so `setup` does not need to run again; running it is harmless).
+2. **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL).
+3. Publish `admin.html`, `assets/admin.js` and `assets/admin.css` (section 2). If the site is published before step 2, the Clients tab shows "Vue Clients indisponible : le script Google n’est pas à jour…" and the Commandes tab keeps working.
+
+**What the admin sees:**
+
+- **Summary:** number of accounts, total points owed (sum of positive balances), clients with a balance, delivered purchases counted.
+- **One row per account:** name, e-mail, phone, city, sign-up date, **points balance**, delivered purchases counted, a progress bar towards the next 50 DH ("550 / 1 500 · encore 950 DH"), number of orders (and how many are still active, i.e. not Annulée/Retournée), last order date. Deleted accounts that still have points or orders stay listed, tagged "Compte supprimé".
+- **Search** by name, e-mail or phone (any digits, `06…`, `+212…`); **sort** by balance (default, highest first), name, sign-up date, purchases or last order; 50 per page; **Export CSV** of the filtered list (`;`-separated, opens in Excel). Keyboard: `/` search, `R` refresh, `Esc` close.
+- **Client file** (click a row): call / WhatsApp / e-mail buttons, balance and progress, the **full points history** with reasons, the manual **adjustment** form (same rules as in the order drawer: confirmation, mandatory reason), every order placed with that account (click one to open the order drawer, then "‹ Retour à la fiche client" or `Esc` to come back), and the account fields (address, last sign-in). The order drawer's Fidélité card has a "Fiche client complète ›" link.
+
+**Backend:** two admin actions, `clients` (list) and `client` (one file), behind the same admin key / session token as the rest of the admin. They return a fixed whitelist of fields (ID, e-mail, name, phone, address, city, sign-up and last sign-in dates); **password salt/hash/iterations, session tokens and reset tokens are never sent**, which the tests check. Both read the Clients, Points and Commandes tabs on each call (no write); with thousands of accounts the list takes a few seconds to load.
 
 ## 2. Publish the site
 

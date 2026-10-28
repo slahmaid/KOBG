@@ -35,7 +35,11 @@
   <div class="adm" id="app" hidden>
     <header class="top">
       <a class="top-logo" href="index.html" title="Voir le site"><img src="assets/kobg-mark-light.svg?v=2" alt="Knockout Boxing Gear" width="1798" height="890"></a>
-      <div class="top-title"><span class="top-tag">Admin</span><strong>Commandes</strong></div>
+      <div class="top-title"><span class="top-tag">Admin</span>
+        <nav class="views" id="views" role="tablist" aria-label="Vue">
+          <button type="button" role="tab" data-v="orders" aria-selected="true" class="on">Commandes</button>
+          <button type="button" role="tab" data-v="clients" aria-selected="false">Clients<b id="clientsN" hidden></b></button>
+        </nav></div>
       <button type="button" class="top-new" id="newBadge" hidden></button>
       <div class="top-sync" id="sync" aria-live="polite"><span class="dot"></span><span id="syncTxt">Chargement…</span></div>
       <div class="top-act">
@@ -46,7 +50,7 @@
       </div>
     </header>
 
-    <section class="kpis" aria-label="Indicateurs">
+    <section class="kpis" id="kpiBoard" aria-label="Indicateurs">
       <div class="kpi-head">
         <h2>Vue d'ensemble</h2>
         <div class="seg" id="period" role="tablist" aria-label="Période">
@@ -59,7 +63,7 @@
       <div class="kpi-grid" id="kpis"></div>
     </section>
 
-    <section class="board" aria-label="Commandes">
+    <section class="board" id="ordersBoard" aria-label="Commandes">
       <div class="tools">
         <div class="chips" id="chips" role="tablist" aria-label="Filtrer par statut"></div>
         <div class="filters">
@@ -91,6 +95,39 @@
         <div class="empty" id="empty" hidden></div>
       </div>
       <div class="pager" id="pager"></div>
+    </section>
+
+    <!-- ============ CLIENTS (customer accounts + loyalty points) ============ -->
+    <section class="board cboard" id="clientsBoard" aria-label="Clients" hidden>
+      <div class="tools">
+        <div class="cstats" id="cstats"></div>
+        <div class="filters">
+          <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            <input type="search" id="cq" placeholder="Nom, e-mail, téléphone…  ( / )" aria-label="Rechercher un client" autocomplete="off" spellcheck="false"></label>
+          <label class="sel"><span class="sr">Trier</span>
+            <select id="csort" aria-label="Trier les clients">
+              <option value="bal">Solde de points décroissant</option>
+              <option value="name">Nom A → Z</option>
+              <option value="signup">Inscription la plus récente</option>
+              <option value="spend">Achats livrés décroissants</option>
+              <option value="last">Dernière commande</option>
+            </select></label>
+          <button type="button" class="btn btn-ghost-d" id="cresetBtn">Effacer</button>
+          <button type="button" class="btn btn-dark" id="ccsvBtn">Export CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="ctableWrap">
+        <table class="otable ctable" id="ctable">
+          <thead><tr>
+            <th scope="col">Client</th><th scope="col">Téléphone</th><th scope="col">Ville</th><th scope="col">Inscrit le</th>
+            <th scope="col" class="num">Solde points</th><th scope="col" class="num">Achats livrés</th><th scope="col">Prochain palier</th>
+            <th scope="col" class="num">Commandes</th><th scope="col">Dernière commande</th>
+          </tr></thead>
+          <tbody id="crows"></tbody>
+        </table>
+        <div class="empty" id="cempty" hidden></div>
+      </div>
+      <div class="pager" id="cpager"></div>
     </section>
   </div>
 

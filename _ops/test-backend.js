@@ -858,3 +858,116 @@ test('setup() creates the Points tab and the points column', () => {
   assert.equal(env.sheets.Points.frozen, 1);
   assert.equal(env.sheets.Commandes.rows[0][15], 'Points utilisés (DH)');
 });
+
+// ---------- admin « Clients » view ----------
+const SAFE_CLIENT_KEYS = ['id', 'email', 'nom', 'tel', 'adresse', 'ville', 'cree', 'creeTs', 'vu', 'gone', 'balance', 'spend', 'earned', 'step', 'reward', 'progress', 'next',
+  'moves', 'orders', 'active', 'lastOrder', 'lastOrderTs', 'lastOrderId'].sort();
+
+test('clients: needs the admin key (or a signed admin session); a customer session is not enough', () => {
+  const env = env0();
+  const a = signup(env);
+  const tok = env.post({ action: 'auth', key: KEY }).token;
+  assert.equal(env.post({ action: 'clients' }).error, 'bad_key');
+  assert.equal(env.post({ action: 'clients', key: 'wrong-key-123' }).error, 'bad_key');
+  assert.equal(env.post({ action: 'clients', session: a.session }).error, 'bad_key');
+  assert.equal(env.post({ action: 'client', key: a.session, client: a.profile.id }).error, 'bad_key');
+  assert.equal(env.post({ action: 'client', client: a.profile.id }).error, 'locked');            // 5th wrong try: the usual lock
+  assert.equal(env.post({ action: 'clients', key: KEY }).error, 'locked');
+  assert.equal(env.post({ action: 'clients', key: tok }).ok, true);                              // signed admin session still works
+  assert.equal(env.post({ action: 'client', key: tok, client: a.profile.id }).ok, true);
+  assert.equal(env.post({ action: 'client', key: tok, client: 'C-NOPE' }).error, 'not_found');
+  assert.equal(env.post({ action: 'client', key: tok }).error, 'not_found');
+});
+
+test('clients: no password hash, salt, iterations, session or reset token ever leaves the script', () => {
+  const env = env0();
+  const a = signup(env, { email: 'secret@example.ma' });
+  const b = signup(env);
+  env.post({ action: 'login', email: 'secret@example.ma', password: PW });
+  env.post({ action: 'reset_request', email: 'secret@example.ma' });
+  const reset = resetLink(env.mails[0]);
+  const o = env.post(order({ session: a.session }));
+  setStatus(env, o.orderId, 'Livrée');
+  const list = env.post({ action: 'clients', key: KEY });
+  const one = env.post({ action: 'client', key: KEY, client: a.profile.id });
+  const crows = rowsOf(env, 'Clients').slice(1);
+  const secrets = crows.flatMap((r) => [r[9], r[10]]).filter(Boolean).map(String)
+    .concat([a.session, b.session, reset, PW])
+    .concat([...env.props.keys()].filter((k) => /^(ses|rst):/.test(k)).map((k) => k.slice(4)));
+  assert.ok(secrets.length >= 8);
+  for (const r of [list, one]) {
+    const txt = JSON.stringify(r);
+    secrets.forEach((s) => assert.ok(!txt.includes(s), 'leaked ' + s.slice(0, 6) + '…'));
+    assert.ok(!/"(sel|hash|iter|salt|token|session|row)"\s*:/.test(txt));
+  }
+  list.clients.forEach((c) => assert.deepEqual(Object.keys(c).sort(), SAFE_CLIENT_KEYS));
+  assert.deepEqual(Object.keys(one.profile).sort(), ['adresse', 'cree', 'creeTs', 'email', 'gone', 'id', 'nom', 'tel', 'ville', 'vu']);
+});
+
+test('clients: one line per account with the right balance, counted spend, progress, orders and last order', () => {
+  const env = strict(env0());
+  const a = signup(env, { nom: 'Amine Alaoui', ville: 'Rabat' });
+  const b = signup(env, { nom: 'Bouchra Idrissi' });
+  const c = signup(env, { nom: 'Chaimae Zerouali' });                       // never ordered
+  const a1 = env.post(order({ session: a.session }));
+  const a2 = env.post(order({ session: a.session, items: [{ id: BODY, qty: 1 }] }));
+  const a3 = env.post(order({ session: a.session }));
+  const b1 = env.post(order({ session: b.session }));
+  env.post(order());                                                         // guest order: no account line
+  setStatus(env, a1.orderId, 'Livrée');
+  setStatus(env, a2.orderId, 'Livrée');
+  setStatus(env, a3.orderId, 'Annulée');
+  setStatus(env, b1.orderId, 'Livrée');
+  adjust(env, b.profile.id, -20, 'Correction manuelle');
+  const r = env.post({ action: 'clients', key: KEY });
+  assert.equal(r.ok, true);
+  assert.equal(r.clients.length, 3);
+  const by = Object.fromEntries(r.clients.map((x) => [x.id, x]));
+  const meA = env.post({ action: 'me', session: a.session }).points, meB = env.post({ action: 'me', session: b.session }).points;
+  assert.equal(by[a.profile.id].balance, meA.balance);
+  assert.equal(by[a.profile.id].balance, 200);                               // 1 775 + 4 584 = 6 359 DH → 4 × 50
+  assert.equal(by[a.profile.id].spend, meA.spend);
+  assert.equal(by[a.profile.id].progress, meA.progress);
+  assert.equal(by[a.profile.id].next, meA.next);
+  assert.equal(by[a.profile.id].orders, 3);
+  assert.equal(by[a.profile.id].active, 2);
+  assert.equal(by[a.profile.id].lastOrderId, a3.orderId);
+  assert.match(by[a.profile.id].lastOrder, /^\d\d\/\d\d\/\d{4} \d\d:\d\d$/);
+  assert.equal(by[a.profile.id].ville, 'Rabat');
+  assert.equal(by[b.profile.id].balance, 30);
+  assert.equal(by[b.profile.id].balance, meB.balance);
+  assert.equal(by[b.profile.id].earned, 50);
+  assert.equal(by[b.profile.id].moves, 2);
+  assert.deepEqual([by[c.profile.id].balance, by[c.profile.id].orders, by[c.profile.id].lastOrder, by[c.profile.id].next], [0, 0, '', 1500]);
+  assert.match(by[c.profile.id].cree, /^\d\d\/\d\d\/\d{4}$/);
+  assert.deepEqual(r.clients.map((x) => x.id), [a.profile.id, b.profile.id, c.profile.id]);   // highest balance first
+  // detail: full points history (newest first) and the account's orders
+  const d = env.post({ action: 'client', key: KEY, client: b.profile.id });
+  assert.equal(d.client.balance, 30);
+  assert.deepEqual(d.client.history.map((h) => [h.type, h.pts, h.solde]), [['ajustement', -20, 30], ['gain', 50, 50]]);
+  assert.match(d.client.history[0].motif, /Correction manuelle$/);
+  const da = env.post({ action: 'client', key: KEY, client: a.profile.id });
+  assert.deepEqual(da.orders.map((o) => o.id).sort(), [a1.orderId, a2.orderId, a3.orderId].sort());
+  assert.deepEqual(Object.fromEntries(da.orders.map((o) => [o.id, o.statut])), { [a1.orderId]: 'Livrée', [a2.orderId]: 'Livrée', [a3.orderId]: 'Annulée' });
+  assert.equal(da.orders.find((o) => o.id === a2.orderId).pointsEarned, 150);
+  assert.equal(da.profile.nom, 'Amine Alaoui');
+  // reading the list writes nothing
+  const before = JSON.stringify(env.sheets);
+  env.post({ action: 'clients', key: KEY });
+  env.post({ action: 'client', key: KEY, client: a.profile.id });
+  assert.equal(JSON.stringify(env.sheets), before);
+});
+
+test('clients: a deleted account that still has points stays listed as « compte supprimé »', () => {
+  const env = env0();
+  const a = signup(env, { email: 'parti@example.ma' });
+  adjust(env, a.profile.id, 70);
+  const sh = env.sheets.Clients;
+  sh.rows.splice(1, 1);                                                      // account row removed by hand in the sheet
+  const r = env.post({ action: 'clients', key: KEY });
+  assert.equal(r.clients.length, 1);
+  assert.deepEqual([r.clients[0].id, r.clients[0].gone, r.clients[0].balance, r.clients[0].email], [a.profile.id, true, 70, 'parti@example.ma']);
+  const d = env.post({ action: 'client', key: KEY, client: a.profile.id });
+  assert.equal(d.profile.gone, true);
+  assert.equal(d.client.balance, 70);
+});

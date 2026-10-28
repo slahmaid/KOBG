@@ -284,3 +284,72 @@ button.kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,
 @media (min-width: 761px) { .c-date-m { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 .pts-adj .d-row { align-items: center; flex-wrap: wrap; }
+
+/* ---------- views: Commandes / Clients ---------- */
+.views { display: inline-flex; gap: 2px; background: #1c1c1c; border-radius: 999px; padding: 3px; }
+.views button { height: 34px; padding: 0 14px; border-radius: 999px; color: rgba(255,255,255,.66); font-size: 15px; font-weight: 900; text-transform: uppercase; font-variation-settings: "wdth" 72; letter-spacing: .02em; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.views button:hover { color: #fff; }
+.views button.on { background: #fff; color: #000; }
+.views button b { font-size: 11px; font-weight: 800; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 7px; font-variation-settings: normal; letter-spacing: 0; }
+
+/* ---------- clients board ---------- */
+.cstats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--g); }
+.cstat { background: #fff; border-radius: calc(var(--r) * .75); padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.cstat b { font-size: clamp(22px, 2.2vw, 30px); font-weight: 900; line-height: 1; font-variation-settings: "wdth" 70; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cstat b small { font-size: .45em; margin-left: 3px; letter-spacing: .04em; }
+.cstat > small { font-size: 12px; color: var(--muted); }
+.cstat.dark { background: var(--black); color: #fff; } .cstat.dark .kpi-l, .cstat.dark > small { color: rgba(255,255,255,.62); }
+.cstat.red { background: var(--accent); color: #fff; } .cstat.red .kpi-l, .cstat.red > small { color: rgba(255,255,255,.8); }
+.ctable .m-l { display: none; }
+.c-who { min-width: 180px; max-width: 260px; }
+.c-who b { display: block; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-who small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-bal b { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.c-bal b.pos { color: #1f8a4c; } .c-bal b.neg { color: var(--accent); }
+.c-spend, .c-ord { font-variant-numeric: tabular-nums; }
+.c-ord small { color: var(--muted); font-size: 11px; }
+.c-last { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+.c-prog { min-width: 150px; }
+.c-prog small, .cprog-wrap small { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cprog { display: block; width: 100%; height: 6px; border: 0; border-radius: 999px; overflow: hidden; background: #ececec; appearance: none; -webkit-appearance: none; }
+.cprog::-webkit-progress-bar { background: #ececec; border-radius: 999px; }
+.cprog::-webkit-progress-value { background: var(--black); border-radius: 999px; }
+.cprog::-moz-progress-bar { background: var(--black); border-radius: 999px; }
+.cprog-wrap .cprog { height: 8px; background: #fff; } .cprog-wrap .cprog::-webkit-progress-bar { background: #fff; }
+.ctable tr.is-gone td { color: var(--muted); }
+.gone-tag { display: inline-block; margin-left: 6px; background: #ececec; color: #555; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; vertical-align: 1px; white-space: nowrap; }
+.d-head .gone-tag { background: #333; color: #fff; }
+
+/* ---------- client file (drawer) ---------- */
+.d-back { justify-self: start; }
+.pts-file { justify-self: start; }
+.pts-hist-l { max-height: 360px; }
+.corders { display: grid; gap: 6px; }
+.corder { background: #fff; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; width: 100%; transition: box-shadow .15s; }
+.corder:hover, .corder:focus-visible { box-shadow: inset 0 0 0 1.5px var(--black); outline: none; }
+.corder[data-unknown] { opacity: .7; }
+.co-l { display: grid; gap: 2px; min-width: 0; }
+.co-l b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.co-l small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.co-r { display: grid; gap: 4px; justify-items: end; flex: none; }
+.co-r b { font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 1240px) { .cstats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .views button { height: 30px; padding: 0 10px; font-size: 13px; }
+  .top-title { order: 4; flex-basis: 100%; }
+  .views { width: 100%; } .views button { flex: 1; justify-content: center; }
+  .cstat { padding: 10px 12px; }
+  .ctable .m-l { display: inline; color: var(--muted); font-weight: 500; }
+  .ctable tbody tr { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "who bal" "tel city" "prog prog" "since spend" "ord last"; }
+  .ctable td.c-who { grid-area: who; max-width: none; min-width: 0; } .ctable td.c-who b { font-size: 16px; }
+  .ctable td.c-bal { grid-area: bal; text-align: right; } .ctable td.c-bal b { font-size: 18px; display: block; } .ctable td.c-bal small { display: block; font-size: 11px; }
+  .ctable td.c-tel { grid-area: tel; } .ctable td.c-city { grid-area: city; text-align: right; color: var(--muted); }
+  .ctable td.c-prog { grid-area: prog; min-width: 0; margin: 4px 0; }
+  .ctable td.c-since { grid-area: since; display: block; font-size: 12px; }
+  .ctable td.c-spend { grid-area: spend; text-align: right; font-size: 12px; }
+  .ctable td.c-ord { grid-area: ord; text-align: left; font-size: 12px; }
+  .ctable td.c-last { grid-area: last; text-align: right; font-size: 12px; }
+  .corder { flex-wrap: wrap; } .co-r { justify-items: start; grid-auto-flow: column; align-items: center; }
+}
+@media (max-width: 480px) { .cstats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cstat b { font-size: 20px; } }

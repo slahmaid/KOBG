@@ -21,7 +21,7 @@
      (never the browser's figure), credited / reverted / refunded when the admin changes a status. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-28';
+const VERSION = '2026-10-28.2';
 const SITE_URL = 'https://slahmaid.github.io/KOBG/';            // where the shop is published
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -271,7 +271,7 @@ function parseCatalog_(text) {
 // ---------- admin ----------
 function admin_(b, ctx) {
   const action = String(b.action);
-  if (['auth', 'list', 'stats', 'update', 'points', 'points_adjust'].indexOf(action) < 0) return fail_('bad_action');
+  if (['auth', 'list', 'stats', 'update', 'points', 'points_adjust', 'clients', 'client'].indexOf(action) < 0) return fail_('bad_action');
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
   if (!key) return fail_('no_admin_key', { reason: 'missing', min: LIMITS.adminKeyMin });
@@ -305,6 +305,8 @@ function admin_(b, ctx) {
   if (action === 'update') return update_(b);
   if (action === 'points') return adminPoints_(b);
   if (action === 'points_adjust') return adjustPoints_(b);
+  if (action === 'clients') return adminClients_();
+  if (action === 'client') return adminClient_(b);
   const orders = readOrders_();
   const now = Date.now();
   if (action === 'stats') {
@@ -959,7 +961,7 @@ function notify_(id, f, lines, t, warn) {
 const SHEET_POINTS = 'Points';
 const POINTS_HEAD = ['Date', 'ID client', 'E-mail', 'N° commande', 'Type', 'Points (DH)', 'Achats comptés (DH)', 'Solde après', 'Motif'];
 const PT = { date: 0, client: 1, email: 2, order: 3, type: 4, pts: 5, spend: 6, bal: 7, motif: 8 };
-const PTS = { max: 1000000, adjustMax: 100000, history: 60, adminHistory: 25, motif: 200 };
+const PTS = { max: 1000000, adjustMax: 100000, history: 60, adminHistory: 25, clientHistory: 500, clientOrders: 300, motif: 200 };
 const EARN_TYPES = ['gain', 'retrait'];               // lines that carry purchases (and points earned from them)
 const USE_TYPES = ['utilisation', 'remboursement'];   // points spent on an order / given back
 const PTS_LABELS = {                                   // what the customer sees (the team's « Motif » stays internal)
@@ -980,7 +982,7 @@ function ledger_(ss) {
   const sh = pointsSheet_(ss);
   const last = sh.getLastRow();
   const rows = last < 2 ? [] : sh.getRange(2, 1, last - 1, POINTS_HEAD.length).getValues().map((v) => ({
-    at: v[PT.date], client: str_(v[PT.client]).replace(/^'/, ''), order: str_(v[PT.order]).replace(/^'/, ''),
+    at: v[PT.date], client: str_(v[PT.client]).replace(/^'/, ''), email: str_(v[PT.email]), order: str_(v[PT.order]).replace(/^'/, ''),
     type: fold_(v[PT.type]), pts: Math.round(num_(v[PT.pts])), spend: num_(v[PT.spend]), bal: num_(v[PT.bal]), motif: str_(v[PT.motif]),
   })).filter((r) => r.client);
   return { sh: sh, rows: rows };
@@ -1058,10 +1060,10 @@ function syncPoints_(ss, v, ex, status) {
   return out;
 }
 // admin view of one customer: profile, balance, latest ledger lines with the team's motif
-function clientInfo_(L, user) {
+function clientInfo_(L, user, limit) {
   const p = pointsOf_(L, user.id);
   return Object.assign({ id: user.id, email: user.email || '', nom: user.nom || '', gone: !!user.gone }, summary_(p), {
-    history: p.rows.slice(-PTS.adminHistory).reverse().map((r) => Object.assign(historyLine_(r), { motif: r.motif, solde: r.bal })),
+    history: p.rows.slice(-(limit || PTS.adminHistory)).reverse().map((r) => Object.assign(historyLine_(r), { motif: r.motif, solde: r.bal })),
   });
 }
 // the customers behind a list of orders (admin 'list' / 'update')
@@ -1103,6 +1105,78 @@ function adjustPoints_(b) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ---------- admin: customer accounts (« Clients » view) ----------
+// Only these profile fields ever leave the script: never Sel / Empreinte / Itérations, sessions or reset tokens.
+function adminProfile_(u) {
+  const c = asDate_(u.cree), v = asDate_(u.vu);
+  return { id: u.id, email: u.email || '', nom: u.nom || '', tel: u.tel || '', adresse: u.adresse || '', ville: u.ville || '',
+    cree: c ? fmt_(c, 'dd/MM/yyyy') : '', creeTs: c ? c.getTime() : 0, vu: v ? fmt_(v, 'dd/MM/yyyy HH:mm') : '', gone: !!u.gone };
+}
+// orders of each account, from the "Commandes" sheet (one read)
+function ordersByClient_(ss) {
+  const sh = ss.getSheetByName(SHEET_ORDERS);
+  const out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  const ex = extras_(sh);
+  if (!ex.acct) return out;
+  const g = gestion_(ss);
+  sh.getRange(2, 1, sh.getLastRow() - 1, ex.width).getValues().forEach((v) => {
+    const uid = str_(v[ex.acct - 1]).replace(/^'/, ''), id = str_(v[1]);
+    if (!uid || !id) return;
+    const d = asDate_(v[0]), gest = g.byId[id];
+    (out[uid] = out[uid] || []).push({ id: id, ts: d ? d.getTime() : 0, recu: d ? fmt_(d, 'dd/MM/yyyy HH:mm') : str_(v[0]),
+      statut: gest && STATUSES.indexOf(gest.statut) >= 0 ? gest.statut : 'Nouvelle', total: num_(v[13]), nb: num_(v[8]),
+      articles: list_(v[5]), points: ex.pts ? num_(v[ex.pts - 1]) : 0 });
+  });
+  return out;
+}
+function adminClients_() {
+  const ss = book_();
+  const users = users_(clientsSheet_(ss));
+  const L = ledger_(ss);
+  const byOrders = ordersByClient_(ss);
+  const sums = {};
+  L.rows.forEach((r) => {
+    const t = sums[r.client] = sums[r.client] || { balance: 0, spend: 0, earned: 0, moves: 0 };
+    t.balance += r.pts; t.moves += 1;
+    if (EARN_TYPES.indexOf(r.type) >= 0) { t.spend += r.spend; t.earned += r.pts; }
+  });
+  const row = (u) => {
+    const t = sums[u.id] || { balance: 0, spend: 0, earned: 0, moves: 0 };
+    const os = byOrders[u.id] || [];
+    const last = os.reduce((m, o) => (o.ts > (m ? m.ts : -1) ? o : m), null);
+    return Object.assign(adminProfile_(u), summary_(t), { moves: t.moves, orders: os.length,
+      active: os.filter((o) => o.statut !== 'Annulée' && o.statut !== 'Retournée').length,
+      lastOrder: last ? last.recu : '', lastOrderTs: last ? last.ts : 0, lastOrderId: last ? last.id : '' });
+  };
+  const known = {};
+  const list = users.map((u) => { known[u.id] = 1; return row(u); });
+  // deleted accounts that still have points or orders stay visible (marked « compte supprimé »)
+  Object.keys(sums).concat(Object.keys(byOrders)).forEach((id) => {
+    if (known[id]) return;
+    known[id] = 1;
+    const mail = (L.rows.filter((r) => r.client === id)[0] || {}).email || '';
+    list.push(row({ id: id, email: mail, nom: '', tel: '', adresse: '', ville: '', gone: true }));
+  });
+  list.sort((a, b) => b.balance - a.balance || b.creeTs - a.creeTs);
+  return ok_({ now: Date.now(), clients: list });
+}
+function adminClient_(b) {
+  const uid = str_(b.client).slice(0, 60);
+  if (!uid) return fail_('not_found');
+  const ss = book_();
+  const L = ledger_(ss);
+  const os = (ordersByClient_(ss)[uid] || []).sort((x, y) => y.ts - x.ts).slice(0, PTS.clientOrders);
+  let user = users_(clientsSheet_(ss)).filter((u) => u.id === uid)[0];
+  if (!user) {
+    const mine = L.rows.filter((r) => r.client === uid);
+    if (!mine.length && !os.length) return fail_('not_found');
+    user = { id: uid, email: (mine[0] || {}).email || '', nom: '', gone: true };
+  }
+  os.forEach((o) => { const p = orderPoints_(L, o.id); o.pointsEarned = p.earned; });
+  return ok_({ profile: adminProfile_(user), client: clientInfo_(L, user, PTS.clientHistory), orders: os });
 }
 
 // ---------- helpers ----------

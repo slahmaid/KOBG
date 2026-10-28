@@ -22,6 +22,7 @@
   const PAGE = 50;
   const REFRESH_MS = 60000;
   const LS_KEY = 'kobg-admin-key', LS_SEEN = 'kobg-admin-seen', LS_PERIOD = 'kobg-admin-period';
+  const CPAGE = 50;
 
   const $ = (s, r) => (r || document).querySelector(s);
   const el = {
@@ -29,13 +30,18 @@
     app: $('#app'), sync: $('#sync'), syncTxt: $('#syncTxt'), refresh: $('#refreshBtn'), logout: $('#logoutBtn'), newBadge: $('#newBadge'),
     period: $('#period'), kpis: $('#kpis'), chips: $('#chips'), q: $('#q'), from: $('#from'), to: $('#to'), sort: $('#sort'),
     reset: $('#resetBtn'), csv: $('#csvBtn'), rows: $('#rows'), empty: $('#empty'), pager: $('#pager'), table: $('#otable'),
-    drawer: $('#drawer'), scrim: $('#scrim'), toasts: $('#toasts')
+    drawer: $('#drawer'), scrim: $('#scrim'), toasts: $('#toasts'),
+    views: $('#views'), clientsN: $('#clientsN'), kpiBoard: $('#kpiBoard'), ordersBoard: $('#ordersBoard'), clientsBoard: $('#clientsBoard'),
+    cq: $('#cq'), csort: $('#csort'), creset: $('#cresetBtn'), ccsv: $('#ccsvBtn'), crows: $('#crows'), cempty: $('#cempty'), cpager: $('#cpager'), ctable: $('#ctable'), cstats: $('#cstats')
   };
 
   const S = {
     key: '', orders: [], loaded: false, today: '', serverSkew: 0, lastSync: 0, busy: false, failing: false,
     period: localStorage.getItem(LS_PERIOD) || 'today', status: 'all', q: '', from: '', to: '', sort: 'new', page: 0,
-    open: null, pending: {}, seen: readSeen(), freshIds: new Set(), clients: {}
+    open: null, pending: {}, seen: readSeen(), freshIds: new Set(), clients: {},
+    view: location.hash === '#clients' ? 'clients' : 'orders', back: null,
+    // « Clients » view: every customer account with its points balance (action 'clients'), one account's file (action 'client')
+    cl: { list: [], loaded: false, busy: false, stale: false, q: '', sort: 'bal', page: 0, open: null, detail: {}, error: '' }
   };
 
   // ---------- utils ----------
@@ -83,6 +89,8 @@
     // The new script always answers with a known admin error code or `version`; anything else
     // (e.g. the old script's {ok:false,error:'missing fields'} or {ok:true,service:…}) means old code.
     const KNOWN = ['bad_key', 'expired', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy', 'bad_points', 'bad_reason'];
+    // an older script (before the Clients view) answers 'bad_action' to 'clients' / 'client'
+    if (data && data.ok !== true && data.error === 'bad_action' && (action === 'clients' || action === 'client')) throw new ApiError('old_clients', data);
     if (!data || typeof data !== 'object') throw new ApiError('bad_reply');
     if (data.ok !== true) {
       const err = data.error;
@@ -104,7 +112,9 @@
       case 'html': return 'Google demande une connexion : le déploiement doit être « Qui a accès : Tout le monde ».';
       case 'network': return 'Réseau indisponible ou script injoignable. Vérifiez la connexion internet.';
       case 'timeout': return 'Google ne répond pas (délai dépassé). Réessayez.';
-      case 'not_found': return 'Commande introuvable dans la feuille.';
+      case 'not_found': return 'Introuvable dans la feuille.';
+      case 'old_clients': return 'Vue Clients indisponible : le script Google n\'est pas à jour. Collez le nouveau order-apps-script.gs dans Apps Script, puis Déployer › Gérer les déploiements › crayon › Version : Nouvelle version › Déployer.';
+      case 'busy': return 'Le script est occupé, réessayez dans quelques secondes.';
       case 'bad_status': return 'Statut refusé par le script.';
       case 'bad_points': return 'Montant de points refusé : un nombre entier, positif ou négatif, non nul (100 000 au plus).';
       case 'bad_reason': return 'Indiquez un motif (3 caractères minimum).';
@@ -162,7 +172,7 @@
       el.loginKey.select();
     }
   });
-  el.logout.addEventListener('click', () => { dropKey(); S.key = ''; S.orders = []; S.loaded = false; showLogin(''); });
+  el.logout.addEventListener('click', () => { dropKey(); S.key = ''; S.orders = []; S.loaded = false; S.cl.list = []; S.cl.loaded = false; S.cl.detail = {}; showLogin(''); });
 
   // ---------- data ----------
   async function load(manual) {
@@ -283,7 +293,7 @@
     el.newBadge.hidden = !newN;
     el.newBadge.textContent = newN + ' nouvelle' + (newN > 1 ? 's' : '');
     el.newBadge.title = 'Afficher les commandes non vues';
-    document.title = (newN ? '(' + newN + ') ' : '') + 'Admin · Commandes — Knockout Boxing Gear';
+    if (S.view === 'orders') document.title = (newN ? '(' + newN + ') ' : '') + 'Admin · Commandes — Knockout Boxing Gear';
     // rows
     const pages = Math.max(1, Math.ceil(f.list.length / PAGE));
     if (S.page >= pages) S.page = pages - 1;
@@ -321,10 +331,10 @@
 
   // ---------- drawer ----------
   let lastFocus = null;
-  function openDrawer(id) {
+  function openDrawer(id, back) {
     const o = byId(id); if (!o) return;
-    if (!S.open) lastFocus = document.activeElement;
-    S.open = id;
+    if (!S.open && !S.cl.open) lastFocus = document.activeElement;
+    S.open = id; S.cl.open = null; S.back = back || null;
     if (isNew(o)) { markSeen(id); }
     renderDrawer(o);
     el.drawer.hidden = false; el.scrim.hidden = false; document.body.classList.add('no-scroll');
@@ -333,10 +343,10 @@
     render();
   }
   function closeDrawer(silent) {
-    if (!S.open && el.drawer.hidden) return;
-    S.open = null;
+    if (!S.open && !S.cl.open && el.drawer.hidden) return;
+    S.open = null; S.cl.open = null; S.back = null;
     el.drawer.hidden = true; el.scrim.hidden = true; document.body.classList.remove('no-scroll');
-    if (!silent) { render(); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
+    if (!silent) { render(); renderClients(); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
   }
   function waText(o) {
     return 'Bonjour ' + o.nom + ', merci pour votre commande ' + o.id + ' chez Knockout Boxing Gear : ' + itemsText(o) + ' — total ' + dh(o.total).replace(/\u00a0/g, ' ') +
@@ -370,6 +380,7 @@
     const disc = Math.round(o.sousTotal * (o.remise || 0) / 100);
     const tel = digits(o.tel);
     el.drawer.innerHTML =
+      (S.back ? '<button type="button" class="btn btn-ghost-d d-back" data-client="' + esc(S.back) + '">‹ Retour à la fiche client</button>' : '') +
       '<div class="d-card d-head"><div class="d-row"><div><div class="d-id">' + esc(o.id) + ' · ' + esc(o.recu) + '</div><h2 class="d-name" id="dTitle">' + esc(o.nom) + '</h2></div>' +
         '<button type="button" class="d-close" data-close aria-label="Fermer (Échap)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></div>' +
         '<div class="d-row"><span class="d-meta">' + esc(o.tel) + ' · ' + esc(o.ville) + '</span><span class="pill' + (S.pending[o.id] ? ' pending' : '') + '" data-s="' + esc(o.statut) + '">' + esc(o.statut) + '</span></div>' +
@@ -412,8 +423,7 @@
     const c = S.clients[o.client];
     if (!c) return '<div class="d-card pts"><span class="d-h">Fidélité</span><small class="pts-muted">Compte ' + esc(o.client) + ' : solde indisponible (actualisez).</small></div>';
     const mine = o.statut === 'Livrée' ? (o.pointsEarned ? sgn(o.pointsEarned) + ' crédités (livrée)' : 'aucun palier franchi') : 'crédités quand elle sera « Livrée »';
-    const hist = (c.history || []).map((r) => '<li><span><b>' + esc(PTS_TYPES[r.type] || 'Ajustement') + ' ' + esc(sgn(r.pts)) + '</b>' +
-      (r.order ? ' · ' + esc(r.order) : '') + '<br><small>' + esc(r.motif || r.label || '') + '</small></span><time>' + esc(r.at || '') + '<br>solde ' + esc(dh(r.solde)) + '</time></li>').join('');
+    const hist = ptsHist(c.history);
     return '<div class="d-card pts"><div class="d-row"><span class="d-h">Fidélité · compte client</span><small>' + esc(c.email || o.client) + (c.gone ? ' (compte supprimé)' : '') + '</small></div>' +
       '<div class="pts-sum"><div><small>Solde</small><b class="' + (c.balance < 0 ? 'neg' : '') + '">' + esc(dh(c.balance)) + '</b></div>' +
         '<div><small>Achats livrés comptés</small><b>' + esc(dh(c.spend)) + '</b></div>' +
@@ -421,10 +431,18 @@
       '<small class="pts-muted">Cette commande : ' + (o.points ? esc(dh(o.points)) + ' de points utilisés · ' : '') + 'points ' + esc(mine) + '. ' +
         esc(dh(c.reward || 50)) + ' tous les ' + esc(dh(c.step || 1500)) + ' d\'achats livrés ; « Retournée » les retire, « Annulée » / « Retournée » rendent les points utilisés.</small>' +
       (hist ? '<ul class="hist pts-hist">' + hist + '</ul>' : '<small class="pts-muted">Aucun mouvement de points.</small>') +
-      (c.gone ? '' : '<form class="pts-adj" data-pts novalidate><span class="d-h">Ajustement manuel</span>' +
-        '<div class="pts-adj-row"><label for="ptsDelta">Points (DH)</label><input id="ptsDelta" type="number" step="1" inputmode="numeric" placeholder="+50 ou -50" required>' +
-        '<label for="ptsReason">Motif</label><input id="ptsReason" type="text" maxlength="200" placeholder="Ex. geste commercial, erreur de saisie…" required></div>' +
-        '<div class="d-row"><small>Écrit dans l\'onglet « Points » avec le motif (le client voit « Ajustement par notre équipe »).</small><button type="submit" class="btn btn-dark">Ajuster le solde</button></div></form>');
+      '<button type="button" class="btn btn-ghost-d pts-file" data-client="' + esc(o.client) + '">Fiche client complète ›</button>' +
+      (c.gone ? '' : ptsForm());
+  }
+  function ptsHist(rows) {
+    return (rows || []).map((r) => '<li><span><b>' + esc(PTS_TYPES[r.type] || 'Ajustement') + ' ' + esc(sgn(r.pts)) + '</b>' +
+      (r.order ? ' · ' + esc(r.order) : '') + '<br><small>' + esc(r.motif || r.label || '') + '</small></span><time>' + esc(r.at || '') + '<br>solde ' + esc(dh(r.solde)) + '</time></li>').join('');
+  }
+  function ptsForm() {
+    return '<form class="pts-adj" data-pts novalidate><span class="d-h">Ajustement manuel</span>' +
+      '<div class="pts-adj-row"><label for="ptsDelta">Points (DH)</label><input id="ptsDelta" type="number" step="1" inputmode="numeric" placeholder="+50 ou -50" required>' +
+      '<label for="ptsReason">Motif</label><input id="ptsReason" type="text" maxlength="200" placeholder="Ex. geste commercial, erreur de saisie…" required></div>' +
+      '<div class="d-row"><small>Écrit dans l\'onglet « Points » avec le motif (le client voit « Ajustement par notre équipe »).</small><button type="submit" class="btn btn-dark">Ajuster le solde</button></div></form>';
   }
   async function adjustPoints(id, form) {
     const o = byId(id); if (!o || !o.client) return;
@@ -439,6 +457,7 @@
     try {
       const d = await api('points_adjust', { client: o.client, delta: delta, reason: reason, order: o.id });
       if (d.client) S.clients[o.client] = d.client;
+      patchClient(o.client, d.client);
       toast('Points ajustés : ' + sgn(delta) + ' · solde ' + dh(d.client ? d.client.balance : 0));
       if (S.open === id) renderDrawer(o);
     } catch (e) {
@@ -462,7 +481,8 @@
       delete S.pending[id];
       const cur = byId(id);
       if (cur) Object.assign(cur, d.order);
-      if (d.clients) Object.assign(S.clients, d.clients);
+      if (d.clients) { Object.assign(S.clients, d.clients); Object.keys(d.clients).forEach((k) => patchClient(k, d.clients[k])); }
+      if (cur && cur.client) { S.cl.stale = true; delete S.cl.detail[cur.client]; }
       const seenN = {};
       (prev.hist || []).forEach((h) => { if (h.note) seenN[h.at + h.note] = (seenN[h.at + h.note] || 0) + 1; });
       const moved = ((d.order && d.order.hist) || []).filter((h) => h.note && h.by === 'serveur' && !(seenN[h.at + h.note]-- > 0)).map((h) => h.note);
@@ -520,13 +540,224 @@
     toast(list.length + ' commande' + (list.length > 1 ? 's' : '') + ' exportée' + (list.length > 1 ? 's' : '') + ' (CSV)');
   }
 
+  // ---------- « Clients » view: customer accounts and their loyalty points ----------
+  // The script only ever sends whitelisted profile fields (never password hashes, salts, sessions or reset tokens).
+  const CSORT = {
+    bal: (a, b) => (b.balance - a.balance) || (b.spend - a.spend) || (b.creeTs - a.creeTs),
+    name: (a, b) => (a.nom || a.email || '').localeCompare(b.nom || b.email || '', 'fr', { sensitivity: 'base' }),
+    signup: (a, b) => (b.creeTs - a.creeTs) || CSORT.name(a, b),
+    spend: (a, b) => (b.spend - a.spend) || (b.balance - a.balance),
+    last: (a, b) => (b.lastOrderTs - a.lastOrderTs) || CSORT.name(a, b)
+  };
+  function setView(v, quiet) {
+    S.view = v === 'clients' ? 'clients' : 'orders';
+    const cl = S.view === 'clients';
+    el.views.querySelectorAll('button[data-v]').forEach((b) => { const on = b.dataset.v === S.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    el.kpiBoard.hidden = cl; el.ordersBoard.hidden = cl; el.clientsBoard.hidden = !cl;
+    try { history.replaceState(null, '', cl ? '#clients' : location.pathname + location.search); } catch (e) {}
+    if (cl) { renderClients(); if (!quiet && (!S.cl.loaded || S.cl.stale)) loadClients(false); }
+    else render();
+  }
+  async function loadClients(manual) {
+    if (S.cl.busy) return;
+    S.cl.busy = true;
+    if (!S.cl.loaded) renderClients();
+    el.refresh.classList.add('spin');
+    try {
+      const d = await api('clients');
+      S.cl.list = Array.isArray(d.clients) ? d.clients : [];
+      S.cl.loaded = true; S.cl.stale = false; S.cl.error = '';
+      renderClients();
+      if (manual) toast('Clients à jour (' + S.cl.list.length + ')');
+    } catch (e) {
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked' || e.code === 'no_admin_key') { dropKey(); S.key = ''; showLogin(errText(e)); return; }
+      S.cl.error = errText(e);
+      renderClients();
+      if (manual || S.view === 'clients') toast(errText(e), true);
+    } finally { S.cl.busy = false; el.refresh.classList.remove('spin'); }
+  }
+  // fold a fresh points summary (from 'update' / 'points_adjust') into the list without a reload
+  function patchClient(id, c) {
+    if (!id || !c) return;
+    const row = S.cl.list.find((x) => x.id === id);
+    if (row) ['balance', 'spend', 'earned', 'progress', 'next', 'step', 'reward'].forEach((k) => { if (c[k] != null) row[k] = c[k]; });
+    S.cl.stale = true;
+    if (S.view === 'clients') renderClients();
+  }
+  function cMatch(c) {
+    if (!S.cl.q) return true;
+    const q = norm(S.cl.q), qd = digits(S.cl.q);
+    const hay = norm([c.nom, c.email, c.id, c.ville].join(' '));
+    const textOk = q.split(/\s+/).filter(Boolean).every((w) => hay.indexOf(w) >= 0);
+    const telOk = qd.length >= 3 && /^[\d\s+().-]+$/.test(S.cl.q) && (digits(c.tel).indexOf(qd) >= 0 || wa212(c.tel).indexOf(qd) >= 0);
+    return textOk || telOk;
+  }
+  function cFiltered() { return S.cl.list.filter(cMatch).sort(CSORT[S.cl.sort] || CSORT.bal); }
+  function renderClients() {
+    const all = S.cl.list;
+    el.clientsN.hidden = !S.cl.loaded; el.clientsN.textContent = S.cl.loaded ? String(all.length) : '';
+    if (S.view !== 'clients') return;
+    document.title = 'Admin · Clients — Knockout Boxing Gear';
+    if (!S.cl.loaded) {
+      el.cstats.innerHTML = '';
+      el.cpager.innerHTML = '';
+      if (S.cl.error) { el.crows.innerHTML = ''; el.cempty.hidden = false; el.cempty.innerHTML = '<strong>Chargement impossible</strong>' + esc(S.cl.error); }
+      else { el.cempty.hidden = true; el.crows.innerHTML = Array.from({ length: 6 }, () => '<tr class="skel">' + '<td></td>'.repeat(9) + '</tr>').join(''); }
+      return;
+    }
+    const live = all.filter((c) => !c.gone);
+    const owed = all.reduce((m, c) => m + Math.max(0, c.balance), 0);
+    const withPts = all.filter((c) => c.balance > 0).length;
+    const spend = all.reduce((m, c) => m + (c.spend || 0), 0);
+    const stat = (l, v, s, cls) => '<div class="cstat' + (cls ? ' ' + cls : '') + '"><span class="kpi-l">' + esc(l) + '</span><b>' + v + '</b><small>' + esc(s) + '</small></div>';
+    el.cstats.innerHTML =
+      stat('Comptes clients', num(live.length), all.length > live.length ? (all.length - live.length) + ' supprimé(s) avec historique' : 'inscrits sur le site', 'dark') +
+      stat('Points à honorer', num(owed) + '<small>DH</small>', 'somme des soldes positifs', 'red') +
+      stat('Clients avec un solde', num(withPts), 'solde > 0 DH') +
+      stat('Achats livrés comptés', num(spend) + '<small>DH</small>', '50 DH de points par 1 500 DH');
+    const list = cFiltered();
+    const pages = Math.max(1, Math.ceil(list.length / CPAGE));
+    if (S.cl.page >= pages) S.cl.page = pages - 1;
+    const slice = list.slice(S.cl.page * CPAGE, S.cl.page * CPAGE + CPAGE);
+    el.crows.innerHTML = slice.map(cRowHtml).join('');
+    el.cempty.hidden = !!slice.length;
+    if (!slice.length) el.cempty.innerHTML = all.length ? '<strong>Aucun résultat</strong>Aucun client ne correspond à la recherche.' : '<strong>Aucun compte client</strong>Les comptes créés sur compte.html apparaîtront ici.';
+    el.cpager.innerHTML = '<span>' + (list.length ? (S.cl.page * CPAGE + 1) + '–' + (S.cl.page * CPAGE + slice.length) + ' sur ' + list.length : '0') + ' client' + (list.length > 1 ? 's' : '') +
+      (list.length !== all.length ? ' (filtrés, ' + all.length + ' au total)' : '') + '</span>' +
+      (pages > 1 ? '<span class="pg"><button type="button" class="btn btn-ghost-d" data-pg="-1"' + (S.cl.page ? '' : ' disabled') + '>‹ Préc.</button><button type="button" class="btn btn-ghost-d" data-pg="1"' + (S.cl.page < pages - 1 ? '' : ' disabled') + '>Suiv. ›</button></span>' : '');
+  }
+  function progressHtml(c) {
+    return '<progress class="cprog" max="' + esc(c.step || 1500) + '" value="' + esc(c.progress || 0) + '" aria-label="' + esc(num(c.progress) + ' DH sur ' + num(c.step || 1500)) + '"></progress>' +
+      '<small>' + esc(num(c.progress)) + ' / ' + esc(num(c.step || 1500)) + ' · encore ' + esc(dh(c.next)) + '</small>';
+  }
+  function cRowHtml(c) {
+    return '<tr data-cid="' + esc(c.id) + '" class="' + (S.cl.open === c.id ? 'is-open' : '') + (c.gone ? ' is-gone' : '') + '" tabindex="0">' +
+      '<td class="c-who"><b>' + esc(c.nom || '—') + (c.gone ? ' <span class="gone-tag">Compte supprimé</span>' : '') + '</b><small>' + esc(c.email) + '</small></td>' +
+      '<td class="c-tel">' + esc(c.tel || '—') + '</td>' +
+      '<td class="c-city">' + esc(c.ville || '—') + '</td>' +
+      '<td class="c-date c-since"><span class="m-l">Inscrit le </span>' + esc(c.cree || '—') + '</td>' +
+      '<td class="num c-bal"><b class="' + (c.balance < 0 ? 'neg' : c.balance > 0 ? 'pos' : '') + '">' + dh(c.balance) + '</b><small class="m-l">points</small></td>' +
+      '<td class="num c-spend"><span class="m-l">Achats livrés </span>' + dh(c.spend) + '</td>' +
+      '<td class="c-prog">' + progressHtml(c) + '</td>' +
+      '<td class="num c-ord"><span class="m-l">Commandes </span>' + esc(c.orders) + (c.orders !== c.active ? '<small> (' + esc(c.active) + ' actives)</small>' : '') + '</td>' +
+      '<td class="c-last"><span class="m-l">Dernière </span>' + (c.lastOrder ? esc(c.lastOrder) : '—') + '</td></tr>';
+  }
+  async function openClient(id) {
+    if (!id) return;
+    if (!S.open && !S.cl.open) lastFocus = document.activeElement;
+    S.cl.open = id; S.open = null; S.back = null;
+    el.drawer.hidden = false; el.scrim.hidden = false; document.body.classList.add('no-scroll');
+    renderClientDrawer(id);
+    el.drawer.scrollTop = 0;
+    el.drawer.focus({ preventScroll: true });
+    renderClients(); if (S.view === 'orders') render();
+    if (!S.cl.detail[id]) await fetchClient(id);
+  }
+  async function fetchClient(id) {
+    try {
+      const d = await api('client', { client: id });
+      S.cl.detail[id] = d;
+      if (d.client) { S.clients[id] = Object.assign({}, d.client, { history: (d.client.history || []).slice(0, 25) }); patchClient(id, d.client); S.cl.stale = false; }
+    } catch (e) {
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
+      S.cl.detail[id] = { error: errText(e) };
+    }
+    if (S.cl.open === id) renderClientDrawer(id, true);
+  }
+  function renderClientDrawer(id, keepScroll) {
+    const top = el.drawer.scrollTop;
+    const row = S.cl.list.find((x) => x.id === id) || {};
+    const d = S.cl.detail[id];
+    const p = (d && d.profile) || row;
+    const c = (d && d.client) || row;
+    const tel = digits(p.tel);
+    const close = '<button type="button" class="d-close" data-close aria-label="Fermer (Échap)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>';
+    let h = '<div class="d-card d-head"><div class="d-row"><div><div class="d-id">Client ' + esc(id) + (p.cree ? ' · inscrit le ' + esc(p.cree) : '') + '</div>' +
+      '<h2 class="d-name" id="dTitle">' + esc(p.nom || p.email || id) + '</h2></div>' + close + '</div>' +
+      '<div class="d-row"><span class="d-meta">' + [p.email, p.tel, p.ville].filter(Boolean).map(esc).join(' · ') + '</span>' + (p.gone ? '<span class="gone-tag">Compte supprimé</span>' : '') + '</div>' +
+      (tel ? '<div class="d-contact"><a class="btn btn-white" href="tel:' + esc(tel) + '">Appeler</a>' +
+        '<a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/' + esc(wa212(p.tel)) + '">WhatsApp</a>' +
+        (p.email ? '<a class="btn btn-ghost" href="mailto:' + esc(p.email) + '">E-mail</a>' : '') +
+        '<button type="button" class="btn btn-ghost" data-copy="' + esc(p.tel) + '">Copier le n°</button></div>' : '') + '</div>';
+    if (!d) h += '<div class="d-card"><span class="d-h">Fidélité</span><small class="pts-muted">Chargement de l\'historique…</small></div>';
+    else if (d.error) h += '<div class="d-card"><span class="d-h">Fidélité</span><small class="pts-muted">' + esc(d.error) + '</small><button type="button" class="btn btn-dark" data-reload-client>Réessayer</button></div>';
+    if (c && c.balance != null) {
+      const hist = d && d.client ? ptsHist(d.client.history) : '';
+      h += '<div class="d-card pts"><div class="d-row"><span class="d-h">Points fidélité</span><small>' + esc(num(c.earned)) + ' DH gagnés au total</small></div>' +
+        '<div class="pts-sum"><div><small>Solde</small><b class="' + (c.balance < 0 ? 'neg' : '') + '">' + esc(dh(c.balance)) + '</b></div>' +
+          '<div><small>Achats livrés comptés</small><b>' + esc(dh(c.spend)) + '</b></div>' +
+          '<div><small>Prochain palier</small><b>dans ' + esc(dh(c.next)) + '</b></div></div>' +
+        '<div class="cprog-wrap">' + progressHtml(c) + '</div>' +
+        (d && d.client ? '<span class="d-h">Historique des points (' + d.client.history.length + ')</span>' + (hist ? '<ul class="hist pts-hist pts-hist-l">' + hist + '</ul>' : '<small class="pts-muted">Aucun mouvement de points.</small>') : '') +
+        (d && d.client && !p.gone ? ptsForm() : '') + '</div>';
+    }
+    if (d && d.orders) {
+      h += '<div class="d-card"><span class="d-h">Commandes (' + d.orders.length + ')</span>' +
+        (d.orders.length ? '<div class="corders">' + d.orders.map((o) => {
+          const known = !!byId(o.id);
+          return '<button type="button" class="corder" data-oid="' + esc(o.id) + '"' + (known ? '' : ' data-unknown') + '>' +
+            '<span class="co-l"><b>' + esc(o.id) + '</b><small>' + esc(o.recu) + ' · ' + esc(o.nb) + ' art.' + (o.points ? ' · −' + esc(dh(o.points)) + ' de points' : '') + (o.pointsEarned ? ' · ' + esc(sgn(o.pointsEarned)) + ' gagnés' : '') + '</small></span>' +
+            '<span class="co-r"><b>' + dh(o.total) + '</b><span class="pill" data-s="' + esc(o.statut) + '">' + esc(o.statut) + '</span></span></button>';
+        }).join('') + '</div>' : '<small class="pts-muted">Aucune commande passée avec ce compte.</small>') + '</div>';
+      h += '<div class="d-card"><span class="d-h">Compte</span><dl class="fields">' +
+        [['ID client', id], ['E-mail', p.email || '—'], ['Nom', p.nom || '—'], ['Téléphone', p.tel || '—'], ['Ville', p.ville || '—'], ['Inscrit le', p.cree || '—'],
+         ['Adresse', p.adresse || '—', 1], ['Dernière connexion', p.vu || '—']]
+          .map((f) => '<div' + (f[2] ? ' class="wide"' : '') + '><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>').join('') + '</dl></div>';
+    }
+    const pd = el.drawer.querySelector('#ptsDelta'), pr = el.drawer.querySelector('#ptsReason');
+    const draft = keepScroll && pd && pr && (pd.value || pr.value) ? [pd.value, pr.value] : null;
+    el.drawer.innerHTML = h;
+    const nd = el.drawer.querySelector('#ptsDelta'), nr = el.drawer.querySelector('#ptsReason');
+    if (draft && nd && nr) { nd.value = draft[0]; nr.value = draft[1]; }
+    if (keepScroll) el.drawer.scrollTop = top;
+  }
+  async function adjustClient(id, form) {
+    const delta = Number(form.querySelector('#ptsDelta').value);
+    const reason = form.querySelector('#ptsReason').value.trim();
+    if (!Number.isInteger(delta) || !delta) { toast('Indiquez un nombre entier de points, ex. 50 ou -50.', true); form.querySelector('#ptsDelta').focus(); return; }
+    if (reason.length < 3) { toast('Indiquez un motif (3 caractères minimum).', true); form.querySelector('#ptsReason').focus(); return; }
+    const row = S.cl.list.find((x) => x.id === id) || {};
+    if (!window.confirm((delta > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(delta) + ' DH de points à ' + (row.email || id) + ' ?\nMotif : ' + reason)) return;
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.textContent = 'Enregistrement…';
+    try {
+      const d = await api('points_adjust', { client: id, delta: delta, reason: reason });
+      if (d.client) { S.clients[id] = d.client; patchClient(id, d.client); }
+      toast('Points ajustés : ' + sgn(delta) + ' · solde ' + dh(d.client ? d.client.balance : 0));
+      delete S.cl.detail[id];
+      form.reset();
+      if (S.cl.open === id) { renderClientDrawer(id, true); await fetchClient(id); }
+    } catch (e) {
+      toast('Ajustement non enregistré. ' + errText(e), true);
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
+      btn.disabled = false; btn.textContent = 'Ajuster le solde';
+    }
+  }
+  function exportClientsCsv() {
+    const list = cFiltered();
+    if (!list.length) { toast('Rien à exporter', true); return; }
+    const head = ['ID client', 'Nom', 'E-mail', 'Téléphone', 'Ville', 'Inscrit le', 'Solde points (DH)', 'Achats livrés comptés (DH)', 'Points gagnés (DH)', 'Reste avant le prochain palier (DH)', 'Commandes', 'Commandes actives', 'Dernière commande', 'Compte supprimé'];
+    const lines = [head].concat(list.map((c) => [c.id, c.nom, c.email, c.tel, c.ville, c.cree, c.balance, c.spend, c.earned, c.next, c.orders, c.active, c.lastOrder, c.gone ? 'oui' : '']));
+    const csv = '\ufeff' + lines.map((r) => r.map(csvCell).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'clients-points-kobg-' + dayOf(now()) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast(list.length + ' client' + (list.length > 1 ? 's' : '') + ' exporté' + (list.length > 1 ? 's' : '') + ' (CSV)');
+  }
+  function refreshView(manual) {
+    if (S.view === 'clients') { loadClients(manual); load(false); } else load(manual);
+    if (S.cl.open) { delete S.cl.detail[S.cl.open]; fetchClient(S.cl.open); }
+  }
+
   // ---------- events ----------
   el.period.addEventListener('click', (e) => { const b = e.target.closest('button[data-p]'); if (!b) return; S.period = b.dataset.p; try { localStorage.setItem(LS_PERIOD, S.period); } catch (x) {} render(); });
   el.kpis.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (!b) return;
     S.status = b.dataset.go === 'Confirmée' ? 'Confirmée' : b.dataset.go; S.page = 0; render();
     document.querySelector('.board').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   el.chips.addEventListener('click', (e) => { const b = e.target.closest('[data-st]'); if (!b) return; S.status = b.dataset.st; S.page = 0; render(); });
-  el.newBadge.addEventListener('click', () => { S.status = 'new'; S.sort = 'new'; el.sort.value = 'new'; S.page = 0; render(); });
+  el.newBadge.addEventListener('click', () => { if (S.view !== 'orders') setView('orders'); S.status = 'new'; S.sort = 'new'; el.sort.value = 'new'; S.page = 0; render(); });
   let qT;
   el.q.addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(() => { S.q = el.q.value.trim(); S.page = 0; render(); }, 120); });
   el.from.addEventListener('change', () => { S.from = el.from.value; S.page = 0; render(); });
@@ -534,7 +765,7 @@
   el.sort.addEventListener('change', () => { S.sort = el.sort.value; S.page = 0; render(); });
   el.reset.addEventListener('click', () => { S.q = S.from = S.to = ''; S.status = 'all'; S.sort = 'new'; S.page = 0; el.q.value = el.from.value = el.to.value = ''; el.sort.value = 'new'; markSeen(); render(); });
   el.csv.addEventListener('click', exportCsv);
-  el.refresh.addEventListener('click', () => load(true));
+  el.refresh.addEventListener('click', () => refreshView(true));
   el.pager.addEventListener('click', (e) => { const b = e.target.closest('[data-pg]'); if (!b) return; S.page += +b.dataset.pg; render(); el.table.scrollIntoView({ block: 'nearest' }); });
   el.rows.addEventListener('click', (e) => {
     const tr = e.target.closest('tr[data-id]'); if (!tr) return;
@@ -544,8 +775,24 @@
   });
   el.rows.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-id]')) { e.preventDefault(); openDrawer(e.target.dataset.id); } });
   el.scrim.addEventListener('click', () => closeDrawer());
+  el.views.addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b && b.dataset.v !== S.view) setView(b.dataset.v); });
+  let cqT;
+  el.cq.addEventListener('input', () => { clearTimeout(cqT); cqT = setTimeout(() => { S.cl.q = el.cq.value.trim(); S.cl.page = 0; renderClients(); }, 120); });
+  el.csort.addEventListener('change', () => { S.cl.sort = el.csort.value; S.cl.page = 0; renderClients(); });
+  el.creset.addEventListener('click', () => { S.cl.q = ''; S.cl.sort = 'bal'; S.cl.page = 0; el.cq.value = ''; el.csort.value = 'bal'; renderClients(); });
+  el.ccsv.addEventListener('click', exportClientsCsv);
+  el.cpager.addEventListener('click', (e) => { const b = e.target.closest('[data-pg]'); if (!b) return; S.cl.page += +b.dataset.pg; renderClients(); el.ctable.scrollIntoView({ block: 'nearest' }); });
+  el.crows.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-cid]'); if (tr) openClient(tr.dataset.cid); });
+  el.crows.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-cid]')) { e.preventDefault(); openClient(e.target.dataset.cid); } });
   el.drawer.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) return closeDrawer();
+    const cl = e.target.closest('[data-client]'); if (cl) return openClient(cl.dataset.client);
+    if (e.target.closest('[data-reload-client]') && S.cl.open) { delete S.cl.detail[S.cl.open]; renderClientDrawer(S.cl.open); return fetchClient(S.cl.open); }
+    const co = e.target.closest('[data-oid]');
+    if (co && S.cl.open) {
+      if (byId(co.dataset.oid)) return openDrawer(co.dataset.oid, S.cl.open);
+      return toast('Commande ' + co.dataset.oid + ' pas encore dans la liste : actualisez (R).', true);
+    }
     const s = e.target.closest('[data-to]'); if (s && S.open) return setStatus(S.open, s.dataset.to);
     if (e.target.closest('[data-note]') && S.open) return saveNote(S.open);
     const c = e.target.closest('[data-copy]'); if (c) return copy(c.dataset.copy);
@@ -553,27 +800,29 @@
   el.drawer.addEventListener('submit', (e) => {
     const f = e.target.closest('form[data-pts]'); if (!f) return;
     e.preventDefault();
-    if (S.open) adjustPoints(S.open, f);
+    if (S.cl.open) adjustClient(S.cl.open, f);
+    else if (S.open) adjustPoints(S.open, f);
   });
   document.addEventListener('keydown', (e) => {
     if (el.app.hidden) return;
-    if (e.key === 'Escape') { if (S.open) { e.preventDefault(); closeDrawer(); } return; }
+    if (e.key === 'Escape') { if (S.open && S.back) { e.preventDefault(); openClient(S.back); } else if (S.open || S.cl.open) { e.preventDefault(); closeDrawer(); } return; }
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
     if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key === '/') { e.preventDefault(); el.q.focus(); el.q.select(); }
-    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); load(true); }
+    const box = S.view === 'clients' ? el.cq : el.q;
+    if (e.key === '/') { e.preventDefault(); box.focus(); box.select(); }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); refreshView(true); }
   });
 
   // ---------- auto refresh ----------
   let timer = null;
-  function startTimer() { stopTimer(); timer = setInterval(() => { if (!document.hidden && !el.app.hidden) load(false); }, REFRESH_MS); }
+  function startTimer() { stopTimer(); timer = setInterval(() => { if (!document.hidden && !el.app.hidden) { load(false); if (S.view === 'clients' && !S.cl.open) loadClients(false); } }, REFRESH_MS); }
   function stopTimer() { if (timer) clearInterval(timer); timer = null; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !el.app.hidden && S.key && Date.now() - S.lastSync > REFRESH_MS) load(false); });
 
   function startApp() {
     el.login.hidden = true; el.app.hidden = false;
     if (!S.loaded) skeleton();
-    render(); load(false); startTimer();
+    render(); setView(S.view, true); load(false); if (S.view === 'clients') loadClients(false); startTimer();
   }
 
   // ---------- boot ----------
@@ -589,5 +838,5 @@
   S.key = storedKey();
   if (S.key) upgradeStoredKey().then(startApp); else showLogin('');
 
-  window.__kobgAdmin = { get orders() { return S.orders; }, get view() { return { status: S.status, q: S.q, period: S.period, page: S.page, open: S.open }; }, reload: load, stats: stats, filtered: filtered, wa212: wa212 };    // for tests / console
+  window.__kobgAdmin = { get orders() { return S.orders; }, get view() { return { view: S.view, status: S.status, q: S.q, period: S.period, page: S.page, open: S.open, client: S.cl.open }; }, get clientList() { return S.cl.list; }, cFiltered: cFiltered, reload: load, stats: stats, filtered: filtered, wa212: wa212 };    // for tests / console
 })();
