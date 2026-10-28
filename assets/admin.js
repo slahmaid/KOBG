@@ -35,7 +35,7 @@
   const S = {
     key: '', orders: [], loaded: false, today: '', serverSkew: 0, lastSync: 0, busy: false, failing: false,
     period: localStorage.getItem(LS_PERIOD) || 'today', status: 'all', q: '', from: '', to: '', sort: 'new', page: 0,
-    open: null, pending: {}, seen: readSeen(), freshIds: new Set()
+    open: null, pending: {}, seen: readSeen(), freshIds: new Set(), clients: {}
   };
 
   // ---------- utils ----------
@@ -82,7 +82,7 @@
     }
     // The new script always answers with a known admin error code or `version`; anything else
     // (e.g. the old script's {ok:false,error:'missing fields'} or {ok:true,service:…}) means old code.
-    const KNOWN = ['bad_key', 'expired', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy'];
+    const KNOWN = ['bad_key', 'expired', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy', 'bad_points', 'bad_reason'];
     if (!data || typeof data !== 'object') throw new ApiError('bad_reply');
     if (data.ok !== true) {
       const err = data.error;
@@ -106,6 +106,8 @@
       case 'timeout': return 'Google ne répond pas (délai dépassé). Réessayez.';
       case 'not_found': return 'Commande introuvable dans la feuille.';
       case 'bad_status': return 'Statut refusé par le script.';
+      case 'bad_points': return 'Montant de points refusé : un nombre entier, positif ou négatif, non nul (100 000 au plus).';
+      case 'bad_reason': return 'Indiquez un motif (3 caractères minimum).';
       case 'no_endpoint': return 'Adresse du script manquante dans assets/admin.js (ADMIN_ENDPOINT).';
       case 'server': return 'Erreur du script Google : ' + (e.data.detail || '');
       default: return 'Erreur : ' + (c || 'inconnue');
@@ -177,6 +179,7 @@
         return p ? Object.assign(o, { statut: p.to }) : o;
       });
       S.orders = list;
+      S.clients = d.clients && typeof d.clients === 'object' ? d.clients : {};
       if (!S.seen) { S.seen = { ts: list.reduce((m, o) => Math.max(m, o.ts || 0), 0), ids: [] }; saveSeen(); }
       const fresh = list.filter((o) => isNew(o) && (!wasLoaded || !prevIds.has(o.id)));
       if (wasLoaded && fresh.length) toast(fresh.length === 1 ? 'Nouvelle commande : ' + fresh[0].id + ' — ' + fresh[0].nom : fresh.length + ' nouvelles commandes');
@@ -361,6 +364,8 @@
     const ta = el.drawer.querySelector('textarea');
     const editing = fromRefresh && ta && (document.activeElement === ta || ta.value !== ta.defaultValue);
     const draft = editing ? ta.value : null;
+    const pd = el.drawer.querySelector('#ptsDelta'), pr = el.drawer.querySelector('#ptsReason');
+    const ptsDraft = fromRefresh && pd && pr && (pd.value || pr.value) ? { d: pd.value, r: pr.value, f: document.activeElement && document.activeElement.id } : null;
     const its = items(o);
     const disc = Math.round(o.sousTotal * (o.remise || 0) / 100);
     const tel = digits(o.tel);
@@ -379,17 +384,68 @@
       '</div><div class="tots"><div><span>Sous-total</span><span>' + dh(o.sousTotal) + '</span></div>' +
         (o.remise ? '<div><span>Remise ' + esc(o.promo || '') + ' (' + o.remise + ' %)</span><span>− ' + dh(disc) + '</span></div>' : '') +
         '<div><span>Livraison</span><span>' + (o.livraison ? dh(o.livraison) : 'Offerte') + '</span></div>' +
+        (o.points ? '<div class="pts-line"><span>Points fidélité utilisés</span><span>− ' + dh(o.points) + '</span></div>' : '') +
         '<div class="grand"><span>Total à encaisser</span><span>' + dh(o.total) + '</span></div></div></div>' +
+      ptsCard(o) +
       '<div class="d-card note"><div class="d-row"><span class="d-h">Note interne</span><small>' + (o.maj ? 'Mis à jour le ' + esc(o.maj) : '') + '</small></div>' +
         '<textarea id="noteTa" maxlength="1000" placeholder="Ex. rappeler après 18 h, adresse précise…">' + esc(o.note) + '</textarea>' +
         '<div class="d-row"><small>Visible uniquement dans l\'admin et l\'onglet Gestion.</small><button type="button" class="btn btn-dark" data-note>Enregistrer la note</button></div></div>' +
       '<div class="d-card"><span class="d-h">Historique</span><ul class="hist">' + histHtml(o) + '</ul></div>' +
-      '<div class="d-card"><span class="d-h">Ligne de la feuille « Commandes » (14 colonnes)</span><dl class="fields">' +
+      '<div class="d-card"><span class="d-h">Ligne de la feuille « Commandes »</span><dl class="fields">' +
         [['Reçue le', o.recu], ['N° commande', o.id], ['Nom', o.nom], ['Téléphone', o.tel], ['Ville', o.ville], ['Articles', o.articles, 1], ['Taille', o.taille], ['Couleur', o.couleur],
-         ['Nb articles', o.nb], ['Sous-total (DH)', o.sousTotal], ['Code promo', o.promo || '—'], ['Remise (%)', o.remise], ['Livraison (DH)', o.livraison], ['Total (DH)', o.total]]
+         ['Nb articles', o.nb], ['Sous-total (DH)', o.sousTotal], ['Code promo', o.promo || '—'], ['Remise (%)', o.remise], ['Livraison (DH)', o.livraison], ['Total (DH)', o.total],
+         ['Compte client', o.client || '—'], ['Points utilisés (DH)', o.points || 0]]
           .map((f) => '<div' + (f[2] ? ' class="wide"' : '') + '><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>').join('') +
       '</dl></div>';
     if (draft != null) { const nt = el.drawer.querySelector('textarea'); nt.value = draft; }
+    if (ptsDraft) {
+      const d2 = el.drawer.querySelector('#ptsDelta'), r2 = el.drawer.querySelector('#ptsReason');
+      if (d2 && r2) { d2.value = ptsDraft.d; r2.value = ptsDraft.r; const f = ptsDraft.f && el.drawer.querySelector('#' + ptsDraft.f); if (f) f.focus({ preventScroll: true }); }
+    }
+  }
+
+  // ---------- loyalty points (orders placed while signed in to a customer account) ----------
+  const PTS_TYPES = { gain: 'Gagnés', retrait: 'Retirés', utilisation: 'Utilisés', remboursement: 'Rendus', ajustement: 'Ajustement' };
+  function sgn(n) { n = Math.round(Number(n) || 0); return (n > 0 ? '+' : n < 0 ? '−' : '') + dh(Math.abs(n)); }
+  function ptsCard(o) {
+    if (!o.client) return '<div class="d-card pts"><span class="d-h">Fidélité</span><small class="pts-muted">Commande passée sans compte client : pas de points fidélité.</small></div>';
+    const c = S.clients[o.client];
+    if (!c) return '<div class="d-card pts"><span class="d-h">Fidélité</span><small class="pts-muted">Compte ' + esc(o.client) + ' : solde indisponible (actualisez).</small></div>';
+    const mine = o.statut === 'Livrée' ? (o.pointsEarned ? sgn(o.pointsEarned) + ' crédités (livrée)' : 'aucun palier franchi') : 'crédités quand elle sera « Livrée »';
+    const hist = (c.history || []).map((r) => '<li><span><b>' + esc(PTS_TYPES[r.type] || 'Ajustement') + ' ' + esc(sgn(r.pts)) + '</b>' +
+      (r.order ? ' · ' + esc(r.order) : '') + '<br><small>' + esc(r.motif || r.label || '') + '</small></span><time>' + esc(r.at || '') + '<br>solde ' + esc(dh(r.solde)) + '</time></li>').join('');
+    return '<div class="d-card pts"><div class="d-row"><span class="d-h">Fidélité · compte client</span><small>' + esc(c.email || o.client) + (c.gone ? ' (compte supprimé)' : '') + '</small></div>' +
+      '<div class="pts-sum"><div><small>Solde</small><b class="' + (c.balance < 0 ? 'neg' : '') + '">' + esc(dh(c.balance)) + '</b></div>' +
+        '<div><small>Achats livrés comptés</small><b>' + esc(dh(c.spend)) + '</b></div>' +
+        '<div><small>Prochain palier</small><b>dans ' + esc(dh(c.next)) + '</b></div></div>' +
+      '<small class="pts-muted">Cette commande : ' + (o.points ? esc(dh(o.points)) + ' de points utilisés · ' : '') + 'points ' + esc(mine) + '. ' +
+        esc(dh(c.reward || 50)) + ' tous les ' + esc(dh(c.step || 1500)) + ' d\'achats livrés ; « Retournée » les retire, « Annulée » / « Retournée » rendent les points utilisés.</small>' +
+      (hist ? '<ul class="hist pts-hist">' + hist + '</ul>' : '<small class="pts-muted">Aucun mouvement de points.</small>') +
+      (c.gone ? '' : '<form class="pts-adj" data-pts novalidate><span class="d-h">Ajustement manuel</span>' +
+        '<div class="pts-adj-row"><label for="ptsDelta">Points (DH)</label><input id="ptsDelta" type="number" step="1" inputmode="numeric" placeholder="+50 ou -50" required>' +
+        '<label for="ptsReason">Motif</label><input id="ptsReason" type="text" maxlength="200" placeholder="Ex. geste commercial, erreur de saisie…" required></div>' +
+        '<div class="d-row"><small>Écrit dans l\'onglet « Points » avec le motif (le client voit « Ajustement par notre équipe »).</small><button type="submit" class="btn btn-dark">Ajuster le solde</button></div></form>');
+  }
+  async function adjustPoints(id, form) {
+    const o = byId(id); if (!o || !o.client) return;
+    const delta = Number(form.querySelector('#ptsDelta').value);
+    const reason = form.querySelector('#ptsReason').value.trim();
+    if (!Number.isInteger(delta) || !delta) { toast('Indiquez un nombre entier de points, ex. 50 ou -50.', true); form.querySelector('#ptsDelta').focus(); return; }
+    if (reason.length < 3) { toast('Indiquez un motif (3 caractères minimum).', true); form.querySelector('#ptsReason').focus(); return; }
+    const c = S.clients[o.client] || {};
+    if (!window.confirm((delta > 0 ? 'Ajouter ' : 'Retirer ') + Math.abs(delta) + ' DH de points ' + (delta > 0 ? 'à ' : 'à ') + (c.email || o.client) + ' ?\nMotif : ' + reason)) return;
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.textContent = 'Enregistrement…';
+    try {
+      const d = await api('points_adjust', { client: o.client, delta: delta, reason: reason, order: o.id });
+      if (d.client) S.clients[o.client] = d.client;
+      toast('Points ajustés : ' + sgn(delta) + ' · solde ' + dh(d.client ? d.client.balance : 0));
+      if (S.open === id) renderDrawer(o);
+    } catch (e) {
+      toast('Ajustement non enregistré. ' + errText(e), true);
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
+      btn.disabled = false; btn.textContent = 'Ajuster le solde';
+    }
   }
 
   // ---------- actions ----------
@@ -406,7 +462,11 @@
       delete S.pending[id];
       const cur = byId(id);
       if (cur) Object.assign(cur, d.order);
-      toast(id + ' → ' + to);
+      if (d.clients) Object.assign(S.clients, d.clients);
+      const seenN = {};
+      (prev.hist || []).forEach((h) => { if (h.note) seenN[h.at + h.note] = (seenN[h.at + h.note] || 0) + 1; });
+      const moved = ((d.order && d.order.hist) || []).filter((h) => h.note && h.by === 'serveur' && !(seenN[h.at + h.note]-- > 0)).map((h) => h.note);
+      toast(id + ' → ' + to + (moved.length ? ' · ' + moved.join(' ') : ''));
     } catch (e) {
       delete S.pending[id];
       const cur = byId(id);
@@ -425,6 +485,7 @@
     try {
       const d = await api('update', { id: id, note: note });
       Object.assign(o, d.order);
+      if (d.clients) Object.assign(S.clients, d.clients);
       toast('Note enregistrée · ' + id);
       if (S.open === id) renderDrawer(o);
     } catch (e) {
@@ -448,8 +509,8 @@
   function exportCsv() {
     const list = filtered().list;
     if (!list.length) { toast('Rien à exporter', true); return; }
-    const head = ['Reçue le', 'N° commande', 'Nom', 'Téléphone', 'Ville', 'Articles', 'Taille', 'Couleur', 'Nb articles', 'Sous-total (DH)', 'Code promo', 'Remise (%)', 'Livraison (DH)', 'Total (DH)', 'Statut', 'Note interne', 'Mis à jour le'];
-    const lines = [head].concat(list.map((o) => [o.recu, o.id, o.nom, o.tel, o.ville, o.articles, o.taille, o.couleur, o.nb, o.sousTotal, o.promo, o.remise, o.livraison, o.total, o.statut, o.note, o.maj]));
+    const head = ['Reçue le', 'N° commande', 'Nom', 'Téléphone', 'Ville', 'Articles', 'Taille', 'Couleur', 'Nb articles', 'Sous-total (DH)', 'Code promo', 'Remise (%)', 'Livraison (DH)', 'Total (DH)', 'Statut', 'Note interne', 'Mis à jour le', 'Compte client', 'Points utilisés (DH)', 'Points gagnés (DH)'];
+    const lines = [head].concat(list.map((o) => [o.recu, o.id, o.nom, o.tel, o.ville, o.articles, o.taille, o.couleur, o.nb, o.sousTotal, o.promo, o.remise, o.livraison, o.total, o.statut, o.note, o.maj, o.client || '', o.points || 0, o.pointsEarned || 0]));
     const csv = '\ufeff' + lines.map((r) => r.map(csvCell).join(';')).join('\r\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -488,6 +549,11 @@
     const s = e.target.closest('[data-to]'); if (s && S.open) return setStatus(S.open, s.dataset.to);
     if (e.target.closest('[data-note]') && S.open) return saveNote(S.open);
     const c = e.target.closest('[data-copy]'); if (c) return copy(c.dataset.copy);
+  });
+  el.drawer.addEventListener('submit', (e) => {
+    const f = e.target.closest('form[data-pts]'); if (!f) return;
+    e.preventDefault();
+    if (S.open) adjustPoints(S.open, f);
   });
   document.addEventListener('keydown', (e) => {
     if (el.app.hidden) return;

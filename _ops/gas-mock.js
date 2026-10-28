@@ -51,7 +51,10 @@ class Sheet {
     if (typeof a === 'string') return new Range(this, 1, 1, 0, 0);    // A1 ranges are only used for formatting
     return new Range(this, a, b, c || 1, d || 1);
   }
-  appendRow(vals) { const r = this.getLastRow() + 1; vals.forEach((v, i) => this.put(r, i + 1, typed(v))); return this; }
+  appendRow(vals) {
+    if (this.guard) this.guard(this.name);
+    const r = this.getLastRow() + 1; vals.forEach((v, i) => this.put(r, i + 1, typed(v))); return this;
+  }
   deleteRow(r) { this.rows.splice(r - 1, 1); return this; }
   setFrozenRows(n) { this.frozen = n; return this; }
   getFrozenRows() { return this.frozen; }
@@ -62,11 +65,11 @@ const signed = (buf) => [...buf].map((b) => (b > 127 ? b - 256 : b));
 
 function makeEnv(opts = {}) {
   const env = { mails: [], logs: [], fetchFail: !!opts.fetchFail, catalogText: opts.catalogText, now: null,
-    mailQuota: opts.mailQuota != null ? opts.mailQuota : 100 };
+    mailQuota: opts.mailQuota != null ? opts.mailQuota : 100, lock: { busy: false, held: false, taken: 0 }, guard: null };
   const sheets = {};
   const book = {
     getSheetByName: (n) => sheets[n] || null,
-    insertSheet: (n) => (sheets[n] = new Sheet(n)),
+    insertSheet: (n) => { const sh = new Sheet(n); sh.guard = (name) => env.guard && env.guard(name); return (sheets[n] = sh); },
   };
   env.sheets = sheets;
 
@@ -123,7 +126,13 @@ function makeEnv(opts = {}) {
         getKeys: () => [...props.keys()],
       }),
     },
-    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
+    // one script-wide lock, like Apps Script: env.lock.busy = true simulates another execution holding it
+    LockService: {
+      getScriptLock: () => ({
+        tryLock: () => { if (env.lock.busy) return false; env.lock.held = true; env.lock.taken++; return true; },
+        releaseLock: () => { env.lock.held = false; },
+      }),
+    },
     UrlFetchApp: {
       fetch: () => {
         if (env.fetchFail) throw new Error('DNS error');

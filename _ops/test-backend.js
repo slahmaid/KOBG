@@ -609,3 +609,252 @@ test('setup() also creates the Clients tab and the account column', () => {
   env.run('benchmarkHash');
   assert.ok(env.logs.some((l) => /itérations PBKDF2/.test(l)));
 });
+
+// ---------- loyalty points ----------
+// RB11 alone = 1750 + 25 delivery = 1775 DH paid; BODY alone = 4559 DH (free delivery)
+const ptsOf = (env) => (env.sheets.Points ? env.sheets.Points.rows.slice(1) : []);
+const bal = (env, s) => env.post({ action: 'me', session: s }).points.balance;
+const setStatus = (env, id, status) => env.post({ action: 'update', key: KEY, id: id, status: status });
+const adjust = (env, client, delta, reason = 'Geste commercial') => env.post({ action: 'points_adjust', key: KEY, client: client, delta: delta, reason: reason });
+// every write to the Points tab must happen while the script lock is held
+const strict = (env) => { env.guard = (name) => { if (name === 'Points' && !env.lock.held) throw new Error('Points written without the lock'); }; return env; };
+
+test('points: 50 DH per full 1 500 DH delivered, the remainder carries over; guests and open orders earn nothing', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  const me0 = env.post({ action: 'me', session: a.session });
+  assert.deepEqual(me0.points, { balance: 0, spend: 0, earned: 0, step: 1500, reward: 50, progress: 0, next: 1500 });
+  const o1 = env.post(order({ session: a.session }));
+  const o2 = env.post(order({ session: a.session }));
+  const o3 = env.post(order({ session: a.session, items: [{ id: BODY, qty: 1 }] }));
+  const guest = env.post(order());
+  setStatus(env, guest.orderId, 'Livrée');
+  setStatus(env, o1.orderId, 'Confirmée');
+  setStatus(env, o1.orderId, 'Expédiée');
+  assert.equal(ptsOf(env).length, 0);                                       // nothing before delivery, nothing for guests
+  const u1 = setStatus(env, o1.orderId, 'Livrée');
+  assert.equal(u1.order.pointsEarned, 50);
+  assert.equal(u1.clients[a.profile.id].balance, 50);
+  let me = env.post({ action: 'me', session: a.session }).points;
+  assert.equal(me.spend, 1775);
+  assert.equal(me.progress, 275);
+  assert.equal(me.next, 1225);                                              // « Plus que 1 225 DH »
+  setStatus(env, o2.orderId, 'Livrée');                                     // 3 550 DH → 2 thresholds
+  assert.equal(bal(env, a.session), 100);
+  setStatus(env, o3.orderId, 'Livrée');                                     // 8 109 DH → 5 thresholds
+  me = env.post({ action: 'me', session: a.session }).points;
+  assert.equal(me.balance, 250);
+  assert.equal(me.earned, 250);
+  assert.equal(me.next, 1500 - (8109 % 1500));
+  const L = ptsOf(env);
+  assert.deepEqual(L.map((v) => [v[3], v[4], v[5], v[6], v[7]]), [
+    [o1.orderId, 'gain', 50, 1775, 50], [o2.orderId, 'gain', 50, 1775, 100], [o3.orderId, 'gain', 150, 4559, 250]]);
+  assert.equal(L[0][1], a.profile.id);
+  assert.equal(L[0][2], a.profile.email);
+  assert.deepEqual(rowsOf(env, 'Points')[0], ['Date', 'ID client', 'E-mail', 'N° commande', 'Type', 'Points (DH)', 'Achats comptés (DH)', 'Solde après', 'Motif']);
+  const h = env.post({ action: 'my_points', session: a.session });
+  assert.equal(h.ok, true);
+  assert.equal(h.points.balance, 250);
+  assert.deepEqual(h.history.map((x) => [x.order, x.type, x.pts]), [[o3.orderId, 'gain', 150], [o2.orderId, 'gain', 50], [o1.orderId, 'gain', 50]]);
+  assert.equal(h.history[0].label, 'Commande livrée');
+  assert.equal(env.post({ action: 'my_points', session: 'k1.' + 'B'.repeat(43) }).error, 'auth');
+  const mine = env.post({ action: 'my_orders', session: a.session }).orders.find((o) => o.id === o3.orderId);
+  assert.equal(mine.pointsEarned, 150);
+  assert.ok(env.lock.taken > 0 && !env.lock.held);
+});
+
+test('points: setting « Livrée » twice (or re-saving it) credits once', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  const o = env.post(order({ session: a.session }));
+  setStatus(env, o.orderId, 'Livrée');
+  setStatus(env, o.orderId, 'Livrée');
+  env.post({ action: 'update', key: KEY, id: o.orderId, status: 'Livrée', note: 'livré en main propre' });
+  env.post({ action: 'update', key: KEY, id: o.orderId, note: 'note seule' });
+  assert.equal(ptsOf(env).length, 1);
+  assert.equal(bal(env, a.session), 50);
+});
+
+test('points: « Retournée » takes the purchase and its points back; re-delivering credits them again', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  const o1 = env.post(order({ session: a.session }));
+  const o2 = env.post(order({ session: a.session }));
+  setStatus(env, o1.orderId, 'Livrée');
+  setStatus(env, o2.orderId, 'Livrée');
+  assert.equal(bal(env, a.session), 100);
+  const r = setStatus(env, o2.orderId, 'Retournée');
+  assert.equal(r.ok, true);
+  assert.equal(r.order.pointsEarned, 0);
+  assert.match(r.order.hist.slice(-1)[0].note, /Fidélité : -1775 DH d’achats comptés, -50 points/);
+  let me = env.post({ action: 'me', session: a.session }).points;
+  assert.equal(me.balance, 50);
+  assert.equal(me.spend, 1775);                                             // the 275 DH carry-over is intact
+  setStatus(env, o2.orderId, 'Retournée');
+  assert.equal(ptsOf(env).length, 3);                                       // idempotent
+  // a delivered order moved back by mistake is reversed too, then credited again
+  setStatus(env, o1.orderId, 'Expédiée');
+  assert.equal(bal(env, a.session), 0);
+  setStatus(env, o1.orderId, 'Livrée');
+  setStatus(env, o2.orderId, 'Livrée');
+  me = env.post({ action: 'me', session: a.session }).points;
+  assert.equal(me.balance, 100);
+  assert.equal(me.spend, 3550);
+  assert.deepEqual(ptsOf(env).map((v) => v[4]), ['gain', 'gain', 'retrait', 'retrait', 'gain', 'gain']);
+});
+
+test('points: redeeming at checkout — deducted server-side, capped at the order total, stored in the sheet', () => {
+  const env = strict(env0({ props: { ADMIN_KEY: KEY, NOTIFY_EMAIL: 'shop@example.org' } }));
+  const a = signup(env);
+  assert.equal(adjust(env, a.profile.id, 3000).ok, true);
+  const r = env.post(order({ session: a.session, points: 120, total: 1655 }));
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.points, 120);
+  assert.equal(r.total, 1655);
+  assert.equal(r.balance, 2880);
+  assert.equal(r.adjusted, false);
+  const c = rowsOf(env, 'Commandes');
+  assert.equal(c[0][15], 'Points utilisés (DH)');
+  const v = c.find((x) => x[1] === r.orderId);
+  assert.equal(v[13], 1655);                                                // Total = amount to collect
+  assert.equal(v[15], 120);
+  const g = rowsOf(env, 'Gestion').find((x) => x[0] === r.orderId);
+  assert.match(g[2], /Points fidélité utilisés : 120 DH/);
+  assert.match(env.mails[0].body, /Points fidélité utilisés : -120 DH/);
+  const last = ptsOf(env).slice(-1)[0];
+  assert.deepEqual([last[3], last[4], last[5], last[7]], [r.orderId, 'utilisation', -120, 2880]);
+  // cap: never more than the order total (after promo)
+  const over = env.post(order({ session: a.session, points: 1776 }));
+  assert.equal(over.ok, false);
+  assert.equal(over.error, 'bad_points');
+  assert.equal(over.max, 1775);
+  assert.equal(over.balance, 2880);
+  const promo = env.post(order({ session: a.session, promoCode: 'KOBG26', points: 1751 }));
+  assert.equal(promo.error, 'bad_points');                                  // 1750 − 175 + 25 = 1600
+  assert.equal(promo.max, 1600);
+  const all = env.post(order({ session: a.session, points: 1775 }));
+  assert.equal(all.ok, true);
+  assert.equal(all.total, 0);
+  assert.equal(all.balance, 1105);
+  // a free order does not count as a purchase
+  setStatus(env, all.orderId, 'Livrée');
+  assert.equal(bal(env, a.session), 1105);
+  // admin list shows points used and the customer's balance
+  const list = env.post({ action: 'list', key: KEY });
+  assert.equal(list.orders.find((o) => o.id === r.orderId).points, 120);
+  assert.equal(list.orders.find((o) => o.id === r.orderId).client, a.profile.id);
+  assert.equal(list.clients[a.profile.id].balance, 1105);
+  // retrying the same submission does not debit twice
+  const again = env.post(order({ orderId: r.orderId, telephone: v[3], session: a.session, points: 120 }));
+  assert.equal(again.duplicate, true);
+  assert.equal(again.points, 120);
+  assert.equal(bal(env, a.session), 1105);
+});
+
+test('points: tampered amounts are refused and nothing is written', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  adjust(env, a.profile.id, 100);
+  env.post(order());
+  const before = rowsOf(env, 'Commandes').length;
+  const n = ptsOf(env).length;
+  for (const p of [101, -50, 10.5, '50', '1e3', [50], { v: 1 }, true, 1e9]) {
+    const r = env.post(order({ session: a.session, points: p }));
+    assert.equal(r.ok, false, String(p));
+    assert.equal(r.error, 'bad_points', String(p));
+  }
+  assert.equal(env.post(order({ points: 50 })).error, 'auth');                                     // guest
+  assert.equal(env.post(order({ session: 'k1.' + 'B'.repeat(43), points: 50 })).error, 'auth');    // stale session
+  assert.equal(rowsOf(env, 'Commandes').length, before);
+  assert.equal(ptsOf(env).length, n);
+  assert.equal(bal(env, a.session), 100);
+  // the client's own total is never trusted: the server recomputes and flags the mismatch
+  const r = env.post(order({ session: a.session, points: 100, total: 10 }));
+  assert.equal(r.total, 1675);
+  assert.equal(r.adjusted, true);
+  // a second order cannot spend the same balance
+  assert.equal(env.post(order({ session: a.session, points: 1 })).error, 'bad_points');
+  // customers cannot call the admin points actions
+  assert.equal(env.post({ action: 'points_adjust', key: a.session, client: a.profile.id, delta: 500, reason: 'moi' }).error, 'bad_key');
+  assert.equal(env.post({ action: 'points_adjust', client: a.profile.id, delta: 500, reason: 'moi' }).error, 'bad_key');
+  assert.equal(bal(env, a.session), 0);
+});
+
+test('points: « Annulée » gives the points used back once; re-activating the order debits them again', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  adjust(env, a.profile.id, 200);
+  const o = env.post(order({ session: a.session, points: 150 }));
+  assert.equal(o.balance, 50);
+  const c = setStatus(env, o.orderId, 'Annulée');
+  assert.match(c.order.hist.slice(-1)[0].note, /\+150 points rendus/);
+  assert.equal(bal(env, a.session), 200);
+  setStatus(env, o.orderId, 'Annulée');
+  assert.equal(bal(env, a.session), 200);
+  setStatus(env, o.orderId, 'Confirmée');                                    // mistake undone
+  assert.equal(bal(env, a.session), 50);
+  // delivered then returned: the points used come back and the purchase is taken out
+  setStatus(env, o.orderId, 'Livrée');                                       // 1 625 DH paid → +50
+  assert.equal(bal(env, a.session), 100);
+  setStatus(env, o.orderId, 'Retournée');
+  assert.equal(bal(env, a.session), 200);
+  const types = ptsOf(env).map((v) => v[4]);
+  assert.deepEqual(types, ['ajustement', 'utilisation', 'remboursement', 'utilisation', 'gain', 'retrait', 'remboursement']);
+  const h = env.post({ action: 'my_points', session: a.session }).history;
+  assert.equal(h.slice(-1)[0].label, 'Ajustement par notre équipe');
+  assert.ok(!JSON.stringify(h).includes('Geste commercial'));                // the team's reason stays internal
+});
+
+test('points: admin adjustment needs the key, a whole amount and a reason; reasons are stored as text', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  assert.equal(adjust(env, a.profile.id, 0).error, 'bad_points');
+  assert.equal(adjust(env, a.profile.id, 2.5).error, 'bad_points');
+  assert.equal(adjust(env, a.profile.id, '100').error, 'bad_points');
+  assert.equal(adjust(env, a.profile.id, 100001).error, 'bad_points');
+  assert.equal(adjust(env, a.profile.id, 10, ' a ').error, 'bad_reason');
+  assert.equal(adjust(env, 'c_inconnu', 10).error, 'not_found');
+  assert.equal(ptsOf(env).length, 0);
+  const r = adjust(env, a.profile.id, 75, '=HYPERLINK("http://x","clic")');
+  assert.equal(r.ok, true);
+  assert.equal(r.client.balance, 75);
+  assert.equal(r.client.history[0].motif, 'Ajustement admin : =HYPERLINK("http://x","clic")');
+  assert.equal(formulas(env).length, 0);
+  assert.equal(adjust(env, a.profile.id, -100, 'Correction erreur').client.balance, -25);
+  const p = env.post({ action: 'points', key: KEY, client: a.profile.id });
+  assert.equal(p.ok, true);
+  assert.equal(p.client.balance, -25);
+  assert.equal(p.client.email, a.profile.email);
+  assert.equal(env.post({ action: 'points', key: KEY, client: 'nope' }).error, 'not_found');
+  // balance below zero (points spent, then the order returned): nothing can be redeemed
+  assert.equal(env.post(order({ session: a.session, points: 1 })).error, 'bad_points');
+  assert.equal(env.post(order({ session: a.session })).ok, true);
+});
+
+test('points: LockService — a busy lock writes nothing, and every ledger write holds the lock', () => {
+  const env = strict(env0());
+  const a = signup(env);
+  adjust(env, a.profile.id, 300);
+  const o = env.post(order({ session: a.session, points: 100 }));
+  const n = ptsOf(env).length, rows = rowsOf(env, 'Commandes').length;
+  env.lock.busy = true;                                                     // another execution holds it
+  assert.equal(env.post(order({ session: a.session, points: 100 })).error, 'busy');
+  assert.equal(setStatus(env, o.orderId, 'Livrée').error, 'busy');
+  assert.equal(adjust(env, a.profile.id, 10).error, 'busy');
+  assert.equal(ptsOf(env).length, n);
+  assert.equal(rowsOf(env, 'Commandes').length, rows);
+  env.lock.busy = false;
+  assert.equal(setStatus(env, o.orderId, 'Livrée').ok, true);
+  assert.equal(env.lock.held, false);                                       // always released
+  assert.equal(bal(env, a.session), 250);
+  // the guard really fires when a write happens outside the lock
+  assert.throws(() => env.ctx.addPoints_(env.ctx.ledger_(env.ctx.book_()), { client: { id: a.profile.id }, pts: 1 }), /without the lock/);
+});
+
+test('setup() creates the Points tab and the points column', () => {
+  const env = makeEnv();
+  env.run('setup');
+  assert.equal(env.sheets.Points.rows[0][5], 'Points (DH)');
+  assert.equal(env.sheets.Points.frozen, 1);
+  assert.equal(env.sheets.Commandes.rows[0][15], 'Points utilisés (DH)');
+});

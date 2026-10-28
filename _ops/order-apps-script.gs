@@ -15,7 +15,10 @@
    - admin: key compared in constant time, 15 min lock after 5 wrong keys, the browser only
      ever keeps a signed, expiring session token (rotating ADMIN_KEY revokes every session);
    - customer accounts (optional, onglet « Clients ») : salted PBKDF2 passwords, hashed expiring
-     session tokens, lock after 5 wrong passwords, password reset by e-mail (see "customer accounts"). */
+     session tokens, lock after 5 wrong passwords, password reset by e-mail (see "customer accounts");
+   - loyalty points (onglet « Points », see "loyalty points"): the balance is the sum of a ledger
+     written only here, under the script lock; points used at checkout are checked against it
+     (never the browser's figure), credited / reverted / refunded when the admin changes a status. */
 
 // ===================== CONFIG =====================
 const VERSION = '2026-10-28';
@@ -25,6 +28,9 @@ const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of tr
 const PROMO_CODES = { KOBG26: 10 };                              // code -> % off the subtotal
 const SHIPPING_FEE = 25;
 const FREE_SHIPPING_FROM = 2000;                                 // on the subtotal before the discount
+// loyalty programme (also in the CONFIG block of script.js): 1 point = 1 DH off a future order;
+// every full LOYALTY.step DH actually paid on delivered orders (cumulative, the remainder carries over) earns LOYALTY.reward points
+const LOYALTY = { step: 1500, reward: 50 };
 // ==================================================
 
 const TZ = 'Africa/Casablanca';
@@ -89,11 +95,16 @@ function order_(b) {
   const units = lines.reduce((n, l) => n + l.qty, 0);
   const warn = [];
   if (!cat) warn.push('⚠ Prix NON vérifiés (catalogue du site injoignable) : contrôlez le total avant d’expédier.');
-  if (Number(b.total) !== t.total) warn.push('⚠ Total recalculé par le serveur : ' + t.total + ' DH (le navigateur annonçait ' + clean_(b.total, 12) + ' DH).');
   if (b.promoCode && !t.pct) warn.push('Code promo refusé : ' + clean_(b.promoCode, 20) + '.');
 
+  // loyalty points the customer wants to use: a whole number of DH, checked against the ledger below
+  const want = wantPoints_(b.points);
+  if (want < 0) return fail_('bad_points');
+
   // signed in (compte.html)? the order is linked to the account; a stale token simply means a guest order
+  // (unless points were asked for: those need the account, so the browser is told to sign in again)
   const acct = b.session ? session_(b.session) : null;
+  if (want && !acct) return fail_('auth');
   const acctNote = acct ? ['Client connecté : ' + acct.user.email + (acct.user.adresse ? ' · adresse enregistrée : ' + acct.user.adresse
     + (acct.user.ville ? ', ' + acct.user.ville : '') : '')] : [];
 
@@ -107,10 +118,13 @@ function order_(b) {
     const ids = columnB_(sh);
     const dupAt = id ? ids.indexOf(id) : -1;
     if (dupAt >= 0) {
-      const v = sh.getRange(dupAt + 2, 1, 1, ORDER_HEAD.length).getValues()[0];
+      const ex = extras_(sh);
+      const v = sh.getRange(dupAt + 2, 1, 1, ex.width).getValues()[0];
       if (tel_(v[3]) === f.tel) {         // same order sent twice (double tap, network retry): don't store it again
+        const used = ex.pts ? num_(v[ex.pts - 1]) : 0;
         return ok_({ duplicate: true, orderId: id, subtotal: num_(v[9]), promoCode: str_(v[10]), discountPct: num_(v[11]),
-          discount: Math.round(num_(v[9]) * num_(v[11]) / 100), delivery: num_(v[12]), total: num_(v[13]) });
+          discount: Math.round(num_(v[9]) * num_(v[11]) / 100), delivery: num_(v[12]), points: used, total: num_(v[13]),
+          linked: !!(ex.acct && str_(v[ex.acct - 1])) });
       }
       id = '';                            // someone else's number: give this order its own
     }
@@ -122,6 +136,19 @@ function order_(b) {
     const nAll = Number(cache.get('rl:all') || 0);
     if (nAll >= LIMITS.global) return fail_('busy');
 
+    // points: read the balance INSIDE the lock, so two orders can't spend the same points
+    let used = 0, ledger = null;
+    if (want) {
+      ledger = ledger_(ss);
+      const bal = pointsOf_(ledger, acct.user.id).balance;
+      const max = Math.max(0, Math.min(bal, t.total));
+      if (want > max) return fail_('bad_points', { balance: bal, max: max });
+      used = want;
+    }
+    const paid = t.total - used;             // what the courier collects (and what counts for future points)
+    if (Number(b.total) !== paid) warn.push('⚠ Total recalculé par le serveur : ' + paid + ' DH (le navigateur annonçait ' + clean_(b.total, 12) + ' DH).');
+    if (used) acctNote.push('Points fidélité utilisés : ' + used + ' DH (déjà déduits du total à encaisser).');
+
     const now = new Date();
     const recu = fmt_(now, 'dd/MM/yyyy HH:mm');
     const row = [
@@ -129,14 +156,15 @@ function order_(b) {
       listCell_(lines.map((l) => l.name + (l.qty > 1 ? ' x' + l.qty : ''))),
       listCell_(lines.map((l) => l.size)),
       listCell_(lines.map((l) => l.colour)),
-      units, t.sub, t.pct ? t.code : '', t.pct, t.delivery, t.total,
+      units, t.sub, t.pct ? t.code : '', t.pct, t.delivery, paid,
     ];
-    if (acct) {
-      const col = acctCol_(sh, true);
-      while (row.length < col) row.push('');
-      row[col - 1] = "'" + acct.user.id;
-    }
+    const put = (col, v) => { while (row.length < col) row.push(''); row[col - 1] = v; };
+    if (acct) put(acctCol_(sh, true), "'" + acct.user.id);
+    if (used) put(extraCol_(sh, ORDER_PTS_COL, true), used);
     sh.appendRow(row);
+    let balance = null;
+    if (used) balance = addPoints_(ledger, { client: acct.user, order: id, type: 'utilisation', pts: -used, motif: 'Utilisés sur la commande ' + id }).balance;
+    else if (acct) balance = pointsOf_(ledger_(ss), acct.user.id).balance;
     const g = gestion_(ss);
     const hist = [{ at: recu, to: 'Nouvelle', by: 'site' }].concat(warn.map((w) => ({ at: recu, note: w, by: 'serveur' })));
     writeGestion_(g, { id: id, statut: 'Nouvelle', note: warn.concat(acctNote).join('\n'), maj: recu, hist: hist });
@@ -144,11 +172,12 @@ function order_(b) {
     cache.put(kTel, String(nTel + 1), LIMITS.perPhoneSec);
     cache.put('rl:all', String(nAll + 1), LIMITS.globalSec);
     reply = { orderId: id, items: lines, subtotal: t.sub, promoCode: t.pct ? t.code : '', discountPct: t.pct,
-      discount: t.discount, delivery: t.delivery, total: t.total, adjusted: warn.length > 0, linked: !!acct };
+      discount: t.discount, delivery: t.delivery, points: used, total: paid, adjusted: warn.length > 0, linked: !!acct };
+    if (balance != null) reply.balance = balance;
   } finally {
     lock.releaseLock();
   }
-  notify_(reply.orderId, f, lines, t, warn.concat(acctNote));
+  notify_(reply.orderId, f, lines, Object.assign({}, t, { points: reply.points, total: reply.total }), warn.concat(acctNote));
   return ok_(reply);
 }
 
@@ -242,7 +271,7 @@ function parseCatalog_(text) {
 // ---------- admin ----------
 function admin_(b, ctx) {
   const action = String(b.action);
-  if (['auth', 'list', 'stats', 'update'].indexOf(action) < 0) return fail_('bad_action');
+  if (['auth', 'list', 'stats', 'update', 'points', 'points_adjust'].indexOf(action) < 0) return fail_('bad_action');
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
   if (!key) return fail_('no_admin_key', { reason: 'missing', min: LIMITS.adminKeyMin });
@@ -274,13 +303,15 @@ function admin_(b, ctx) {
     return ok_({ token: auth === 'key' ? token_(key, b.remember ? LIMITS.sessionLong : LIMITS.sessionShort) : given });
   }
   if (action === 'update') return update_(b);
+  if (action === 'points') return adminPoints_(b);
+  if (action === 'points_adjust') return adjustPoints_(b);
   const orders = readOrders_();
   const now = Date.now();
   if (action === 'stats') {
     const period = ['today', '7d', '30d', 'all'].indexOf(b.period) >= 0 ? b.period : 'today';
     return ok_({ now: now, today: fmt_(new Date(now), 'yyyy-MM-dd'), period: period, stats: stats_(orders, period, now) });
   }
-  return ok_({ now: now, today: fmt_(new Date(now), 'yyyy-MM-dd'), orders: orders });
+  return ok_({ now: now, today: fmt_(new Date(now), 'yyyy-MM-dd'), orders: orders, clients: clientsOf_(orders) });
 }
 
 // 'key' (the admin key), 'token' (valid session token), 'expired', or false
@@ -331,9 +362,14 @@ function update_(b) {
     }
     if (hasNote) r.note = clean_(b.note, LIMITS.note, true);
     r.maj = when;
+    const ex = extras_(sh);
+    const v = sh.getRange(at + 2, 1, 1, ex.width).getValues()[0];
+    // loyalty points follow the status (idempotent: the ledger already says what this order did)
+    const moves = hasStatus ? syncPoints_(ss, v, ex, r.statut) : [];
+    moves.forEach((m) => r.hist.push({ at: when, note: m, by: 'serveur' }));
     writeGestion_(g, r);
-    const v = sh.getRange(at + 2, 1, 1, ORDER_HEAD.length).getValues()[0];
-    return ok_({ order: toOrder_(v, at + 2, r) });
+    const o = toOrder_(v, at + 2, r, ex, ledger_(ss));
+    return ok_({ order: o, clients: clientsOf_([o]) });
   } finally {
     lock.releaseLock();
   }
@@ -343,19 +379,24 @@ function readOrders_() {
   const ss = book_();
   const sh = ss.getSheetByName(SHEET_ORDERS);
   if (!sh || sh.getLastRow() < 2) return [];
-  const n = Math.min(ORDER_HEAD.length, sh.getLastColumn());
+  const ex = extras_(sh);
   const g = gestion_(ss);
-  return sh.getRange(2, 1, sh.getLastRow() - 1, n).getValues()
-    .map((v, i) => toOrder_(v, i + 2, g.byId[str_(v[1])]))
+  const L = ledger_(ss);
+  return sh.getRange(2, 1, sh.getLastRow() - 1, ex.width).getValues()
+    .map((v, i) => toOrder_(v, i + 2, g.byId[str_(v[1])], ex, L))
     .filter(Boolean);
 }
 
 // one sheet row (+ its "Gestion" line) -> the order object admin.js renders
-function toOrder_(v, row, gest) {
+// (+ the account that placed it and the loyalty points it used / earned, when the extra columns exist)
+function toOrder_(v, row, gest, ex, L) {
   const id = str_(v[1]);
   if (!id) return null;
   const d = asDate_(v[0]);
+  const client = ex && ex.acct ? str_(v[ex.acct - 1]) : '';
+  const mine = L && client ? orderPoints_(L, id) : null;
   return {
+    client: client, points: ex && ex.pts ? num_(v[ex.pts - 1]) : 0, pointsEarned: mine ? mine.earned : 0,
     row: row, id: id, ts: d ? d.getTime() : 0,
     recu: d ? fmt_(d, 'dd/MM/yyyy HH:mm') : str_(v[0]), day: d ? fmt_(d, 'yyyy-MM-dd') : '',
     nom: str_(v[2]), tel: tel_(v[3]), ville: str_(v[4]), articles: list_(v[5]), taille: list_(v[6]), couleur: list_(v[7]),
@@ -396,7 +437,7 @@ const SHEET_CLIENTS = 'Clients';
 const CLIENT_HEAD = ['ID client', 'E-mail', 'Nom', 'Téléphone', 'Adresse', 'Ville', 'Créé le', 'Mis à jour le',
   'Dernière connexion', 'Sel', 'Empreinte', 'Itérations'];
 const C = { id: 0, email: 1, nom: 2, tel: 3, adresse: 4, ville: 5, cree: 6, maj: 7, vu: 8, sel: 9, hash: 10, iter: 11 };
-const ACCOUNT_ACTIONS = ['register', 'login', 'logout', 'me', 'update_profile', 'change_password', 'my_orders',
+const ACCOUNT_ACTIONS = ['register', 'login', 'logout', 'me', 'update_profile', 'change_password', 'my_orders', 'my_points',
   'reset_request', 'reset_confirm'];
 const ACCT = {
   iter: 5000, pwMin: 8, pwMax: 128,
@@ -407,6 +448,7 @@ const ACCT = {
   orders: 50, adresse: 200,
 };
 const ORDER_ACCT_COL = 'Compte client';      // extra column of "Commandes": the account that placed the order
+const ORDER_PTS_COL = 'Points utilisés (DH)'; // extra column of "Commandes": loyalty points taken off the total
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"']{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
 const TOKEN_RE = /^k1\.[A-Za-z0-9_-]{43}$/;
 
@@ -426,7 +468,11 @@ function account_(b) {
   }
   const s = session_(b.session);
   if (!s) return fail_('auth');
-  if (a === 'me') return ok_({ profile: profile_(s.user) });
+  if (a === 'me') return ok_({ profile: profile_(s.user), points: summary_(pointsOf_(ledger_(book_()), s.user.id)) });
+  if (a === 'my_points') {
+    const p = pointsOf_(ledger_(book_()), s.user.id);
+    return ok_({ points: summary_(p), history: p.rows.slice(-PTS.history).reverse().map(historyLine_) });
+  }
   if (a === 'update_profile') return updateProfile_(s, b);
   if (a === 'change_password') return changePassword_(s, b);
   if (a === 'my_orders') return ok_({ orders: myOrders_(s.user.id) });
@@ -635,11 +681,13 @@ function myOrders_(uid) {
   const ss = book_();
   const sh = ss.getSheetByName(SHEET_ORDERS);
   if (!sh || sh.getLastRow() < 2) return [];
-  const col = acctCol_(sh, false);
+  const ex = extras_(sh);
+  const col = ex.acct;
   if (!col) return [];
   const g = gestion_(ss);
+  const L = ledger_(ss);
   const out = [];
-  sh.getRange(2, 1, sh.getLastRow() - 1, col).getValues().forEach((v) => {
+  sh.getRange(2, 1, sh.getLastRow() - 1, ex.width).getValues().forEach((v) => {
     if (str_(v[col - 1]) !== uid) return;
     const id = str_(v[1]);
     if (!id) return;
@@ -653,6 +701,7 @@ function myOrders_(uid) {
         return { name: m ? m[1] : n, qty: m ? Number(m[2]) : 1, size: sizes[i] || '', colour: colours[i] || '' };
       }),
       nb: num_(v[8]), sousTotal: num_(v[9]), promo: str_(v[10]), remise: num_(v[11]), livraison: num_(v[12]), total: num_(v[13]),
+      points: ex.pts ? num_(v[ex.pts - 1]) : 0, pointsEarned: orderPoints_(L, id).earned,
       statut: gest && STATUSES.indexOf(gest.statut) >= 0 ? gest.statut : 'Nouvelle',
       // status changes only: the team's internal notes never leave the sheet
       suivi: (gest ? gest.hist : []).filter((h) => h && h.to && STATUSES.indexOf(h.to) >= 0).map((h) => ({ at: str_(h.at), to: h.to })),
@@ -745,15 +794,22 @@ function profile_(u) {
     depuis: d ? fmt_(d, 'dd/MM/yyyy') : '' };
 }
 // "Commandes" column holding the account id; created after the last used column if missing (create=true)
-function acctCol_(sh, create) {
+function acctCol_(sh, create) { return extraCol_(sh, ORDER_ACCT_COL, create); }
+// any extra "Commandes" column, found by its header (accents/case ignored); new ones go after the last used column
+function extraCol_(sh, name, create) {
   const width = Math.max(ORDER_HEAD.length, sh.getLastColumn());
   const head = sh.getRange(1, 1, 1, width).getValues()[0].map((h) => fold_(h));
-  const i = head.indexOf(fold_(ORDER_ACCT_COL));
+  const i = head.indexOf(fold_(name));
   if (i >= 0) return i + 1;
   if (!create) return 0;
   const col = Math.max(ORDER_HEAD.length, head.filter(String).length ? head.length : 0) + 1;
-  sh.getRange(1, col).setValue(ORDER_ACCT_COL).setFontWeight('bold');
+  sh.getRange(1, col).setValue(name).setFontWeight('bold');
   return col;
+}
+// where the extra columns are, and how wide a row must be read to see them
+function extras_(sh) {
+  const acct = extraCol_(sh, ORDER_ACCT_COL, false), pts = extraCol_(sh, ORDER_PTS_COL, false);
+  return { acct: acct, pts: pts, width: Math.max(ORDER_HEAD.length, acct, pts) };
 }
 
 // ---- crypto + validation ----
@@ -877,6 +933,7 @@ function notify_(id, f, lines, t, warn) {
         'Sous-total : ' + t.sub + ' DH',
         t.pct ? 'Remise ' + t.code + ' (-' + t.pct + ' %) : -' + t.discount + ' DH' : '',
         'Livraison : ' + (t.delivery ? t.delivery + ' DH' : 'offerte'),
+        t.points ? 'Points fidélité utilisés : -' + t.points + ' DH' : '',
         'À encaisser à la livraison : ' + t.total + ' DH',
         warn.length ? '\n' + warn.join('\n') : '', '',
         'Gérer la commande : ' + SITE_URL + 'admin.html',
@@ -884,6 +941,167 @@ function notify_(id, f, lines, t, warn) {
     });
   } catch (e) {
     console.warn('notification e-mail not sent: ' + e);
+  }
+}
+
+// ---------- loyalty points (programme fidélité) ----------
+// The tab « Points » is a ledger: one line per change, never rewritten. A customer's balance is the
+// sum of their lines, so the team can audit it, and correct it with the admin panel (or a hand-typed
+// line « ajustement »). Every write happens under the script lock (orders, status changes, adjustments).
+// - earned: when an order linked to an account is set to « Livrée », the amount actually paid (after
+//   promo and points, delivery included) is added to the customer's eligible purchases; the points owed
+//   are floor(purchases / LOYALTY.step) × LOYALTY.reward minus what was already earned (the rest carries over);
+// - reverted: a delivered order moved to any other status (« Retournée », a mistaken click…) takes its
+//   purchases back out and the same formula removes the points it made cross a threshold;
+// - used: points taken off an order at checkout are debited at once; « Annulée » or « Retournée » gives
+//   them back, and moving the order back to an active status debits them again.
+// Each order's lines say what it already did, so setting the same status twice changes nothing.
+const SHEET_POINTS = 'Points';
+const POINTS_HEAD = ['Date', 'ID client', 'E-mail', 'N° commande', 'Type', 'Points (DH)', 'Achats comptés (DH)', 'Solde après', 'Motif'];
+const PT = { date: 0, client: 1, email: 2, order: 3, type: 4, pts: 5, spend: 6, bal: 7, motif: 8 };
+const PTS = { max: 1000000, adjustMax: 100000, history: 60, adminHistory: 25, motif: 200 };
+const EARN_TYPES = ['gain', 'retrait'];               // lines that carry purchases (and points earned from them)
+const USE_TYPES = ['utilisation', 'remboursement'];   // points spent on an order / given back
+const PTS_LABELS = {                                   // what the customer sees (the team's « Motif » stays internal)
+  gain: 'Commande livrée', retrait: 'Commande retournée ou annulée : achat décompté',
+  utilisation: 'Utilisés sur une commande', remboursement: 'Points rendus (commande annulée ou retournée)',
+};
+
+function pointsSheet_(ss) {
+  let sh = ss.getSheetByName(SHEET_POINTS);
+  if (!sh) sh = ss.insertSheet(SHEET_POINTS);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, POINTS_HEAD.length).setValues([POINTS_HEAD]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function ledger_(ss) {
+  const sh = pointsSheet_(ss);
+  const last = sh.getLastRow();
+  const rows = last < 2 ? [] : sh.getRange(2, 1, last - 1, POINTS_HEAD.length).getValues().map((v) => ({
+    at: v[PT.date], client: str_(v[PT.client]).replace(/^'/, ''), order: str_(v[PT.order]).replace(/^'/, ''),
+    type: fold_(v[PT.type]), pts: Math.round(num_(v[PT.pts])), spend: num_(v[PT.spend]), bal: num_(v[PT.bal]), motif: str_(v[PT.motif]),
+  })).filter((r) => r.client);
+  return { sh: sh, rows: rows };
+}
+function pointsOf_(L, uid) {
+  const rows = L.rows.filter((r) => r.client === uid);
+  let balance = 0, spend = 0, earned = 0;
+  rows.forEach((r) => {
+    balance += r.pts;
+    if (EARN_TYPES.indexOf(r.type) >= 0) { spend += r.spend; earned += r.pts; }
+  });
+  return { balance: balance, spend: spend, earned: earned, rows: rows };
+}
+function orderPoints_(L, id) {
+  let spend = 0, earned = 0, used = 0;
+  L.rows.forEach((r) => {
+    if (r.order !== id) return;
+    if (EARN_TYPES.indexOf(r.type) >= 0) { spend += r.spend; earned += r.pts; }
+    else if (USE_TYPES.indexOf(r.type) >= 0) used += r.pts;
+  });
+  return { spend: spend, earned: earned, used: used };
+}
+// appends one ledger line (call with the script lock held); returns the new balance
+function addPoints_(L, e) {
+  const balance = pointsOf_(L, e.client.id).balance + e.pts;
+  const at = new Date();
+  L.sh.appendRow([at, "'" + e.client.id, cell_(e.client.email || ''), e.order ? "'" + e.order : '', e.type, e.pts, e.spend || 0, balance, cell_(e.motif || '')]);
+  L.rows.push({ at: at, client: e.client.id, order: e.order || '', type: e.type, pts: e.pts, spend: e.spend || 0, bal: balance, motif: e.motif || '' });
+  return { balance: balance };
+}
+// what the browser gets: balance, purchases counted, how far the next reward is
+function summary_(p) {
+  const left = ((p.spend % LOYALTY.step) + LOYALTY.step) % LOYALTY.step;
+  return { balance: p.balance, spend: p.spend, earned: p.earned, step: LOYALTY.step, reward: LOYALTY.reward,
+    progress: p.spend > 0 ? left : 0, next: LOYALTY.step - (p.spend > 0 ? left : 0) };
+}
+function historyLine_(r) {
+  const d = asDate_(r.at);
+  return { at: d ? fmt_(d, 'dd/MM/yyyy') : str_(r.at), order: r.order, type: has(PTS_LABELS, r.type) ? r.type : 'ajustement',
+    label: has(PTS_LABELS, r.type) ? PTS_LABELS[r.type] : 'Ajustement par notre équipe', pts: r.pts, spend: r.spend };
+}
+// the points requested at checkout: 0 (none), a whole number of DH, or -1 (refused)
+function wantPoints_(v) {
+  if (v == null || v === '' || v === 0 || v === false) return 0;
+  return typeof v === 'number' && Number.isInteger(v) && v > 0 && v <= PTS.max ? v : -1;
+}
+// a status change on order row v: write the ledger lines it implies (lock held); returns notes for the history
+function syncPoints_(ss, v, ex, status) {
+  const uid = ex.acct ? str_(v[ex.acct - 1]).replace(/^'/, '') : '';
+  if (!uid) return [];                                            // guest order: no points
+  const id = str_(v[1]);
+  const paid = Math.max(0, Math.round(num_(v[13])));
+  const used = ex.pts ? Math.max(0, Math.round(num_(v[ex.pts - 1]))) : 0;
+  const L = ledger_(ss);
+  const user = users_(clientsSheet_(ss)).filter((u) => u.id === uid)[0] || { id: uid, email: '' };
+  const o = orderPoints_(L, id);
+  const out = [];
+  const wantSpend = status === 'Livrée' ? paid : 0;
+  if (o.spend !== wantSpend) {
+    const p = pointsOf_(L, uid);
+    const spend = p.spend - o.spend + wantSpend;
+    const delta = Math.floor(Math.max(0, spend) / LOYALTY.step) * LOYALTY.reward - p.earned;
+    const diff = wantSpend - o.spend;
+    const r = addPoints_(L, { client: user, order: id, type: wantSpend ? 'gain' : 'retrait', pts: delta, spend: diff,
+      motif: wantSpend ? 'Commande livrée : ' + diff + ' DH d’achats comptés' : 'Commande passée en « ' + status + ' » : ' + (-diff) + ' DH d’achats décomptés' });
+    out.push('Fidélité : ' + (diff > 0 ? '+' : '') + diff + ' DH d’achats comptés, ' + (delta > 0 ? '+' : '') + delta + ' points (solde ' + r.balance + ').');
+  }
+  const wantUsed = status === 'Annulée' || status === 'Retournée' ? 0 : -used;
+  if (o.used !== wantUsed) {
+    const back = wantUsed > o.used;
+    const r = addPoints_(L, { client: user, order: id, type: back ? 'remboursement' : 'utilisation', pts: wantUsed - o.used,
+      motif: back ? 'Commande passée en « ' + status + ' » : points utilisés rendus' : 'Commande repassée en « ' + status + ' » : points de nouveau utilisés' });
+    out.push('Fidélité : ' + (back ? '+' : '') + (wantUsed - o.used) + ' points ' + (back ? 'rendus' : 'de nouveau débités') + ' (solde ' + r.balance + ').');
+  }
+  return out;
+}
+// admin view of one customer: profile, balance, latest ledger lines with the team's motif
+function clientInfo_(L, user) {
+  const p = pointsOf_(L, user.id);
+  return Object.assign({ id: user.id, email: user.email || '', nom: user.nom || '', gone: !!user.gone }, summary_(p), {
+    history: p.rows.slice(-PTS.adminHistory).reverse().map((r) => Object.assign(historyLine_(r), { motif: r.motif, solde: r.bal })),
+  });
+}
+// the customers behind a list of orders (admin 'list' / 'update')
+function clientsOf_(orders) {
+  const ids = {};
+  orders.forEach((o) => { if (o && o.client) ids[o.client] = 1; });
+  if (!Object.keys(ids).length) return {};
+  const ss = book_();
+  const L = ledger_(ss);
+  const out = {};
+  users_(clientsSheet_(ss)).forEach((u) => { if (ids[u.id]) out[u.id] = clientInfo_(L, u); });
+  Object.keys(ids).forEach((id) => { if (!out[id]) out[id] = clientInfo_(L, { id: id, email: '', nom: '', gone: true }); });
+  return out;
+}
+function adminPoints_(b) {
+  const uid = str_(b.client).slice(0, 60);
+  const ss = book_();
+  const user = uid && users_(clientsSheet_(ss)).filter((u) => u.id === uid)[0];
+  if (!user) return fail_('not_found');
+  return ok_({ client: clientInfo_(ledger_(ss), user) });
+}
+// manual correction from the admin panel: whole points, + or -, with a reason (kept in « Motif »)
+function adjustPoints_(b) {
+  const uid = str_(b.client).slice(0, 60);
+  const delta = Number(b.delta);
+  if (!Number.isInteger(delta) || !delta || Math.abs(delta) > PTS.adjustMax || typeof b.delta !== 'number') return fail_('bad_points');
+  const reason = clean_(b.reason, PTS.motif);
+  if (reason.length < 3) return fail_('bad_reason');
+  const order = ID_RE.test(String(b.order || '')) ? String(b.order) : '';
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const ss = book_();
+    const user = uid && users_(clientsSheet_(ss)).filter((u) => u.id === uid)[0];
+    if (!user) return fail_('not_found');
+    const L = ledger_(ss);
+    addPoints_(L, { client: user, order: order, type: 'ajustement', pts: delta, motif: 'Ajustement admin : ' + reason });
+    return ok_({ client: clientInfo_(L, user) });
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -945,15 +1163,18 @@ function newId_() {
 }
 
 // ---------- to run by hand from the Apps Script editor ----------
-// Creates the tabs (Commandes, Gestion, Clients) with their headers. Safe to run again.
+// Creates the tabs (Commandes, Gestion, Clients, Points) with their headers. Safe to run again.
 function setup() {
   const ss = book_();
-  acctCol_(ordersSheet_(ss), true);
+  const sh = ordersSheet_(ss);
+  acctCol_(sh, true);
+  extraCol_(sh, ORDER_PTS_COL, true);
   gestion_(ss);
   clientsSheet_(ss);
+  pointsSheet_(ss);
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
-  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' » et « ' + SHEET_CLIENTS + ' » prêts.');
+  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' » et « ' + SHEET_POINTS + ' » prêts.');
   console.log('E-mails restants aujourd’hui (liens de réinitialisation, notifications) : ' + MailApp.getRemainingDailyQuota());
   console.log(key.length >= LIMITS.adminKeyMin ? 'ADMIN_KEY configurée.' : 'ADMIN_KEY manquante : lancez generateAdminKey().');
   console.log(catalog_() ? 'Catalogue du site lu : ' + CATALOG_URL : 'ATTENTION : catalogue illisible à ' + CATALOG_URL);

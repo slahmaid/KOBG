@@ -281,8 +281,36 @@
       <p class="acct-order-meta">${e(o.recu)} · ${e(plural(+o.nb || 0, 'article'))}${o.promo ? ` · code ${e(o.promo)}` : ''}</p>
       <ul class="acct-order-items">${items}</ul>
       ${steps}
+      ${+o.points || +o.pointsEarned ? `<p class="acct-order-pts">${+o.points ? `<span>Points utilisés : -${A.formatDH(+o.points)}</span>` : ''}${+o.pointsEarned > 0 ? `<span class="is-plus">Points gagnés : +${A.formatDH(+o.pointsEarned)}</span>` : ''}</p>` : ''}
       <div class="acct-order-foot"><span>${e(st[1])}</span><strong>${A.formatDH(+o.total || 0)}</strong></div>
     </li>`;
+  }
+
+  // ---------- loyalty points ----------
+  const STEP = 1500, REWARD = 50;
+  function paintPoints(p) {
+    if (!p) return;
+    const step = +p.step || STEP, reward = +p.reward || REWARD;
+    $('pointsBal').textContent = A.formatDH(Math.max(0, +p.balance || 0));
+    const prog = $('pointsProg');
+    prog.max = step;
+    prog.value = Math.max(0, Math.min(step, +p.progress || 0));
+    $('pointsNext').textContent = `Plus que ${A.formatDH(+p.next > 0 ? +p.next : step)} d’achats livrés pour gagner ${A.formatDH(reward)}.`;
+  }
+  const signed = (n) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${A.formatDH(Math.abs(n))}`;
+  async function loadPoints() {
+    const s = A.store.read();
+    const list = $('pointsList'), msg = $('pointsMsg');
+    if (!s) return;
+    const res = await A.api('my_points', { session: s.token });
+    if (!res.ok) { if (res.error === 'auth') { lost(); return; } msg.hidden = false; msg.textContent = A.message(res); return; }
+    paintPoints(res.points);
+    const h = Array.isArray(res.history) ? res.history : [];
+    list.innerHTML = h.map((r) => `<li class="acct-pts-row">
+        <span class="acct-pts-what"><strong>${A.esc(r.label)}</strong><small>${A.esc(r.at)}${r.order ? ` · ${A.esc(r.order)}` : ''}${r.type === 'gain' && +r.spend ? ` · ${A.esc(A.formatDH(+r.spend))} comptés` : ''}</small></span>
+        <strong class="acct-pts-n${+r.pts > 0 ? ' is-plus' : +r.pts < 0 ? ' is-minus' : ''}">${A.esc(signed(+r.pts || 0))}</strong></li>`).join('');
+    msg.hidden = h.length > 0;
+    msg.textContent = 'Aucun mouvement pour l’instant : vos points apparaîtront ici dès votre première commande livrée.';
   }
   async function loadOrders() {
     const s = A.store.read();
@@ -306,9 +334,10 @@
     fillProfile(s.profile);
     show('dash', focus);
     loadOrders();
+    loadPoints();
     // fresh profile (the team may have corrected it in the sheet); a dead session falls back to the sign-in form
     A.api('me', { session: s.token }).then((r) => {
-      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); }
+      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); paintPoints(r.points); }
       else if (r.error === 'auth') lost();
     });
   }

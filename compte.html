@@ -259,6 +259,22 @@
       </section>
 
       <div class="acct-side">
+        <section class="pp-card acct-points" id="pointsCard" aria-labelledby="pointsH">
+          <div class="acct-card-head">
+            <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span><span>Programme fidélité</span></p>
+            <h2 class="pp-card-h" id="pointsH">Mes points</h2>
+          </div>
+          <p class="acct-pts-bal"><strong id="pointsBal">—</strong><span>disponibles, à utiliser sur votre prochaine commande (1&nbsp;point = 1&nbsp;DH)</span></p>
+          <div class="acct-pts-prog">
+            <progress id="pointsProg" max="1500" value="0" aria-labelledby="pointsNext"></progress>
+            <p class="acct-pts-next" id="pointsNext">Chargement…</p>
+          </div>
+          <p class="acct-muted acct-small">50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat. Les points sont crédités quand la commande est livrée et retirés si elle est retournée. <a href="cgv.html#fidelite">Conditions</a></p>
+          <h3 class="acct-pts-h">Historique</h3>
+          <p class="acct-muted" id="pointsMsg" hidden></p>
+          <ol class="acct-pts-list" id="pointsList" aria-labelledby="pointsH"></ol>
+        </section>
+
         <form class="cod cod--panel acct-form" id="profileForm" novalidate aria-labelledby="profileH">
           <div class="cod-head">
             <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span><span id="profileSince">Profil</span></p>
@@ -452,6 +468,7 @@
       <p class="cart-line"><span>Livraison</span><strong id="cartShipping">25&nbsp;DH</strong></p>
       <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
       <p class="cart-note">Livraison 25&nbsp;DH, offerte dès 2&nbsp;000&nbsp;DH d’achat (avant réduction). Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
+      <p class="cart-note cart-note--pts">Fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat, avec <a href="compte.html">votre compte client</a>.</p>
       <a href="commande.html" class="cart-checkout" id="cartCheckout">
         Acheter maintenant
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>

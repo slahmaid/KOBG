@@ -5,7 +5,7 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | File | What it is |
 |---|---|
 | `order-apps-script.gs` | The order + admin backend (Google Apps Script web app). **Must be deployed — see step 1.** |
-| `test-backend.js` | 37 automated tests for the backend (orders, admin, customer accounts). Run `node _ops/test-backend.js`. |
+| `test-backend.js` | 46 automated tests for the backend (orders, admin, customer accounts, loyalty points). Run `node _ops/test-backend.js`. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
 | `dev-server.js` | Local preview at `http://localhost:8080/KOBG/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
 
@@ -17,7 +17,7 @@ The site already posts orders to the Apps Script URL in `script.js` (`ORDER_ENDP
 
 1. Open the Google Sheet that receives the orders → **Extensions › Apps Script**.
 2. Select all the code in `Code.gs` (or whatever the file is called), delete it, paste the full content of `order-apps-script.gs`, **Save**.
-3. In the function dropdown pick **`setup`** → **Run**. Approve the permissions Google asks for (Sheets, external requests to read the site's catalog, sending e-mail). The execution log should say the tabs are ready and the catalog was read. `setup` also creates the **Clients** tab (customer accounts) and a **Compte client** column at the end of **Commandes**; it is safe to run again.
+3. In the function dropdown pick **`setup`** → **Run**. Approve the permissions Google asks for (Sheets, external requests to read the site's catalog, sending e-mail). The execution log should say the tabs are ready and the catalog was read. `setup` also creates the **Clients** tab (customer accounts), the **Points** tab (loyalty ledger) and the **Compte client** / **Points utilisés (DH)** columns at the end of **Commandes**; it is safe to run again.
 4. Pick **`generateAdminKey`** → **Run**. Copy the key printed in the execution log into a password manager. This is the key for `admin.html`. (Or set your own in **Project Settings › Script Properties › `ADMIN_KEY`**, 12+ characters, random.)
 5. Optional: in **Script Properties** add `NOTIFY_EMAIL` = the address that should get an e-mail for every new order.
 6. **Deploy › Manage deployments ›** pencil icon on the existing deployment **› Version: New version › Deploy**.
@@ -40,6 +40,27 @@ Customers can create an account (optional: guest checkout still works), sign in,
 - **Limits:** 30 sign-ups/hour overall; 5 wrong passwords lock that e-mail for 15 min (a password reset unlocks it); 300 failed sign-ins per 15 min overall pause sign-in; 3 reset e-mails/hour per address and 40/hour overall; up to 10 signed-in devices per account; sessions last 30 days with "Rester connecté", 24 h otherwise; reset links are single-use and expire after 1 h.
 - **Reset link address:** e-mails link to `SITE_URL` + `compte.html`, so keep `SITE_URL` in sync if you move to a custom domain.
 - Test after deploying: create an account on the live site with your own e-mail, place one order while signed in, check that it appears in **Mon compte** and that `Compte client` is filled in the sheet, use "Mot de passe oublié", then set the test order to **Annulée** and delete the test row in **Clients**.
+
+### Loyalty points (programme fidélité)
+
+Customers with an account earn **50 points per full 1 500 DH** of delivered purchases (1 point = 1 DH). The count is cumulative: what does not complete a 1 500 DH step carries over to the next order. They can spend all or part of their balance at checkout (`commande.html` and every product page) when signed in.
+
+**Go-live (on top of an already deployed accounts version):**
+
+1. Apps Script → select all → paste the new `order-apps-script.gs` → **Save**.
+2. Run **`setup`** again (adds the **Points** tab and the `Points utilisés (DH)` column at the end of **Commandes**; existing rows and columns are untouched).
+3. **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL).
+4. Publish the site files (section 2). Until step 3 is done, the old script ignores the `points` field: publish the site **after** redeploying.
+5. Test: sign in with a test account, place an order, set it to **Livrée** in `admin.html` and check the **Points** tab and **Mon compte**; then use the points on a second order, set it to **Annulée** and check that the points come back. Delete the test rows afterwards (or adjust the balance to 0 from the admin).
+
+**How it works:**
+
+- **Points tab (ledger):** one row per movement: date, client ID, e-mail, order, type (`gain`, `retrait`, `utilisation`, `remboursement`, `ajustement`), points (+/−), purchases counted (DH), balance after, reason. **The balance is the sum of this tab**; do not edit or delete rows unless you mean to change a balance (prefer the admin adjustment, which keeps a reason).
+- **Earning:** only orders placed while signed in (`Compte client` filled). Points are credited when an order is set to **Livrée**, based on the `Total (DH)` actually collected (after promo and points, delivery included). Setting it to **Retournée** (or moving a delivered order back to another status) removes those purchases and the points they produced. Clicking a status twice never double-credits: each order's ledger rows are reconciled with its status.
+- **Spending:** the points are checked and debited by the script when the order is created (never trusted from the browser; capped at the order total after promo). `Total (DH)` is then the amount to collect. **Annulée** / **Retournée** refund the points that order used; setting it back to an active status debits them again.
+- **Admin:** the order drawer shows a **Fidélité** card (balance, purchases counted, next step, last 25 movements with their reason) and a manual **adjustment** form (+/− points and a mandatory reason, written to the ledger as `ajustement`; the customer only sees "Ajustement par notre équipe"). The totals show "Points fidélité utilisés" and the CSV export has 3 new columns.
+- **Negative balance:** if a returned order's points were already spent, the balance goes below 0 and redeeming is blocked until new purchases (or an adjustment) bring it back.
+- **Changing the rate:** edit `LOYALTY` in `order-apps-script.gs` **and** `LOYALTY` in `script.js` (display only), and the texts in `cgv.html` (article 9 bis) and the product/cart notes. Past ledger rows are not recalculated.
 
 ## 2. Publish the site
 

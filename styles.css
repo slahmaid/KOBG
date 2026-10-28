@@ -4149,3 +4149,50 @@ html:not(.has-wa) .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr
   .acct-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
   .acct-out .pill-btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ---------- loyalty points (programme fidélité) ---------- */
+.cod-line--pts strong, .cart-line.cod-line--pts strong { color: #1f8a4c; }
+.cart-note--pts a, .pp-perk--pts a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+.pp-perk--pts svg { background: var(--accent); }
+.pts-box { display: grid; gap: 10px; padding: 14px 16px; border: 1.5px dashed #bdbdbd; border-radius: calc(var(--r) * .6); background: var(--white); }
+.pts-box[hidden], .pts-amount[hidden] { display: none; }
+.pts-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .04em; }
+.pts-head svg { flex: none; width: 18px; height: 18px; color: var(--accent); }
+.pts-bal { margin-left: auto; font-size: 15px; letter-spacing: 0; text-transform: none; white-space: nowrap; color: #1f8a4c; }
+.pts-use { display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.pts-use input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--black); cursor: inherit; }
+.pts-use.is-off { color: #777; cursor: not-allowed; }
+.pts-amount { display: grid; gap: 6px; }
+.pts-amount-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #444; }
+.pts-amount-row { display: flex; align-items: center; gap: 8px; }
+.pts-input { flex: 0 1 140px; min-width: 0; height: 40px; padding: 0 12px; border: 1.5px solid #bdbdbd; border-radius: 10px; background: var(--white); font: inherit; font-size: 16px; font-weight: 800; }
+.pts-input:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; border-color: var(--black); }
+.pts-unit { font-weight: 800; color: #444; }
+.pts-all { flex: none; height: 40px; margin-left: auto; padding: 0 14px; border-radius: 10px; background: var(--black); color: var(--white); font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .04em; }
+.pts-all:hover { background: var(--accent-ink); }
+.pts-hint, .pts-earn { margin: 0; font-size: 12px; font-weight: 600; color: #555; }
+@media (max-width: 420px) {
+  .pts-amount-row { flex-wrap: wrap; }
+  .pts-all { flex: 1 1 100%; margin-left: 0; }
+}
+/* Mon compte */
+.acct-points { display: grid; gap: 14px; }
+.acct-pts-bal { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 0; font-weight: 700; color: #555; }
+.acct-pts-bal strong { font-size: clamp(30px, 3vw, 40px); font-weight: 900; color: var(--black); white-space: nowrap; }
+.acct-pts-bal span { font-size: 13px; }
+.acct-pts-prog { display: grid; gap: 6px; }
+.acct-pts-prog progress { width: 100%; height: 10px; border: 0; border-radius: 99px; background: #e3e3e3; overflow: hidden; appearance: none; -webkit-appearance: none; }
+.acct-pts-prog progress::-webkit-progress-bar { background: #e3e3e3; border-radius: 99px; }
+.acct-pts-prog progress::-webkit-progress-value { background: var(--accent); border-radius: 99px; }
+.acct-pts-prog progress::-moz-progress-bar { background: var(--accent); border-radius: 99px; }
+.acct-pts-next { margin: 0; font-size: 14px; font-weight: 800; }
+.acct-pts-h { margin: 4px 0 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.acct-pts-list { display: grid; gap: 0; max-height: 340px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.acct-pts-list:empty { display: none; }
+.acct-pts-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #e3e3e3; }
+.acct-pts-what { display: grid; gap: 2px; min-width: 0; font-size: 14px; }
+.acct-pts-what small { font-size: 12px; font-weight: 600; color: #666; overflow-wrap: anywhere; }
+.acct-pts-n { flex: none; font-size: 16px; font-weight: 900; white-space: nowrap; }
+.acct-pts-n.is-plus, .acct-order-pts .is-plus { color: #1f8a4c; }
+.acct-pts-n.is-minus { color: var(--accent-ink); }
+.acct-order-pts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; font-weight: 800; color: #444; }
