@@ -781,6 +781,133 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     }
   }
 
+
+  // =========================================================
+  // Customer accounts (optional; compte.html + assets/account.js). Same backend as the orders.
+  // The session token lives in localStorage ("Rester connecté") or sessionStorage (this tab only).
+  // Signed in: the header icon gets a dot, order forms are pre-filled and orders are linked to the account.
+  // =========================================================
+  const ACCT_KEY = 'kobg-account-v1';
+  const ACCT_TOKEN = /^k1\.[A-Za-z0-9_-]{43}$/;
+  const acctStores = () => { const s = []; try { s.push(localStorage, sessionStorage); } catch (err) { /* storage blocked */ } return s; };
+  const acctStore = {
+    read() {
+      for (const st of acctStores()) {
+        try {
+          const o = JSON.parse(st.getItem(ACCT_KEY) || 'null');
+          if (o && ACCT_TOKEN.test(o.token) && o.exp > Date.now() && o.profile && typeof o.profile === 'object') return o;
+          if (o) st.removeItem(ACCT_KEY);
+        } catch (err) { /* corrupt entry: ignored */ }
+      }
+      return null;
+    },
+    // { session, exp, profile } from the server; remember = localStorage
+    save(res, remember) {
+      const cur = this.read();
+      const keep = remember == null ? !!(cur && cur.remember) : !!remember;
+      const o = { token: res.session || (cur && cur.token), exp: res.exp || (cur && cur.exp), profile: res.profile || (cur && cur.profile) || {}, remember: keep };
+      if (!ACCT_TOKEN.test(o.token)) return null;
+      this.clear();
+      try { (keep ? localStorage : sessionStorage).setItem(ACCT_KEY, JSON.stringify(o)); } catch (err) { /* private mode: this page only */ }
+      acctPaint();
+      return o;
+    },
+    clear() { acctStores().forEach((st) => { try { st.removeItem(ACCT_KEY); } catch (err) { /* ignore */ } }); acctPaint(); },
+  };
+  const firstName = (n) => String(n || '').trim().split(/\s+/)[0] || '';
+  const ACCT_ERRORS = {
+    unavailable: 'L’espace client est indisponible pour le moment. Vous pouvez toujours commander sans compte.',
+    timeout: 'Le serveur ne répond pas. Vérifiez votre connexion puis réessayez.',
+    network: 'Connexion impossible : vérifiez votre connexion internet puis réessayez.',
+    http: 'Une erreur est survenue. Réessayez dans un instant.',
+    server: 'Une erreur est survenue. Réessayez dans un instant.',
+    bad_login: 'E-mail ou mot de passe incorrect.',
+    locked: 'Trop d’essais. Réessayez dans {min} min, ou choisissez un nouveau mot de passe avec « Mot de passe oublié ».',
+    busy: 'Le service est très sollicité : réessayez dans quelques minutes.',
+    email_taken: 'Un compte existe déjà avec cet e-mail. Connectez-vous ou utilisez « Mot de passe oublié ».',
+    weak_password: 'Mot de passe trop faible : 8 caractères minimum, évitez les suites évidentes (12345678, motdepasse…).',
+    bad_field: 'Merci de corriger le champ indiqué en rouge.',
+    bad_password: 'Mot de passe actuel incorrect.',
+    bad_reset: 'Ce lien n’est plus valable (déjà utilisé, remplacé par un plus récent ou expiré). Demandez-en un nouveau.',
+    mail_unavailable: 'Envoi de l’e-mail impossible pour le moment. Réessayez plus tard ou écrivez-nous à info@knockoutboxinggear.com.',
+    auth: 'Votre session a expiré : reconnectez-vous.',
+  };
+  // one account call: { ok:true, ...data } or { ok:false, error, field?, retryIn? }; 'auth' signs out locally
+  async function acctApi(action, data = {}) {
+    const url = orderEndpoint();
+    if (!url || ORDER_ENDPOINT_FORMAT === 'form') return { ok: false, error: 'unavailable' };
+    const ctrl = 'AbortController' in window ? new AbortController() : null;
+    const timer = setTimeout(() => ctrl?.abort(), 25000);
+    try {
+      const res = await fetch(url, {
+        method: 'POST', body: JSON.stringify({ ...data, action }), signal: ctrl?.signal, redirect: 'follow', credentials: 'omit',
+        headers: { Accept: 'application/json', 'Content-Type': 'text/plain;charset=utf-8' },
+      });
+      if (!res.ok) return { ok: false, error: 'http' };
+      let out = null;
+      try { out = await res.json(); } catch (err) { out = null; }
+      if (!out || typeof out !== 'object') return { ok: false, error: 'http' };
+      if (out.ok === false && out.error === 'auth') acctStore.clear();
+      return out.ok === false ? { ...out, error: String(out.error || 'http') } : { ...out, ok: true };
+    } catch (err) {
+      return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const acctMsg = (res) => (ACCT_ERRORS[res.error] || ACCT_ERRORS.http).replace('{min}', String(Math.max(1, Math.ceil((+res.retryIn || 60) / 60))));
+
+  // header icon (every page)
+  const acctBtn = document.getElementById('acctBtn');
+  function acctPaint() {
+    if (!acctBtn) return;
+    const s = acctStore.read();
+    acctBtn.classList.toggle('is-in', !!s);
+    acctBtn.setAttribute('aria-label', s ? `Mon compte${firstName(s.profile.nom) ? ` (${firstName(s.profile.nom)}, connecté)` : ' (connecté)'}` : 'Mon compte : se connecter ou créer un compte');
+    acctBtn.title = s ? 'Mon compte' : 'Se connecter';
+  }
+  const acctHooks = [];
+  acctPaint();
+  window.addEventListener('storage', (e) => { if (e.key === ACCT_KEY || e.key === null) { acctPaint(); acctHooks.forEach((fn) => fn()); } });
+
+  // order forms: pre-fill from the profile, a one-line "signed in / sign in" note above the fields
+  function acctOrderForm(form) {
+    const fs = form.querySelector('.cod-fields');
+    if (!fs) return;
+    const note = document.createElement('p');
+    note.className = 'acct-note';
+    fs.before(note);
+    const back = encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
+    const fill = () => {
+      const s = acctStore.read();
+      if (!s) {
+        note.innerHTML = `Vous avez un compte&nbsp;? <a href="compte.html?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées et suivre la commande <span class="acct-note-opt">(facultatif)</span>.`;
+        return;
+      }
+      const p = s.profile;
+      const where = [p.adresse, p.ville].filter(Boolean).join(', ');
+      note.innerHTML = `<span class="acct-note-in"><strong>Connecté${p.nom ? ` : ${esc(p.nom)}` : ''}</strong> · commande enregistrée dans <a href="compte.html">votre compte</a>.</span>${where ? `<span class="acct-note-adr">Adresse enregistrée : ${esc(where)}</span>` : ''}`;
+      [['nom', p.nom], ['telephone', p.telephone ? phonePretty(p.telephone) : ''], ['ville', p.ville]].forEach(([n, v]) => {
+        const el = form.elements[n];
+        if (el && v && !el.value.trim()) el.value = v;
+      });
+    };
+    fill();
+    acctHooks.push(fill);
+    // checkout: one quiet check that the session is still valid (and the profile current); a dead one = guest order
+    const s = acctStore.read();
+    if (s && form.closest('[data-checkout]')) {
+      acctApi('me', { session: s.token }).then((r) => { if (r.ok && r.profile) acctStore.save({ profile: r.profile }); fill(); });
+    }
+    window.addEventListener('pageshow', (e) => { if (e.persisted) fill(); });
+  }
+
+  window.KOBGAccount = Object.freeze({
+    api: acctApi, store: acctStore, message: acctMsg, errors: ACCT_ERRORS,
+    phoneOK, phoneLocal, phonePretty, normPhone, esc, formatDH, firstName,
+    available: () => !!orderEndpoint() && ORDER_ENDPOINT_FORMAT !== 'form',
+  });
+
   const COD_RULES = {
     nom: (v) => (v.trim().length < 3 || !/\p{L}{2}/u.test(v) ? 'Indiquez votre nom complet.' : ''),
     ville: (v) => (v.trim().length < 2 ? 'Indiquez votre ville.' : ''),
@@ -822,6 +949,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       submitTxt.textContent = on ? 'Envoi en cours…' : 'Confirmer la commande';
     };
     window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci.html
+    acctOrderForm(form);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (busy) return;
@@ -856,7 +984,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         page: location.origin + location.pathname,
       };
       setBusy(true);
-      const res = await sendOrder(payload);
+      const acct = acctStore.read();                   // signed in: the order goes to the account (token never stored)
+      const res = await sendOrder(acct ? { ...payload, session: acct.token } : payload);
       if (!res.ok) {
         setBusy(false);
         const bad = res.error === 'bad_field' && fields.find((el) => el.name === res.field);
@@ -872,7 +1001,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         orderId: /^KOBG-\d{6}-[A-Z0-9]{4}$/.test(srv.orderId) ? srv.orderId : payload.orderId,
         items: Array.isArray(srv.items) ? srv.items : payload.items,
         subtotal: +srv.subtotal || 0, promoCode: srv.promoCode || '', discountPct: +srv.discountPct || 0,
-        discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total,
+        discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total, linked: srv.linked === true,
       } : payload;
       try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !!res.test })); } catch (err) { /* private mode */ }
       onSuccess(done);
@@ -970,6 +1099,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       $('merciCust').innerHTML = [['Nom', o.nom], ['Téléphone', o.telephone ? phonePretty(o.telephone) : ''], ['Ville', o.ville]]
         .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
       $('merciRecap').hidden = false;
+      if (o.linked) {
+        const p = document.createElement('p');
+        p.className = 'acct-note acct-note--merci';
+        p.innerHTML = 'Cette commande est enregistrée dans <a href="compte.html">votre compte</a> : suivez son statut à tout moment.';
+        $('merciCust').after(p);
+      }
     }
   }
 

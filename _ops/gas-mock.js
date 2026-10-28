@@ -36,6 +36,7 @@ class Range {
     return this;
   }
   setValue(v) { this.sheet.put(this.row, this.col, typed(v)); return this; }
+  getValue() { return this.getValues()[0][0]; }
   setFontWeight() { return this; }
   setNumberFormat() { return this; }
 }
@@ -51,12 +52,17 @@ class Sheet {
     return new Range(this, a, b, c || 1, d || 1);
   }
   appendRow(vals) { const r = this.getLastRow() + 1; vals.forEach((v, i) => this.put(r, i + 1, typed(v))); return this; }
+  deleteRow(r) { this.rows.splice(r - 1, 1); return this; }
   setFrozenRows(n) { this.frozen = n; return this; }
   getFrozenRows() { return this.frozen; }
 }
 
+const bytes = (v) => (Array.isArray(v) ? Buffer.from(v.map((b) => b & 255)) : Buffer.from(String(v), 'utf8'));
+const signed = (buf) => [...buf].map((b) => (b > 127 ? b - 256 : b));
+
 function makeEnv(opts = {}) {
-  const env = { mails: [], logs: [], fetchFail: !!opts.fetchFail, catalogText: opts.catalogText, now: null };
+  const env = { mails: [], logs: [], fetchFail: !!opts.fetchFail, catalogText: opts.catalogText, now: null,
+    mailQuota: opts.mailQuota != null ? opts.mailQuota : 100 };
   const sheets = {};
   const book = {
     getSheetByName: (n) => sheets[n] || null,
@@ -96,8 +102,12 @@ function makeEnv(opts = {}) {
       return new Date(guess - (shown - guess));
     },
     getUuid: () => crypto.randomUUID(),
-    computeDigest: (alg, s) => [...crypto.createHash(alg).update(String(s), 'utf8').digest()].map((b) => (b > 127 ? b - 256 : b)),
-    computeHmacSha256Signature: (value, key) => [...crypto.createHmac('sha256', key).update(value, 'utf8').digest()].map((b) => (b > 127 ? b - 256 : b)),
+    // like Apps Script: strings (UTF-8) or Byte[] (signed bytes) in, signed Byte[] out
+    computeDigest: (alg, s) => signed(crypto.createHash(alg).update(bytes(s)).digest()),
+    computeHmacSha256Signature: (value, key) => {
+      if (Array.isArray(key) ? !key.length : !String(key).length) throw new Error('Invalid argument: key');   // Java rejects an empty key
+      return signed(crypto.createHmac('sha256', bytes(key)).update(bytes(value)).digest());
+    },
     base64EncodeWebSafe: (bytes) => Buffer.from(bytes.map((b) => (b < 0 ? b + 256 : b))).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
   };
   const ctx = {
@@ -109,6 +119,8 @@ function makeEnv(opts = {}) {
         getProperty: (k) => (props.has(k) ? props.get(k) : null),
         setProperty: (k, v) => { if (String(v).length > 9 * 1024) throw new Error('property too large'); props.set(k, String(v)); },
         deleteProperty: (k) => props.delete(k),
+        getProperties: () => Object.fromEntries(props),
+        getKeys: () => [...props.keys()],
       }),
     },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
@@ -120,7 +132,10 @@ function makeEnv(opts = {}) {
       },
     },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: (s) => ({ s, setMimeType() { return this; }, getContent() { return this.s; } }) },
-    MailApp: { sendEmail: (o) => env.mails.push(o) },
+    MailApp: {
+      sendEmail: (o) => { if (env.mailQuota < 1) throw new Error('Service invoked too many times for one day: email.'); env.mailQuota--; env.mails.push(o); },
+      getRemainingDailyQuota: () => env.mailQuota,
+    },
     Utilities,
   };
   vm.createContext(ctx);

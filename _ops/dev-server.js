@@ -2,6 +2,8 @@
 // order-apps-script.gs in memory (gas-mock.js), so orders and the admin panel can be tried without
 // touching the real Google Sheet. Nothing is sent to Google. Data is lost when the server stops.
 // Run: node _ops/dev-server.js [port]     Admin key: dev-admin-key-0123456789
+// E-mails (password-reset links) are NOT sent: they are printed here, with the link pointing at this
+// preview, and listed at http://localhost:8080/__mails (JSON).
 'use strict';
 const http = require('http');
 const fs = require('fs');
@@ -32,12 +34,18 @@ http.createServer((req, res) => {
     let body = '';
     req.on('data', (c) => { body += c; if (body.length > 1e6) req.destroy(); });
     req.on('end', () => {
+      const sent = backend.mails.length;
       const out = backend.post(body);
-      if (out.ok && !body.includes('"action"')) console.log('order', out.orderId, out.total + ' DH', out.adjusted ? '(re-priced)' : '');
+      if (out.ok && !body.includes('"action"')) console.log('order', out.orderId, out.total + ' DH', out.adjusted ? '(re-priced)' : '', out.linked ? '(account)' : '');
+      backend.mails.slice(sent).forEach((m) => {
+        m.body = String(m.body).split('https://slahmaid.github.io/KOBG/').join(`http://localhost:${PORT}/KOBG/`);
+        console.log(`\n--- e-mail (not sent) to ${m.to}: ${m.subject}\n${m.body}\n---`);
+      });
       send(res, 200, 'application/json', JSON.stringify(out));
     });
     return;
   }
+  if (url.pathname === '/__mails') return send(res, 200, 'application/json', JSON.stringify(backend.mails));
   if (url.pathname === '/__dev.js') return send(res, 200, TYPES['.js'], DEV_JS);
   if (url.pathname === '/' ) { res.writeHead(302, { Location: '/KOBG/' }); return res.end(); }
 

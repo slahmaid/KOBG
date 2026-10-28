@@ -309,3 +309,303 @@ test('setup() and generateAdminKey() from the editor', () => {
   assert.ok(env.sheets.Commandes && env.sheets.Gestion);
   assert.ok(env.logs.some((l) => /ADMIN_KEY configurée/.test(l)));
 });
+
+// ===================== customer accounts =====================
+const crypto = require('crypto');
+const PW = 'Gants-Rouges-2026';
+let acctSeq = 0;
+function signup(env, extra = {}) {
+  acctSeq += 1;
+  return env.post(Object.assign({ action: 'register', nom: 'Salma Bennani', email: `salma${acctSeq}@example.ma`,
+    telephone: '0661 22 33 ' + String(acctSeq % 100).padStart(2, '0'), password: PW }, extra));
+}
+const sessionsOf = (env, uid) => [...env.props.entries()].filter(([k, v]) => k.startsWith('ses:') && JSON.parse(v).u === uid);
+const resetLink = (mail) => /compte\.html#reset=(k1\.[A-Za-z0-9_-]{43})/.exec(mail.body)[1];
+
+test('accounts: PBKDF2 matches the reference implementation (Node crypto)', () => {
+  const env = makeEnv();
+  const salt = '00112233445566778899aabbccddeeff';
+  for (const [pw, n] of [['motdepasse', 1], ['Gants-Rouges-2026', 2], ['éàç 😀 mot', 1000]]) {
+    assert.equal(env.ctx.pbkdf2_(pw, salt, n), crypto.pbkdf2Sync(Buffer.from(pw, 'utf8'), Buffer.from(salt, 'hex'), n, 32, 'sha256').toString('hex'), pw);
+  }
+});
+
+test('accounts: register stores a salted hash (never the password) and signs in', () => {
+  const env = env0();
+  const r = signup(env, { email: '  Salma.B@Example.MA ', adresse: '12 rue Ibn Battouta, Maarif', ville: 'Casablanca' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.match(r.session, /^k1\.[A-Za-z0-9_-]{43}$/);
+  assert.ok(r.exp > Date.now() + 29 * 864e5);
+  assert.deepEqual(Object.keys(r.profile).sort(), ['adresse', 'depuis', 'email', 'id', 'nom', 'telephone', 'ville']);
+  assert.equal(r.profile.email, 'salma.b@example.ma');
+  assert.match(r.profile.telephone, /^06\d{8}$/);
+  const rows = rowsOf(env, 'Clients');
+  assert.deepEqual(rows[0], ['ID client', 'E-mail', 'Nom', 'Téléphone', 'Adresse', 'Ville', 'Créé le', 'Mis à jour le', 'Dernière connexion', 'Sel', 'Empreinte', 'Itérations']);
+  const v = rows[1];
+  assert.ok(!JSON.stringify(rows).includes(PW));                         // never in clear
+  assert.match(v[9], /^[0-9a-f]{32}$/);                                   // salt kept as text
+  assert.match(v[10], /^[0-9a-f]{64}$/);
+  assert.ok(v[11] >= 1000);
+  assert.equal(env.ctx.pbkdf2_(PW, v[9], v[11]), v[10]);
+  assert.equal(typeof v[3], 'string');
+  // the session is stored hashed: the token itself is nowhere on the server
+  assert.ok(![...env.props.keys(), ...env.props.values()].some((x) => x.includes(r.session)));
+  assert.equal(sessionsOf(env, r.profile.id).length, 1);
+  const short = signup(env, { remember: false });
+  assert.ok(short.exp < Date.now() + 2 * 864e5);
+});
+
+test('accounts: register validates fields, weak passwords and duplicates', () => {
+  const env = env0();
+  assert.equal(signup(env, { email: 'pas-un-email' }).field, 'email');
+  assert.equal(signup(env, { email: 'a@b' }).field, 'email');
+  assert.equal(signup(env, { nom: 'A' }).field, 'nom');
+  assert.equal(signup(env, { telephone: '0512' }).field, 'telephone');
+  assert.equal(signup(env, { password: 'court' }).error, 'weak_password');
+  assert.equal(signup(env, { password: '12345678' }).error, 'weak_password');
+  assert.equal(signup(env, { password: 'aaaaaaaaaa' }).error, 'weak_password');
+  assert.equal(signup(env, { email: 'moi@example.ma', password: 'MOI@example.ma' }).error, 'weak_password');
+  assert.equal(signup(env, { password: 'x'.repeat(129) }).error, 'bad_field');
+  assert.equal(signup(env, { password: 12345678 }).error, 'weak_password');
+  assert.equal(signup(env, { email: 'dup@example.ma' }).ok, true);
+  const d = signup(env, { email: 'DUP@example.ma' });
+  assert.equal(d.error, 'email_taken');
+  assert.equal(rowsOf(env, 'Clients').length, 2);
+});
+
+test('accounts: profile fields never reach the sheet as formulas', () => {
+  const env = env0();
+  const r = signup(env, { nom: '=HYPERLINK("http://x","clic") Nom', adresse: '+SUM(A1:A9)', ville: '@Fès', email: '=x@example.ma' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const u = env.post({ action: 'update_profile', session: r.session, adresse: '-1+2 rue\u0000 X', nom: '@Salma Ben' });
+  assert.equal(u.ok, true, JSON.stringify(u));
+  assert.deepEqual(formulas(env), []);
+  assert.equal(rowsOf(env, 'Clients')[1][4], '-1+2 rue X');
+});
+
+test('accounts: login with one generic error, lock after 5 wrong passwords (known or unknown e-mail)', () => {
+  const env = env0();
+  const r = signup(env, { email: 'karim@example.ma' });
+  const ok = env.post({ action: 'login', email: 'KARIM@example.ma', password: PW });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.profile.id, r.profile.id);
+  assert.notEqual(ok.session, r.session);
+  const wrong = env.post({ action: 'login', email: 'karim@example.ma', password: 'mauvais-mot' });
+  const ghost = env.post({ action: 'login', email: 'personne@example.ma', password: 'mauvais-mot' });
+  assert.deepEqual(Object.keys(wrong).sort(), Object.keys(ghost).sort());
+  assert.equal(wrong.error, 'bad_login');
+  assert.equal(ghost.error, 'bad_login');
+  assert.equal(env.post({ action: 'login', email: 'karim@example.ma' }).error, 'bad_login');
+  assert.equal(env.post({ action: 'login', email: 'karim@example.ma', password: { $ne: 1 } }).error, 'bad_login');
+  for (let i = 0; i < 3; i++) assert.equal(env.post({ action: 'login', email: 'karim@example.ma', password: 'x' + i }).error, 'bad_login');
+  const locked = env.post({ action: 'login', email: 'karim@example.ma', password: 'encore-faux' });
+  assert.equal(locked.error, 'locked');
+  assert.ok(locked.retryIn > 0);
+  assert.equal(env.post({ action: 'login', email: 'karim@example.ma', password: PW }).error, 'locked');   // even the right one
+  for (let i = 0; i < 4; i++) env.post({ action: 'login', email: 'personne@example.ma', password: 'x' + i });
+  assert.equal(env.post({ action: 'login', email: 'personne@example.ma', password: 'y' }).error, 'locked');  // same for unknown
+  assert.equal(env.post({ action: 'login', email: 'autre@example.ma', password: 'y' }).error, 'bad_login');  // per e-mail
+  env.cache.clear();
+  assert.equal(env.post({ action: 'login', email: 'karim@example.ma', password: PW }).ok, true);
+});
+
+test('accounts: sessions — me, bad/expired/forged tokens, logout, cap per account', () => {
+  const env = env0();
+  const r = signup(env);
+  assert.equal(env.post({ action: 'me', session: r.session }).profile.email, r.profile.email);
+  for (const bad of [undefined, '', 'k1.' + 'A'.repeat(43), r.session + 'x', 'v1.123.abc', { a: 1 }]) {
+    assert.equal(env.post({ action: 'me', session: bad }).error, 'auth', String(bad));
+  }
+  const [key, val] = sessionsOf(env, r.profile.id)[0];
+  env.props.set(key, JSON.stringify(Object.assign(JSON.parse(val), { exp: Date.now() - 1 })));
+  assert.equal(env.post({ action: 'me', session: r.session }).error, 'auth');
+  assert.equal(env.props.has(key), false);                                 // expired: deleted
+  const l = env.post({ action: 'login', email: r.profile.email, password: PW });
+  assert.equal(env.post({ action: 'logout', session: l.session }).ok, true);
+  assert.equal(env.post({ action: 'me', session: l.session }).error, 'auth');
+  // "every device": all sessions of this account end, another account's stay
+  const other = signup(env, { email: 'autre@example.ma' });
+  const d1 = env.post({ action: 'login', email: r.profile.email, password: PW });
+  const d2 = env.post({ action: 'login', email: r.profile.email, password: PW });
+  assert.equal(env.post({ action: 'logout', session: d1.session, all: true }).ok, true);
+  assert.equal(env.post({ action: 'me', session: d2.session }).error, 'auth');
+  assert.equal(sessionsOf(env, r.profile.id).length, 0);
+  assert.equal(env.post({ action: 'me', session: other.session }).ok, true);
+  assert.equal(env.post({ action: 'logout', session: d1.session, all: true }).ok, true);   // already gone: still ok
+  for (let i = 0; i < 12; i++) env.post({ action: 'login', email: r.profile.email, password: PW });
+  assert.equal(sessionsOf(env, r.profile.id).length, 10);
+  // account removed from the sheet by the team: its sessions die
+  const last = env.post({ action: 'login', email: r.profile.email, password: PW });
+  env.sheets.Clients.deleteRow(2);
+  assert.equal(env.post({ action: 'me', session: last.session }).error, 'auth');
+  assert.equal(env.post({ action: 'my_orders' }).error, 'auth');
+});
+
+test('accounts: update profile and saved delivery address', () => {
+  const env = env0();
+  const r = signup(env);
+  const u = env.post({ action: 'update_profile', session: r.session, nom: 'Salma Bennani-Alaoui', telephone: '+212 7 00 11 22 33',
+    adresse: 'Résidence Al Andalous, apt 4\n2e étage', ville: 'Marrakech' });
+  assert.equal(u.ok, true, JSON.stringify(u));
+  assert.equal(u.profile.telephone, '0700112233');
+  assert.equal(u.profile.adresse, 'Résidence Al Andalous, apt 4 2e étage');
+  assert.equal(u.profile.email, r.profile.email);
+  assert.equal(env.post({ action: 'update_profile', session: r.session, email: 'pirate@x.ma' }).profile.email, r.profile.email);
+  assert.equal(env.post({ action: 'update_profile', session: r.session, telephone: '123' }).field, 'telephone');
+  assert.equal(env.post({ action: 'update_profile', session: r.session, nom: '' }).field, 'nom');
+  assert.equal(env.post({ action: 'update_profile', session: r.session, adresse: 'x'.repeat(500) }).profile.adresse.length, 200);
+  assert.equal(env.post({ action: 'me', session: r.session }).profile.ville, 'Marrakech');
+});
+
+test('accounts: change password checks the current one and signs out other devices', () => {
+  const env = env0();
+  const r = signup(env);
+  const other = env.post({ action: 'login', email: r.profile.email, password: PW });
+  assert.equal(env.post({ action: 'change_password', session: r.session, current: 'faux', password: 'Nouveau-Pass-99' }).error, 'bad_password');
+  assert.equal(env.post({ action: 'change_password', session: r.session, current: PW, password: 'court' }).error, 'weak_password');
+  const c = env.post({ action: 'change_password', session: r.session, current: PW, password: 'Nouveau-Pass-99' });
+  assert.equal(c.ok, true, JSON.stringify(c));
+  assert.equal(env.post({ action: 'me', session: r.session }).ok, true);    // this device stays signed in
+  assert.equal(env.post({ action: 'me', session: other.session }).error, 'auth');
+  assert.equal(env.post({ action: 'login', email: r.profile.email, password: PW }).error, 'bad_login');
+  assert.equal(env.post({ action: 'login', email: r.profile.email, password: 'Nouveau-Pass-99' }).ok, true);
+});
+
+test('accounts: older, weaker hashes are upgraded at the next login', () => {
+  const env = env0();
+  const r = signup(env);
+  const row = rowsOf(env, 'Clients')[1];
+  const target = row[11];
+  row[9] = 'ffeeddccbbaa99887766554433221100';
+  row[10] = env.ctx.pbkdf2_(PW, row[9], 10);
+  row[11] = 10;
+  assert.equal(env.post({ action: 'login', email: r.profile.email, password: PW }).ok, true);
+  assert.equal(row[11], target);
+  assert.notEqual(row[9], 'ffeeddccbbaa99887766554433221100');
+  assert.equal(env.ctx.pbkdf2_(PW, row[9], row[11]), row[10]);
+});
+
+test('accounts: orders placed while signed in are linked; history shows only my orders and statuses', () => {
+  const env = env0();
+  const a = signup(env), b = signup(env);
+  const o1 = env.post(order({ session: a.session }));
+  const o2 = env.post(order({ session: a.session, items: [{ id: BODY, qty: 1 }], promoCode: 'KOBG26' }));
+  const ob = env.post(order({ session: b.session }));
+  const guest = env.post(order());
+  const stale = env.post(order({ session: 'k1.' + 'B'.repeat(43) }));
+  assert.equal(o1.linked, true);
+  assert.equal(guest.linked, false);
+  assert.equal(stale.ok, true);                                             // a stale token never blocks an order
+  assert.equal(stale.linked, false);
+  const c = rowsOf(env, 'Commandes');
+  assert.equal(c[0][14], 'Compte client');
+  assert.equal(c.find((v) => v[1] === o1.orderId)[14], a.profile.id);
+  assert.equal(c.find((v) => v[1] === guest.orderId)[14] || '', '');
+  assert.match(rowsOf(env, 'Gestion').find((v) => v[0] === o1.orderId)[2], new RegExp('Client connecté : ' + a.profile.email.replace('.', '\\.')));
+
+  const tok = env.post({ action: 'auth', key: KEY }).token;
+  env.post({ action: 'update', key: tok, id: o1.orderId, status: 'Confirmée' });
+  env.post({ action: 'update', key: tok, id: o1.orderId, status: 'Expédiée', note: 'SECRET interne : client difficile' });
+  const mine = env.post({ action: 'my_orders', session: a.session });
+  assert.equal(mine.ok, true);
+  assert.deepEqual(mine.orders.map((o) => o.id).sort(), [o1.orderId, o2.orderId].sort());
+  const m1 = mine.orders.find((o) => o.id === o1.orderId);
+  assert.equal(m1.statut, 'Expédiée');
+  assert.deepEqual(m1.suivi.map((h) => h.to), ['Nouvelle', 'Confirmée', 'Expédiée']);
+  assert.deepEqual(m1.items, [{ name: 'Gants de sac Rival RB11 Evolution', qty: 1, size: 'M', colour: 'Noir' }]);
+  assert.equal(m1.total, 1775);
+  assert.ok(!JSON.stringify(mine).includes('SECRET'));
+  assert.ok(!JSON.stringify(mine).includes('Client connecté'));
+  const m2 = mine.orders.find((o) => o.id === o2.orderId);
+  assert.equal(m2.promo, 'KOBG26');
+  assert.equal(env.post({ action: 'my_orders', session: b.session }).orders.map((o) => o.id).join(), ob.orderId);
+  assert.equal(env.post({ action: 'list', key: tok }).orders.length, 5);   // admin still sees every order
+});
+
+test('accounts: the account column goes after any extra column of an older Commandes tab', () => {
+  const env = env0();
+  env.post(order());
+  const c = env.sheets.Commandes;
+  c.rows[0][14] = 'Remarque';
+  const a = signup(env);
+  const o = env.post(order({ session: a.session }));
+  assert.equal(c.rows[0][15], 'Compte client');
+  assert.equal(c.rows.find((v) => v[1] === o.orderId)[15], a.profile.id);
+  assert.equal(env.post({ action: 'my_orders', session: a.session }).orders.length, 1);
+});
+
+test('accounts: password reset by e-mail — same answer for unknown e-mails, single-use 1 h link', () => {
+  const env = env0();
+  const r = signup(env, { email: 'nadia@example.ma' });
+  const other = env.post({ action: 'login', email: 'nadia@example.ma', password: PW });
+  const unknown = env.post({ action: 'reset_request', email: 'inconnu@example.ma' });
+  const known = env.post({ action: 'reset_request', email: 'Nadia@example.ma' });
+  assert.deepEqual(Object.keys(unknown).sort(), Object.keys(known).sort());
+  assert.equal(unknown.ok, true);
+  assert.equal(env.mails.length, 1);
+  const m = env.mails[0];
+  assert.equal(m.to, 'nadia@example.ma');
+  assert.ok(!/[\r\n]/.test(m.subject));
+  assert.match(m.body, /https:\/\/slahmaid\.github\.io\/KOBG\/compte\.html#reset=k1\./);
+  assert.ok(!m.body.includes(PW));
+  const tok = resetLink(m);
+  assert.ok(![...env.props.keys(), ...env.props.values()].some((x) => x.includes(tok)));   // stored hashed
+  assert.equal(env.post({ action: 'reset_confirm', token: tok, password: 'court' }).error, 'weak_password');
+  const c = env.post({ action: 'reset_confirm', token: tok, password: 'Nouveau-Depart-7' });
+  assert.equal(c.ok, true, JSON.stringify(c));
+  assert.equal(env.post({ action: 'me', session: c.session }).ok, true);
+  assert.equal(env.post({ action: 'me', session: r.session }).error, 'auth');       // every old session revoked
+  assert.equal(env.post({ action: 'me', session: other.session }).error, 'auth');
+  assert.equal(env.post({ action: 'reset_confirm', token: tok, password: 'Encore-Autre-8' }).error, 'bad_reset');  // single use
+  assert.equal(env.post({ action: 'login', email: 'nadia@example.ma', password: 'Nouveau-Depart-7' }).ok, true);
+  assert.equal(env.post({ action: 'reset_confirm', token: 'k1.' + 'C'.repeat(43), password: 'Nouveau-Depart-7' }).error, 'bad_reset');
+  assert.equal(env.post({ action: 'reset_confirm', token: '../etc', password: 'Nouveau-Depart-7' }).error, 'bad_reset');
+});
+
+test('accounts: reset links expire, only the newest works, and a reset unlocks the account', () => {
+  const env = env0();
+  signup(env, { email: 'omar@example.ma' });
+  for (let i = 0; i < 5; i++) env.post({ action: 'login', email: 'omar@example.ma', password: 'faux' + i });
+  assert.equal(env.post({ action: 'login', email: 'omar@example.ma', password: PW }).error, 'locked');
+  env.post({ action: 'reset_request', email: 'omar@example.ma' });
+  env.post({ action: 'reset_request', email: 'omar@example.ma' });
+  const first = resetLink(env.mails[0]), second = resetLink(env.mails[1]);
+  assert.equal(env.post({ action: 'reset_confirm', token: first, password: 'Nouveau-Depart-7' }).error, 'bad_reset');
+  const [k, v] = [...env.props.entries()].find(([key]) => key.startsWith('rst:'));
+  env.props.set(k, JSON.stringify(Object.assign(JSON.parse(v), { exp: Date.now() - 1 })));
+  assert.equal(env.post({ action: 'reset_confirm', token: second, password: 'Nouveau-Depart-7' }).error, 'bad_reset');
+  env.post({ action: 'reset_request', email: 'omar@example.ma' });
+  const third = resetLink(env.mails[2]);
+  assert.equal(env.post({ action: 'reset_confirm', token: third, password: 'Nouveau-Depart-7' }).ok, true);
+  assert.equal(env.post({ action: 'login', email: 'omar@example.ma', password: 'Nouveau-Depart-7' }).ok, true);
+});
+
+test('accounts: reset requests are rate-limited and respect the MailApp quota', () => {
+  const env = env0();
+  signup(env, { email: 'lina@example.ma' });
+  for (let i = 0; i < 5; i++) assert.equal(env.post({ action: 'reset_request', email: 'lina@example.ma' }).ok, true);
+  assert.equal(env.mails.length, 3);                                        // 3 per e-mail per hour
+  assert.equal(env.post({ action: 'reset_request', email: 'nope' }).field, 'email');
+  const env2 = env0({ mailQuota: 0 });
+  signup(env2, { email: 'lina@example.ma' });
+  assert.equal(env2.post({ action: 'reset_request', email: 'lina@example.ma' }).error, 'mail_unavailable');
+});
+
+test('accounts: registrations are capped per hour; account actions never reach the admin API', () => {
+  const env = env0();
+  for (let i = 0; i < 30; i++) assert.equal(signup(env).ok, true);
+  assert.equal(signup(env).error, 'busy');
+  const r = env.post({ action: 'login', email: `salma${acctSeq - 1}@example.ma`, password: PW });
+  assert.equal(r.ok, true);
+  assert.equal(env.post({ action: 'list', key: r.session }).error, 'bad_key');   // a customer token is not an admin token
+  assert.equal(env.post({ action: 'me', key: KEY }).error, 'auth');
+});
+
+test('setup() also creates the Clients tab and the account column', () => {
+  const env = makeEnv();
+  env.run('setup');
+  assert.equal(env.sheets.Clients.rows[0][0], 'ID client');
+  assert.equal(env.sheets.Commandes.rows[0][14], 'Compte client');
+  env.run('benchmarkHash');
+  assert.ok(env.logs.some((l) => /itérations PBKDF2/.test(l)));
+});

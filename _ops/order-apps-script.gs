@@ -13,10 +13,12 @@
      sheet (no =, +, -, @ formulas, no control characters);
    - rate limits: 5 orders / hour / phone number, 40 orders / 10 min overall;
    - admin: key compared in constant time, 15 min lock after 5 wrong keys, the browser only
-     ever keeps a signed, expiring session token (rotating ADMIN_KEY revokes every session). */
+     ever keeps a signed, expiring session token (rotating ADMIN_KEY revokes every session);
+   - customer accounts (optional, onglet « Clients ») : salted PBKDF2 passwords, hashed expiring
+     session tokens, lock after 5 wrong passwords, password reset by e-mail (see "customer accounts"). */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-27';
+const VERSION = '2026-10-28';
 const SITE_URL = 'https://slahmaid.github.io/KOBG/';            // where the shop is published
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -62,7 +64,8 @@ function doPost(e) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return fail_('bad_request');
   const ctx = { authed: false };
   try {
-    return b.action != null ? admin_(b, ctx) : order_(b);
+    if (b.action == null) return order_(b);
+    return ACCOUNT_ACTIONS.indexOf(String(b.action)) >= 0 ? account_(b) : admin_(b, ctx);
   } catch (err) {
     console.error(err && err.stack || err);
     // only a signed-in admin gets details; shoppers get a generic error
@@ -88,6 +91,11 @@ function order_(b) {
   if (!cat) warn.push('⚠ Prix NON vérifiés (catalogue du site injoignable) : contrôlez le total avant d’expédier.');
   if (Number(b.total) !== t.total) warn.push('⚠ Total recalculé par le serveur : ' + t.total + ' DH (le navigateur annonçait ' + clean_(b.total, 12) + ' DH).');
   if (b.promoCode && !t.pct) warn.push('Code promo refusé : ' + clean_(b.promoCode, 20) + '.');
+
+  // signed in (compte.html)? the order is linked to the account; a stale token simply means a guest order
+  const acct = b.session ? session_(b.session) : null;
+  const acctNote = acct ? ['Client connecté : ' + acct.user.email + (acct.user.adresse ? ' · adresse enregistrée : ' + acct.user.adresse
+    + (acct.user.ville ? ', ' + acct.user.ville : '') : '')] : [];
 
   let id = ID_RE.test(String(b.orderId || '')) ? String(b.orderId) : '';
   const lock = LockService.getScriptLock();
@@ -116,25 +124,31 @@ function order_(b) {
 
     const now = new Date();
     const recu = fmt_(now, 'dd/MM/yyyy HH:mm');
-    sh.appendRow([
+    const row = [
       now, id, cell_(f.nom), "'" + f.tel, cell_(f.ville),
       listCell_(lines.map((l) => l.name + (l.qty > 1 ? ' x' + l.qty : ''))),
       listCell_(lines.map((l) => l.size)),
       listCell_(lines.map((l) => l.colour)),
       units, t.sub, t.pct ? t.code : '', t.pct, t.delivery, t.total,
-    ]);
+    ];
+    if (acct) {
+      const col = acctCol_(sh, true);
+      while (row.length < col) row.push('');
+      row[col - 1] = "'" + acct.user.id;
+    }
+    sh.appendRow(row);
     const g = gestion_(ss);
     const hist = [{ at: recu, to: 'Nouvelle', by: 'site' }].concat(warn.map((w) => ({ at: recu, note: w, by: 'serveur' })));
-    writeGestion_(g, { id: id, statut: 'Nouvelle', note: warn.join('\n'), maj: recu, hist: hist });
+    writeGestion_(g, { id: id, statut: 'Nouvelle', note: warn.concat(acctNote).join('\n'), maj: recu, hist: hist });
 
     cache.put(kTel, String(nTel + 1), LIMITS.perPhoneSec);
     cache.put('rl:all', String(nAll + 1), LIMITS.globalSec);
     reply = { orderId: id, items: lines, subtotal: t.sub, promoCode: t.pct ? t.code : '', discountPct: t.pct,
-      discount: t.discount, delivery: t.delivery, total: t.total, adjusted: warn.length > 0 };
+      discount: t.discount, delivery: t.delivery, total: t.total, adjusted: warn.length > 0, linked: !!acct };
   } finally {
     lock.releaseLock();
   }
-  notify_(reply.orderId, f, lines, t, warn);
+  notify_(reply.orderId, f, lines, t, warn.concat(acctNote));
   return ok_(reply);
 }
 
@@ -368,6 +382,423 @@ function stats_(orders, period, now) {
     caAEncaisser: due, caEncaisse: paid, by: by };
 }
 
+// ---------- customer accounts (compte.html) ----------
+// Accounts are optional: guests still order with name / city / phone only.
+// - passwords: PBKDF2-HMAC-SHA256 with a random 128-bit salt per account (ACCT.iter rounds,
+//   stored per account so the count can be raised later: older hashes are upgraded at the next login);
+//   never stored, logged or e-mailed in clear;
+// - sessions: random 256-bit tokens; the server only keeps their SHA-256 ("ses:<hash>" script
+//   properties) with an expiry, so a leaked Properties dump can't be replayed; max ACCT.maxSessions per account;
+// - login: one generic error ('bad_login') whether the e-mail exists or not (an unknown e-mail costs
+//   the same hashing time), 15 min lock after 5 wrong passwords for that e-mail, global brake on failures;
+// - password reset: single-use link valid 1 h, sent with MailApp; the request always answers the same.
+const SHEET_CLIENTS = 'Clients';
+const CLIENT_HEAD = ['ID client', 'E-mail', 'Nom', 'Téléphone', 'Adresse', 'Ville', 'Créé le', 'Mis à jour le',
+  'Dernière connexion', 'Sel', 'Empreinte', 'Itérations'];
+const C = { id: 0, email: 1, nom: 2, tel: 3, adresse: 4, ville: 5, cree: 6, maj: 7, vu: 8, sel: 9, hash: 10, iter: 11 };
+const ACCOUNT_ACTIONS = ['register', 'login', 'logout', 'me', 'update_profile', 'change_password', 'my_orders',
+  'reset_request', 'reset_confirm'];
+const ACCT = {
+  iter: 5000, pwMin: 8, pwMax: 128,
+  session: 30 * 86400, sessionShort: 86400, reset: 3600, maxSessions: 10,
+  loginFails: 5, lockSec: 900, globalFails: 300, globalFailSec: 900,
+  resetPerEmail: 3, resetSec: 3600, resetGlobal: 40,
+  register: 30, registerSec: 3600,
+  orders: 50, adresse: 200,
+};
+const ORDER_ACCT_COL = 'Compte client';      // extra column of "Commandes": the account that placed the order
+const EMAIL_RE = /^[^\s@<>()[\]\\,;:"']{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+const TOKEN_RE = /^k1\.[A-Za-z0-9_-]{43}$/;
+
+function account_(b) {
+  const a = String(b.action);
+  if (a === 'register') return register_(b);
+  if (a === 'login') return login_(b);
+  if (a === 'reset_request') return resetRequest_(b);
+  if (a === 'reset_confirm') return resetConfirm_(b);
+  if (a === 'logout') {                     // { all: true } = every device of this account
+    const h = tokenHash_(b.session);
+    if (!h) return ok_({});
+    const cur = b.all === true ? session_(b.session) : null;
+    if (cur) dropSessions_(cur.user.id, '');
+    PropertiesService.getScriptProperties().deleteProperty('ses:' + h);
+    return ok_({});
+  }
+  const s = session_(b.session);
+  if (!s) return fail_('auth');
+  if (a === 'me') return ok_({ profile: profile_(s.user) });
+  if (a === 'update_profile') return updateProfile_(s, b);
+  if (a === 'change_password') return changePassword_(s, b);
+  if (a === 'my_orders') return ok_({ orders: myOrders_(s.user.id) });
+  return fail_('bad_action');
+}
+
+function register_(b) {
+  const email = email_(b.email);
+  const f = { nom: clean_(b.nom, 80), tel: phone_(b.telephone), adresse: clean_(b.adresse, ACCT.adresse), ville: clean_(b.ville, 60) };
+  if (!email) return fail_('bad_field', { field: 'email' });
+  if (f.nom.length < 3 || !/\p{L}.*\p{L}/u.test(f.nom)) return fail_('bad_field', { field: 'nom' });
+  if (!f.tel) return fail_('bad_field', { field: 'telephone' });
+  if (f.ville && (f.ville.length < 2 || !/\p{L}/u.test(f.ville))) return fail_('bad_field', { field: 'ville' });
+  const weak = weak_(b.password, email);
+  if (weak) return fail_(weak, { field: 'password', min: ACCT.pwMin });
+
+  const cache = CacheService.getScriptCache();
+  const nReg = Number(cache.get('ac:reg') || 0);
+  if (nReg >= ACCT.register) return fail_('busy');
+  const salt = salt_();
+  const hash = pbkdf2_(String(b.password), salt, ACCT.iter);     // before the lock: it is the slow part
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  let user;
+  try {
+    const sh = clientsSheet_(book_());
+    const all = users_(sh);
+    if (all.some((u) => u.email === email)) return fail_('email_taken');
+    const ids = all.map((u) => u.id);
+    let id;
+    do { id = 'C-' + rand_().replace(/[^A-Za-z0-9]/g, '').slice(0, 10).toUpperCase(); } while (ids.indexOf(id) >= 0);
+    const now = new Date();
+    user = { id: id, email: email, nom: f.nom, tel: f.tel, adresse: f.adresse, ville: f.ville, cree: now, maj: now, vu: now,
+      sel: salt, hash: hash, iter: ACCT.iter, row: Math.max(1, sh.getLastRow()) + 1 };
+    writeUser_(sh, user);
+    cache.put('ac:reg', String(nReg + 1), ACCT.registerSec);
+  } finally {
+    lock.releaseLock();
+  }
+  const s = newSession_(user.id, b.remember !== false);
+  return ok_({ session: s.token, exp: s.exp, profile: profile_(user) });
+}
+
+function login_(b) {
+  const email = email_(b.email);
+  const pw = typeof b.password === 'string' ? b.password : '';
+  if (!email || !pw || pw.length > ACCT.pwMax) return fail_('bad_login');
+  const cache = CacheService.getScriptCache();
+  const k = 'ac:f:' + shortHash_(email);
+  const until = Number(cache.get(k + ':lock') || 0);
+  if (until > Date.now()) return fail_('locked', { retryIn: Math.ceil((until - Date.now()) / 1000) });
+  const nAll = Number(cache.get('ac:fails') || 0);
+  if (nAll >= ACCT.globalFails) return fail_('busy');
+
+  const sh = clientsSheet_(book_());
+  const user = users_(sh).filter((u) => u.email === email)[0] || null;
+  // unknown e-mail: same work, same answer
+  const good = user ? safeEq_(pbkdf2_(pw, user.sel, user.iter), user.hash)
+    : (pbkdf2_(pw, '00000000000000000000000000000000', ACCT.iter), false);
+  if (!good) return loginFail_(cache, k, nAll);
+  cache.remove(k);
+  const now = new Date();
+  user.vu = now;
+  if (user.iter < ACCT.iter) { user.sel = salt_(); user.hash = pbkdf2_(pw, user.sel, ACCT.iter); user.iter = ACCT.iter; }
+  const lock = LockService.getScriptLock();
+  if (lock.tryLock(10000)) {
+    try { const u = refind_(sh, user); if (u) writeUser_(sh, u); } finally { lock.releaseLock(); }
+  }
+  const s = newSession_(user.id, b.remember !== false);
+  return ok_({ session: s.token, exp: s.exp, profile: profile_(user) });
+}
+function loginFail_(cache, k, nAll) {
+  cache.put('ac:fails', String(nAll + 1), ACCT.globalFailSec);
+  const n = Number(cache.get(k) || 0) + 1;
+  if (n >= ACCT.loginFails) {
+    cache.put(k + ':lock', String(Date.now() + ACCT.lockSec * 1000), ACCT.lockSec);
+    cache.remove(k);
+    return fail_('locked', { retryIn: ACCT.lockSec });
+  }
+  cache.put(k, String(n), ACCT.lockSec);
+  return fail_('bad_login');
+}
+
+function updateProfile_(s, b) {
+  const f = {
+    nom: b.nom != null ? clean_(b.nom, 80) : s.user.nom,
+    tel: b.telephone != null ? phone_(b.telephone) : s.user.tel,
+    adresse: b.adresse != null ? clean_(b.adresse, ACCT.adresse) : s.user.adresse,
+    ville: b.ville != null ? clean_(b.ville, 60) : s.user.ville,
+  };
+  if (f.nom.length < 3 || !/\p{L}.*\p{L}/u.test(f.nom)) return fail_('bad_field', { field: 'nom' });
+  if (!f.tel) return fail_('bad_field', { field: 'telephone' });
+  if (f.ville && (f.ville.length < 2 || !/\p{L}/u.test(f.ville))) return fail_('bad_field', { field: 'ville' });
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const sh = clientsSheet_(book_());
+    const u = refind_(sh, s.user);
+    if (!u) return fail_('auth');
+    Object.assign(u, f, { maj: new Date() });
+    writeUser_(sh, u);
+    return ok_({ profile: profile_(u) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function changePassword_(s, b) {
+  const cur = typeof b.current === 'string' ? b.current : '';
+  const cache = CacheService.getScriptCache();
+  const k = 'ac:f:' + shortHash_(s.user.email);
+  const until = Number(cache.get(k + ':lock') || 0);
+  if (until > Date.now()) return fail_('locked', { retryIn: Math.ceil((until - Date.now()) / 1000) });
+  if (!cur || cur.length > ACCT.pwMax || !safeEq_(pbkdf2_(cur, s.user.sel, s.user.iter), s.user.hash)) {
+    const r = loginFail_(cache, k, Number(cache.get('ac:fails') || 0));
+    return JSON.parse(r.getContent()).error === 'locked' ? r : fail_('bad_password', { field: 'current' });
+  }
+  const weak = weak_(b.password, s.user.email);
+  if (weak) return fail_(weak, { field: 'password', min: ACCT.pwMin });
+  const r = setPassword_(s.user, String(b.password));
+  if (r) return r;
+  dropSessions_(s.user.id, s.hash);        // signs out every other device
+  return ok_({});
+}
+
+function resetRequest_(b) {
+  const email = email_(b.email);
+  if (!email) return fail_('bad_field', { field: 'email' });
+  if (MailApp.getRemainingDailyQuota() < 1) return fail_('mail_unavailable');
+  const cache = CacheService.getScriptCache();
+  const nAll = Number(cache.get('ac:rst') || 0);
+  if (nAll >= ACCT.resetGlobal) return fail_('busy');
+  const k = 'ac:r:' + shortHash_(email);
+  const n = Number(cache.get(k) || 0);
+  if (n >= ACCT.resetPerEmail) return ok_({ sent: true });    // same answer: says nothing about the account
+  cache.put(k, String(n + 1), ACCT.resetSec);
+  cache.put('ac:rst', String(nAll + 1), ACCT.resetSec);
+  const user = users_(clientsSheet_(book_())).filter((u) => u.email === email)[0];
+  if (!user) return ok_({ sent: true });
+  const props = PropertiesService.getScriptProperties();
+  sweep_(props, (k2, v) => k2.indexOf('rst:') === 0 && v.u === user.id);     // only the newest link works
+  const token = 'k1.' + rand_();
+  props.setProperty('rst:' + sha_(token), JSON.stringify({ u: user.id, exp: Date.now() + ACCT.reset * 1000 }));
+  const link = SITE_URL + 'compte.html#reset=' + token;
+  try {
+    MailApp.sendEmail({
+      to: user.email,
+      name: 'Knockout Boxing Gear',
+      subject: 'Réinitialisation de votre mot de passe · Knockout Boxing Gear',
+      body: [
+        'Bonjour ' + user.nom + ',', '',
+        'Vous avez demandé à réinitialiser le mot de passe de votre compte Knockout Boxing Gear.',
+        'Ouvrez ce lien pour choisir un nouveau mot de passe (valable 1 heure, une seule fois) :', '',
+        link, '',
+        'Vous n’êtes pas à l’origine de cette demande ? Ignorez cet e-mail : votre mot de passe reste inchangé.', '',
+        'Knockout Boxing Gear · ' + SITE_URL,
+      ].join('\n'),
+    });
+  } catch (e) {
+    console.warn('reset e-mail not sent: ' + e);
+    return fail_('mail_unavailable');
+  }
+  return ok_({ sent: true });
+}
+
+function resetConfirm_(b) {
+  const h = tokenHash_(b.token);
+  const props = PropertiesService.getScriptProperties();
+  const rec = h ? parse_(props.getProperty('rst:' + h)) : null;
+  if (!rec || !(rec.exp > Date.now())) { if (h) props.deleteProperty('rst:' + h); return fail_('bad_reset'); }
+  const sh = clientsSheet_(book_());
+  const user = users_(sh).filter((u) => u.id === rec.u)[0];
+  if (!user) { props.deleteProperty('rst:' + h); return fail_('bad_reset'); }
+  const weak = weak_(b.password, user.email);
+  if (weak) return fail_(weak, { field: 'password', min: ACCT.pwMin });
+  props.deleteProperty('rst:' + h);                                    // single use
+  const r = setPassword_(user, String(b.password));
+  if (r) return r;
+  dropSessions_(user.id, null);
+  sweep_(props, (k, v) => k.indexOf('rst:') === 0 && v.u === user.id);
+  CacheService.getScriptCache().remove('ac:f:' + shortHash_(user.email) + ':lock');
+  const s = newSession_(user.id, b.remember !== false);
+  return ok_({ session: s.token, exp: s.exp, profile: profile_(user) });
+}
+
+function setPassword_(user, pw) {
+  const salt = salt_();
+  const hash = pbkdf2_(pw, salt, ACCT.iter);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const sh = clientsSheet_(book_());
+    const u = refind_(sh, user);
+    if (!u) return fail_('auth');
+    Object.assign(u, { sel: salt, hash: hash, iter: ACCT.iter, maj: new Date() });
+    writeUser_(sh, u);
+    Object.assign(user, u);
+  } finally {
+    lock.releaseLock();
+  }
+  return null;
+}
+
+// orders placed while signed in, newest first, with the status the team set in "Gestion"
+function myOrders_(uid) {
+  const ss = book_();
+  const sh = ss.getSheetByName(SHEET_ORDERS);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const col = acctCol_(sh, false);
+  if (!col) return [];
+  const g = gestion_(ss);
+  const out = [];
+  sh.getRange(2, 1, sh.getLastRow() - 1, col).getValues().forEach((v) => {
+    if (str_(v[col - 1]) !== uid) return;
+    const id = str_(v[1]);
+    if (!id) return;
+    const gest = g.byId[id];
+    const d = asDate_(v[0]);
+    const names = list_(v[5]).split(' / '), sizes = list_(v[6]).split(' / '), colours = list_(v[7]).split(' / ');
+    out.push({
+      id: id, ts: d ? d.getTime() : 0, recu: d ? fmt_(d, 'dd/MM/yyyy HH:mm') : str_(v[0]),
+      items: names.map((n, i) => {
+        const m = /^(.*) x(\d+)$/.exec(n);
+        return { name: m ? m[1] : n, qty: m ? Number(m[2]) : 1, size: sizes[i] || '', colour: colours[i] || '' };
+      }),
+      nb: num_(v[8]), sousTotal: num_(v[9]), promo: str_(v[10]), remise: num_(v[11]), livraison: num_(v[12]), total: num_(v[13]),
+      statut: gest && STATUSES.indexOf(gest.statut) >= 0 ? gest.statut : 'Nouvelle',
+      // status changes only: the team's internal notes never leave the sheet
+      suivi: (gest ? gest.hist : []).filter((h) => h && h.to && STATUSES.indexOf(h.to) >= 0).map((h) => ({ at: str_(h.at), to: h.to })),
+    });
+  });
+  out.sort((x, y) => y.ts - x.ts);
+  return out.slice(0, ACCT.orders);
+}
+
+// ---- sessions ----
+function newSession_(uid, remember) {
+  const props = PropertiesService.getScriptProperties();
+  const now = Date.now();
+  const mine = [];
+  sweep_(props, (k, v) => {
+    if (k.indexOf('ses:') !== 0 && k.indexOf('rst:') !== 0) return false;
+    if (!(v.exp > now)) return true;                                  // expired: cleaned up
+    if (k.indexOf('ses:') === 0 && v.u === uid) mine.push({ k: k, exp: v.exp });
+    return false;
+  });
+  mine.sort((x, y) => x.exp - y.exp);
+  while (mine.length >= ACCT.maxSessions) props.deleteProperty(mine.shift().k);   // oldest device signed out
+  const token = 'k1.' + rand_();
+  const exp = now + (remember ? ACCT.session : ACCT.sessionShort) * 1000;
+  props.setProperty('ses:' + sha_(token), JSON.stringify({ u: uid, exp: exp }));
+  return { token: token, exp: exp };
+}
+// a valid session -> { hash, user } (the user re-read from the sheet), else null
+function session_(token) {
+  const h = tokenHash_(token);
+  if (!h) return null;
+  const props = PropertiesService.getScriptProperties();
+  const rec = parse_(props.getProperty('ses:' + h));
+  if (!rec) return null;
+  if (!(rec.exp > Date.now())) { props.deleteProperty('ses:' + h); return null; }
+  const user = users_(clientsSheet_(book_())).filter((u) => u.id === rec.u)[0];
+  if (!user) { props.deleteProperty('ses:' + h); return null; }      // account deleted from the sheet
+  return { hash: h, user: user };
+}
+function dropSessions_(uid, keepHash) {
+  sweep_(PropertiesService.getScriptProperties(), (k, v) => k.indexOf('ses:') === 0 && v.u === uid && k !== 'ses:' + keepHash);
+}
+// deletes the session/reset properties for which test(key, value) is true
+function sweep_(props, test) {
+  const all = props.getProperties();
+  Object.keys(all).forEach((k) => {
+    if (k.indexOf('ses:') !== 0 && k.indexOf('rst:') !== 0) return;
+    const v = parse_(all[k]);
+    if (!v || test(k, v)) props.deleteProperty(k);
+  });
+}
+function tokenHash_(t) { return typeof t === 'string' && TOKEN_RE.test(t) ? sha_(t) : ''; }
+function parse_(s) { if (!s) return null; try { const o = JSON.parse(s); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } }
+
+// ---- "Clients" sheet ----
+function clientsSheet_(ss) {
+  let sh = ss.getSheetByName(SHEET_CLIENTS);
+  if (!sh) sh = ss.insertSheet(SHEET_CLIENTS);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, CLIENT_HEAD.length).setValues([CLIENT_HEAD]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function users_(sh) {
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last - 1, CLIENT_HEAD.length).getValues().map((v, i) => ({
+    row: i + 2, id: str_(v[C.id]), email: str_(v[C.email]).toLowerCase(), nom: str_(v[C.nom]), tel: tel_(v[C.tel]),
+    adresse: str_(v[C.adresse]), ville: str_(v[C.ville]), cree: v[C.cree], maj: v[C.maj], vu: v[C.vu],
+    sel: str_(v[C.sel]), hash: str_(v[C.hash]), iter: Math.max(1, Math.floor(num_(v[C.iter])) || ACCT.iter),
+  })).filter((u) => u.id && u.email);
+}
+// the row may have moved (someone sorted or deleted rows in the sheet): look the account up again by id
+function refind_(sh, user) {
+  const u = users_(sh).filter((x) => x.id === user.id)[0];
+  if (!u) return null;
+  ['nom', 'tel', 'adresse', 'ville', 'vu', 'sel', 'hash', 'iter', 'maj'].forEach((k) => { if (user[k] !== undefined) u[k] = user[k]; });
+  return u;
+}
+function writeUser_(sh, u) {
+  sh.getRange(u.row, 1, 1, CLIENT_HEAD.length).setValues([[
+    "'" + u.id, cell_(u.email), cell_(u.nom), "'" + u.tel, cell_(u.adresse), cell_(u.ville), u.cree, u.maj, u.vu,
+    "'" + u.sel, "'" + u.hash, u.iter,
+  ]]);
+}
+function profile_(u) {
+  const d = asDate_(u.cree);
+  return { id: u.id, email: u.email, nom: u.nom, telephone: u.tel, adresse: u.adresse, ville: u.ville,
+    depuis: d ? fmt_(d, 'dd/MM/yyyy') : '' };
+}
+// "Commandes" column holding the account id; created after the last used column if missing (create=true)
+function acctCol_(sh, create) {
+  const width = Math.max(ORDER_HEAD.length, sh.getLastColumn());
+  const head = sh.getRange(1, 1, 1, width).getValues()[0].map((h) => fold_(h));
+  const i = head.indexOf(fold_(ORDER_ACCT_COL));
+  if (i >= 0) return i + 1;
+  if (!create) return 0;
+  const col = Math.max(ORDER_HEAD.length, head.filter(String).length ? head.length : 0) + 1;
+  sh.getRange(1, col).setValue(ORDER_ACCT_COL).setFontWeight('bold');
+  return col;
+}
+
+// ---- crypto + validation ----
+function email_(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  return s.length <= 254 && EMAIL_RE.test(s) ? s : '';
+}
+function weak_(pw, email) {
+  if (typeof pw !== 'string' || pw.length < ACCT.pwMin) return 'weak_password';
+  if (pw.length > ACCT.pwMax) return 'bad_field';
+  if (pw.toLowerCase() === email || /^(.)\1+$/.test(pw) || /^(?:12345678|123456789|1234567890|password|motdepasse|azertyuiop?|qwertyuiop?)$/i.test(pw)) return 'weak_password';
+  return '';
+}
+// PBKDF2-HMAC-SHA256, one 32-byte block (RFC 8018). Apps Script's HMAC takes and returns signed Byte[].
+function pbkdf2_(pw, saltHex, iter) {
+  const key = utf8_(pw);
+  let u = Utilities.computeHmacSha256Signature(unhex_(saltHex).concat([0, 0, 0, 1]), key);
+  const t = u.slice();
+  for (let i = 1; i < iter; i++) {
+    u = Utilities.computeHmacSha256Signature(u, key);
+    for (let j = 0; j < t.length; j++) t[j] ^= u[j];
+  }
+  return hex_(t);
+}
+function utf8_(s) {
+  const e = unescape(encodeURIComponent(String(s)));
+  const out = [];
+  for (let i = 0; i < e.length; i++) { const c = e.charCodeAt(i); out.push(c > 127 ? c - 256 : c); }
+  return out;
+}
+function hex_(bytes) { return bytes.map((x) => ('0' + (x & 255).toString(16)).slice(-2)).join(''); }
+function unhex_(h) {
+  const out = [];
+  for (let i = 0; i + 1 < h.length; i += 2) { const c = parseInt(h.substr(i, 2), 16); out.push(c > 127 ? c - 256 : c); }
+  return out;
+}
+function sha_(s) { return hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8)); }
+function shortHash_(s) { return sha_('kobg-acct:' + s).slice(0, 32); }
+// 32 random bytes from two UUIDv4 (122 random bits each), base64url without padding (43 chars)
+function rand_() {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    Utilities.getUuid() + Utilities.getUuid() + Date.now(), Utilities.Charset.UTF_8)).replace(/=+$/, '');
+}
+function salt_() { return sha_(Utilities.getUuid() + Utilities.getUuid()).slice(0, 32); }
+
 // ---------- sheets ----------
 function book_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -514,16 +945,24 @@ function newId_() {
 }
 
 // ---------- to run by hand from the Apps Script editor ----------
-// Creates the two tabs with their headers. Safe to run again.
+// Creates the tabs (Commandes, Gestion, Clients) with their headers. Safe to run again.
 function setup() {
   const ss = book_();
-  ordersSheet_(ss);
+  acctCol_(ordersSheet_(ss), true);
   gestion_(ss);
+  clientsSheet_(ss);
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
-  console.log('Onglets « ' + SHEET_ORDERS + ' » et « ' + SHEET_ADMIN + ' » prêts.');
+  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' » et « ' + SHEET_CLIENTS + ' » prêts.');
+  console.log('E-mails restants aujourd’hui (liens de réinitialisation, notifications) : ' + MailApp.getRemainingDailyQuota());
   console.log(key.length >= LIMITS.adminKeyMin ? 'ADMIN_KEY configurée.' : 'ADMIN_KEY manquante : lancez generateAdminKey().');
   console.log(catalog_() ? 'Catalogue du site lu : ' + CATALOG_URL : 'ATTENTION : catalogue illisible à ' + CATALOG_URL);
+}
+// Times one password hash (ACCT.iter rounds of PBKDF2). Aim for well under a second; lower ACCT.iter if not.
+function benchmarkHash() {
+  const t0 = Date.now();
+  pbkdf2_('benchmark-password', salt_(), ACCT.iter);
+  console.log(ACCT.iter + ' itérations PBKDF2 : ' + (Date.now() - t0) + ' ms par connexion.');
 }
 // Generates a strong admin key, saves it in ADMIN_KEY and prints it ONCE in the execution log.
 // Running it again replaces the key and signs every admin out.
