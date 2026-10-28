@@ -24,8 +24,8 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-28.3';
-const SITE_URL = 'https://slahmaid.github.io/KOBG/';            // where the shop is published
+const VERSION = '2026-10-28.4';
+const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
 const PROMO_CODES = { KOBG26: 10 };                              // code -> % off the subtotal

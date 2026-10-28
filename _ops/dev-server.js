@@ -1,4 +1,4 @@
-// Local preview with a FAKE order backend: serves the site at http://localhost:8080/KOBG/ and runs
+// Local preview with a FAKE order backend: serves the site at http://localhost:8080/ (root, like the custom domain) and runs
 // order-apps-script.gs in memory (gas-mock.js), so orders and the admin panel can be tried without
 // touching the real Google Sheet. Nothing is sent to Google. Data is lost when the server stops.
 // Run: node _ops/dev-server.js [port]     Admin key: dev-admin-key-0123456789
@@ -38,7 +38,7 @@ http.createServer((req, res) => {
       const out = backend.post(body);
       if (out.ok && !body.includes('"action"')) console.log('order', out.orderId, out.total + ' DH', out.adjusted ? '(re-priced)' : '', out.linked ? '(account)' : '');
       backend.mails.slice(sent).forEach((m) => {
-        m.body = String(m.body).split('https://slahmaid.github.io/KOBG/').join(`http://localhost:${PORT}/KOBG/`);
+        m.body = String(m.body).split('https://knockoutboxinggear.com/').join(`http://localhost:${PORT}/`);
         console.log(`\n--- e-mail (not sent) to ${m.to}: ${m.subject}\n${m.body}\n---`);
       });
       send(res, 200, 'application/json', JSON.stringify(out));
@@ -56,9 +56,10 @@ http.createServer((req, res) => {
     return send(res, 200, 'application/json', JSON.stringify({ ok: true, next: i }));
   }
   if (url.pathname === '/__dev.js') return send(res, 200, TYPES['.js'], DEV_JS);
-  if (url.pathname === '/' ) { res.writeHead(302, { Location: '/KOBG/' }); return res.end(); }
+  // old GitHub Pages sub-path (/KOBG/...): redirected to the root, as on the live site
+  if (/^\/KOBG(?=\/|$)/i.test(url.pathname)) { res.writeHead(301, { Location: (url.pathname.replace(/^\/KOBG/i, '') || '/') + url.search }); return res.end(); }
 
-  let rel = decodeURIComponent(url.pathname).replace(/^\/KOBG(?=\/|$)/, '');
+  let rel = decodeURIComponent(url.pathname);
   if (rel === '' || rel.endsWith('/')) rel += 'index.html';
   const file = path.normalize(path.join(ROOT, rel));
   const inside = file.startsWith(ROOT + path.sep);
@@ -70,7 +71,7 @@ http.createServer((req, res) => {
   const data = fs.readFileSync(file);
   send(res, 200, TYPES[ext] || 'application/octet-stream', ext === '.html' ? inject(data.toString('utf8')) : data);
 }).listen(PORT, '127.0.0.1', () => {
-  console.log(`KOBG local preview: http://localhost:${PORT}/KOBG/  (fake backend, admin key: ${ADMIN_KEY})`);
+  console.log(`KOBG local preview: http://localhost:${PORT}/  (fake backend, admin key: ${ADMIN_KEY})`);
 });
 
 function inject(html) { return html.replace('</head>', '  <script src="/__dev.js"></script>\n</head>'); }

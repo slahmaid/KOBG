@@ -546,7 +546,7 @@ test('accounts: password reset by e-mail — same answer for unknown e-mails, si
   const m = env.mails[0];
   assert.equal(m.to, 'nadia@example.ma');
   assert.ok(!/[\r\n]/.test(m.subject));
-  assert.match(m.body, /https:\/\/slahmaid\.github\.io\/KOBG\/compte\.html#reset=k1\./);
+  assert.match(m.body, /https:\/\/knockoutboxinggear\.com\/compte\.html#reset=k1\./);
   assert.ok(!m.body.includes(PW));
   const tok = resetLink(m);
   assert.ok(![...env.props.keys(), ...env.props.values()].some((x) => x.includes(tok)));   // stored hashed

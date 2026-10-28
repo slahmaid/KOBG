@@ -7,7 +7,7 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | `order-apps-script.gs` | The order + admin backend (Google Apps Script web app). **Must be deployed — see step 1.** |
 | `test-backend.js` | 50 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view). Run `node _ops/test-backend.js`. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
-| `dev-server.js` | Local preview at `http://localhost:8080/KOBG/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
+| `dev-server.js` | Local preview at `http://localhost:8080/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
 
 ---
 
@@ -158,4 +158,4 @@ Limits to know about:
 - Apps Script hashing is slow, so the iteration count (5,000) is lower than for a native server; strong passwords matter. Changing the e-mail of an account is not offered (do it by re-creating the account).
 - Apps Script can't see visitors' IP addresses, so rate limits are per phone number and global, not per visitor.
 - GitHub Pages can't send HTTP headers, so `frame-ancestors`/HSTS etc. only apply if you move to Netlify or Cloudflare Pages, which read the `_headers` file included here.
-- On `slahmaid.github.io`, every GitHub Pages site of that account shares one browser origin (and therefore the admin session storage). A custom domain (e.g. a `.ma` domain) gives the shop its own origin; recommended before scaling up.
+- The shop is served from its own domain, `https://knockoutboxinggear.com/` (file `CNAME`; `www` points to `slahmaid.github.io`), so it has its own browser origin instead of sharing `slahmaid.github.io` with the account's other GitHub Pages sites. All links are relative, so the site works at the domain root; old `slahmaid.github.io/KOBG/...` addresses are redirected by GitHub Pages.

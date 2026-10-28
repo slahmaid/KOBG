@@ -1,3 +1,7 @@
+// Old address (GitHub Pages sub-path /KOBG/...): the shop now lives at the root of knockoutboxinggear.com, so such a path
+// only reaches 404.html; send the visitor to the same page at the root.
+if (/^\/KOBG(?=\/|$)/i.test(location.pathname)) location.replace((location.pathname.replace(/^\/KOBG/i, '') || '/') + location.search + location.hash);
+
 // =========================================================
 // CONFIG — edit here
 // ORDERS (cash on delivery): the order forms (product pages + commande.html) POST each order here.
