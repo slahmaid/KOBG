@@ -6,9 +6,9 @@ const assert = require('node:assert/strict');
 const { makeEnv } = require('./gas-mock');
 
 const KEY = 'kobg-test-admin-key-0123456789';
-const RB11 = 'gants-de-sac-rival-rb11-evolution-noir';          // 1750 DH, sizes M L XL
+const RB11 = 'gants-de-sac-rival-rb11-evolution-noir';          // 1690 DH, sizes M L XL
 const RB10 = 'gants-de-sac-rival-rb10-intelli-shock-blanc';     // 2390 DH, sizes S M L XL
-const RS11 = 'gants-de-sparring-rival-rs11v-evolution-or';      // 2005 DH, sizes incl. "16 oz-s"
+const RS11 = 'gants-de-sparring-rival-rs11v-evolution-or';      // 1990 DH, sizes incl. "16 oz-s"
 const BODY = 'protecteur-corporel-rival-neon';                  // 4559 DH, no size
 
 let seq = 0;
@@ -17,7 +17,7 @@ function order(extra = {}) {
   return Object.assign({
     orderId: 'KOBG-261027-' + 'ABCDEFGH'[seq % 8] + 'B2' + 'CDEFGHJK'[(seq >> 3) % 8],
     nom: 'Yassine El Amrani', telephone: '06 12 34 56 ' + String(seq % 100).padStart(2, '0'), ville: 'Casablanca',
-    items: [{ id: RB11 + '--m', qty: 1, unitPrice: 1750 }], subtotal: 1750, total: 1775, promoCode: '', source: 'panier',
+    items: [{ id: RB11 + '--m', qty: 1, unitPrice: 1690 }], subtotal: 1690, total: 1715, promoCode: '', source: 'panier',
   }, extra);
 }
 const env0 = (o) => makeEnv(Object.assign({ props: { ADMIN_KEY: KEY } }, o));
@@ -32,11 +32,11 @@ test('health check answers with the version', () => {
 
 test('valid order is stored with server prices, Gestion line and phone as text', () => {
   const env = env0();
-  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 2, unitPrice: 1750 }, { id: BODY, qty: 1, unitPrice: 4559 }], total: 8059 }));
+  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 2, unitPrice: 1690 }, { id: BODY, qty: 1, unitPrice: 4559 }], total: 7939 }));
   assert.equal(r.ok, true, JSON.stringify(r));
-  assert.equal(r.subtotal, 8059);
+  assert.equal(r.subtotal, 7939);
   assert.equal(r.delivery, 0);                                   // >= 2000 DH: free
-  assert.equal(r.total, 8059);
+  assert.equal(r.total, 7939);
   assert.equal(r.adjusted, false);
   assert.equal(r.items[0].name, 'Gants de sac Rival RB11 Evolution');
   assert.equal(r.items[0].size, 'M');
@@ -59,11 +59,11 @@ test('valid order is stored with server prices, Gestion line and phone as text',
 test('single cheap item pays delivery; promo code applies 10 %', () => {
   const env = env0();
   const a = env.post(order());
-  assert.equal(a.total, 1775);
-  const b = env.post(order({ promoCode: 'kobg26', total: 1600 }));
+  assert.equal(a.total, 1715);
+  const b = env.post(order({ promoCode: 'kobg26', total: 1546 }));
   assert.equal(b.discountPct, 10);
-  assert.equal(b.discount, 175);
-  assert.equal(b.total, 1750 - 175 + 25);
+  assert.equal(b.discount, 169);
+  assert.equal(b.total, 1690 - 169 + 25);
   assert.equal(b.promoCode, 'KOBG26');
 });
 
@@ -84,7 +84,7 @@ test('fake promo codes and prototype keys give no discount', () => {
     const r = env.post(order({ promoCode: code }));
     assert.equal(r.ok, true);
     assert.equal(r.discountPct, 0, code);
-    assert.equal(r.total, 1775, code);
+    assert.equal(r.total, 1715, code);
   }
 });
 
@@ -183,7 +183,7 @@ test('garbage requests are refused without a stack trace', () => {
 
 test('catalog unreachable: order kept, client price flagged; last good copy used when known', () => {
   const env = env0({ fetchFail: true });
-  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 1, unitPrice: 1750, name: 'Gants / X', size: 'M', colour: 'Noir' }] }));
+  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 1, unitPrice: 1690, name: 'Gants / X', size: 'M', colour: 'Noir' }] }));
   assert.equal(r.ok, true);
   assert.equal(r.adjusted, true);
   assert.match(rowsOf(env, 'Gestion')[1][2], /NON vérifiés/);
@@ -275,7 +275,7 @@ test('admin: works with an older Gestion tab and old rows', () => {
   const g = env.sheets.Gestion;
   g.rows = [['Commande', 'Etat', 'Notes']];                        // older layout, other names
   const c = env.sheets.Commandes;
-  c.rows.push(['27/10/2026 09:15', 'KOBG-261027-OLD1', 'Ancien Client', 612345678, 'Rabat', 'Gants de sac Rival RB11 Evolution', 'L', 'Noir', 1, 1750, '', 0, 25, 1775]);
+  c.rows.push(['27/10/2026 09:15', 'KOBG-261027-OLD1', 'Ancien Client', 612345678, 'Rabat', 'Gants de sac Rival RB11 Evolution', 'L', 'Noir', 1, 1690, '', 0, 25, 1715]);
   g.rows.push(['KOBG-261027-OLD1', 'Expédiée', 'déjà parti']);
   const l = env.post({ action: 'list', key: KEY });
   assert.equal(l.ok, true, JSON.stringify(l));
@@ -513,7 +513,7 @@ test('accounts: orders placed while signed in are linked; history shows only my 
   assert.equal(m1.statut, 'Expédiée');
   assert.deepEqual(m1.suivi.map((h) => h.to), ['Nouvelle', 'Confirmée', 'Expédiée']);
   assert.deepEqual(m1.items, [{ name: 'Gants de sac Rival RB11 Evolution', qty: 1, size: 'M', colour: 'Noir' }]);
-  assert.equal(m1.total, 1775);
+  assert.equal(m1.total, 1715);
   assert.ok(!JSON.stringify(mine).includes('SECRET'));
   assert.ok(!JSON.stringify(mine).includes('Client connecté'));
   const m2 = mine.orders.find((o) => o.id === o2.orderId);
@@ -611,7 +611,7 @@ test('setup() also creates the Clients tab and the account column', () => {
 });
 
 // ---------- loyalty points ----------
-// RB11 alone = 1750 + 25 delivery = 1775 DH paid; BODY alone = 4559 DH (free delivery)
+// RB11 alone = 1690 + 25 delivery = 1715 DH paid; BODY alone = 4559 DH (free delivery)
 const ptsOf = (env) => (env.sheets.Points ? env.sheets.Points.rows.slice(1) : []);
 const bal = (env, s) => env.post({ action: 'me', session: s }).points.balance;
 const setStatus = (env, id, status) => env.post({ action: 'update', key: KEY, id: id, status: status });
@@ -636,19 +636,19 @@ test('points: 50 DH per full 1 500 DH delivered, the remainder carries over; gue
   assert.equal(u1.order.pointsEarned, 50);
   assert.equal(u1.clients[a.profile.id].balance, 50);
   let me = env.post({ action: 'me', session: a.session }).points;
-  assert.equal(me.spend, 1775);
-  assert.equal(me.progress, 275);
-  assert.equal(me.next, 1225);                                              // « Plus que 1 225 DH »
-  setStatus(env, o2.orderId, 'Livrée');                                     // 3 550 DH → 2 thresholds
+  assert.equal(me.spend, 1715);
+  assert.equal(me.progress, 215);
+  assert.equal(me.next, 1285);                                              // « Plus que 1 285 DH »
+  setStatus(env, o2.orderId, 'Livrée');                                     // 3 430 DH → 2 thresholds
   assert.equal(bal(env, a.session), 100);
-  setStatus(env, o3.orderId, 'Livrée');                                     // 8 109 DH → 5 thresholds
+  setStatus(env, o3.orderId, 'Livrée');                                     // 7 989 DH → 5 thresholds
   me = env.post({ action: 'me', session: a.session }).points;
   assert.equal(me.balance, 250);
   assert.equal(me.earned, 250);
-  assert.equal(me.next, 1500 - (8109 % 1500));
+  assert.equal(me.next, 1500 - (7989 % 1500));
   const L = ptsOf(env);
   assert.deepEqual(L.map((v) => [v[3], v[4], v[5], v[6], v[7]]), [
-    [o1.orderId, 'gain', 50, 1775, 50], [o2.orderId, 'gain', 50, 1775, 100], [o3.orderId, 'gain', 150, 4559, 250]]);
+    [o1.orderId, 'gain', 50, 1715, 50], [o2.orderId, 'gain', 50, 1715, 100], [o3.orderId, 'gain', 150, 4559, 250]]);
   assert.equal(L[0][1], a.profile.id);
   assert.equal(L[0][2], a.profile.email);
   assert.deepEqual(rowsOf(env, 'Points')[0], ['Date', 'ID client', 'E-mail', 'N° commande', 'Type', 'Points (DH)', 'Achats comptés (DH)', 'Solde après', 'Motif']);
@@ -686,10 +686,10 @@ test('points: « Retournée » takes the purchase and its points back; re-delive
   const r = setStatus(env, o2.orderId, 'Retournée');
   assert.equal(r.ok, true);
   assert.equal(r.order.pointsEarned, 0);
-  assert.match(r.order.hist.slice(-1)[0].note, /Fidélité : -1775 DH d’achats comptés, -50 points/);
+  assert.match(r.order.hist.slice(-1)[0].note, /Fidélité : -1715 DH d’achats comptés, -50 points/);
   let me = env.post({ action: 'me', session: a.session }).points;
   assert.equal(me.balance, 50);
-  assert.equal(me.spend, 1775);                                             // the 275 DH carry-over is intact
+  assert.equal(me.spend, 1715);                                             // the 215 DH carry-over is intact
   setStatus(env, o2.orderId, 'Retournée');
   assert.equal(ptsOf(env).length, 3);                                       // idempotent
   // a delivered order moved back by mistake is reversed too, then credited again
@@ -699,7 +699,7 @@ test('points: « Retournée » takes the purchase and its points back; re-delive
   setStatus(env, o2.orderId, 'Livrée');
   me = env.post({ action: 'me', session: a.session }).points;
   assert.equal(me.balance, 100);
-  assert.equal(me.spend, 3550);
+  assert.equal(me.spend, 3430);
   assert.deepEqual(ptsOf(env).map((v) => v[4]), ['gain', 'gain', 'retrait', 'retrait', 'gain', 'gain']);
 });
 
@@ -707,16 +707,16 @@ test('points: redeeming at checkout — deducted server-side, capped at the orde
   const env = strict(env0({ props: { ADMIN_KEY: KEY, NOTIFY_EMAIL: 'shop@example.org' } }));
   const a = signup(env);
   assert.equal(adjust(env, a.profile.id, 3000).ok, true);
-  const r = env.post(order({ session: a.session, points: 120, total: 1655 }));
+  const r = env.post(order({ session: a.session, points: 120, total: 1595 }));
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(r.points, 120);
-  assert.equal(r.total, 1655);
+  assert.equal(r.total, 1595);
   assert.equal(r.balance, 2880);
   assert.equal(r.adjusted, false);
   const c = rowsOf(env, 'Commandes');
   assert.equal(c[0][15], 'Points utilisés (DH)');
   const v = c.find((x) => x[1] === r.orderId);
-  assert.equal(v[13], 1655);                                                // Total = amount to collect
+  assert.equal(v[13], 1595);                                                // Total = amount to collect
   assert.equal(v[15], 120);
   const g = rowsOf(env, 'Gestion').find((x) => x[0] === r.orderId);
   assert.match(g[2], /Points fidélité utilisés : 120 DH/);
@@ -724,31 +724,31 @@ test('points: redeeming at checkout — deducted server-side, capped at the orde
   const last = ptsOf(env).slice(-1)[0];
   assert.deepEqual([last[3], last[4], last[5], last[7]], [r.orderId, 'utilisation', -120, 2880]);
   // cap: never more than the order total (after promo)
-  const over = env.post(order({ session: a.session, points: 1776 }));
+  const over = env.post(order({ session: a.session, points: 1716 }));
   assert.equal(over.ok, false);
   assert.equal(over.error, 'bad_points');
-  assert.equal(over.max, 1775);
+  assert.equal(over.max, 1715);
   assert.equal(over.balance, 2880);
-  const promo = env.post(order({ session: a.session, promoCode: 'KOBG26', points: 1751 }));
-  assert.equal(promo.error, 'bad_points');                                  // 1750 − 175 + 25 = 1600
-  assert.equal(promo.max, 1600);
-  const all = env.post(order({ session: a.session, points: 1775 }));
+  const promo = env.post(order({ session: a.session, promoCode: 'KOBG26', points: 1547 }));
+  assert.equal(promo.error, 'bad_points');                                  // 1690 − 169 + 25 = 1546
+  assert.equal(promo.max, 1546);
+  const all = env.post(order({ session: a.session, points: 1715 }));
   assert.equal(all.ok, true);
   assert.equal(all.total, 0);
-  assert.equal(all.balance, 1105);
+  assert.equal(all.balance, 1165);
   // a free order does not count as a purchase
   setStatus(env, all.orderId, 'Livrée');
-  assert.equal(bal(env, a.session), 1105);
+  assert.equal(bal(env, a.session), 1165);
   // admin list shows points used and the customer's balance
   const list = env.post({ action: 'list', key: KEY });
   assert.equal(list.orders.find((o) => o.id === r.orderId).points, 120);
   assert.equal(list.orders.find((o) => o.id === r.orderId).client, a.profile.id);
-  assert.equal(list.clients[a.profile.id].balance, 1105);
+  assert.equal(list.clients[a.profile.id].balance, 1165);
   // retrying the same submission does not debit twice
   const again = env.post(order({ orderId: r.orderId, telephone: v[3], session: a.session, points: 120 }));
   assert.equal(again.duplicate, true);
   assert.equal(again.points, 120);
-  assert.equal(bal(env, a.session), 1105);
+  assert.equal(bal(env, a.session), 1165);
 });
 
 test('points: tampered amounts are refused and nothing is written', () => {
@@ -770,7 +770,7 @@ test('points: tampered amounts are refused and nothing is written', () => {
   assert.equal(bal(env, a.session), 100);
   // the client's own total is never trusted: the server recomputes and flags the mismatch
   const r = env.post(order({ session: a.session, points: 100, total: 10 }));
-  assert.equal(r.total, 1675);
+  assert.equal(r.total, 1615);
   assert.equal(r.adjusted, true);
   // a second order cannot spend the same balance
   assert.equal(env.post(order({ session: a.session, points: 1 })).error, 'bad_points');
@@ -1171,20 +1171,20 @@ test('wheel: -20 % discount — applied to the items at checkout, once, not with
   const b = wheelUser(env, '0612000032');
   assert.equal(env.post(order({ wheel: true, session: b.session })).error, 'bad_wheel');
   assert.equal(rowsOf(env, 'Commandes').length, 1);
-  // 1 750 DH: -350 DH, delivery still 25 DH (the free-delivery threshold looks at the subtotal before discount)
-  const o = env.post(order({ wheel: true, session: a.session, promoCode: 'KOBG26', total: 1425 }));
+  // 1 690 DH: -338 DH, delivery still 25 DH (the free-delivery threshold looks at the subtotal before discount)
+  const o = env.post(order({ wheel: true, session: a.session, promoCode: 'KOBG26', total: 1377 }));
   assert.equal(o.ok, true, JSON.stringify(o));
   assert.equal(o.discountPct, 20);
-  assert.equal(o.discount, 350);
+  assert.equal(o.discount, 338);
   assert.equal(o.promoCode, 'ROUE');
   assert.equal(o.delivery, 25);
-  assert.equal(o.total, 1425);
+  assert.equal(o.total, 1377);
   assert.equal(o.wheel, 20);
   assert.equal(o.adjusted, true);                                              // the promo code was dropped (noted)
   const row = rowsOf(env, 'Commandes')[1];
   assert.equal(row[10], 'ROUE');
   assert.equal(row[11], 20);
-  assert.equal(row[13], 1425);
+  assert.equal(row[13], 1377);
   assert.match(rowsOf(env, 'Gestion')[1][2], /non cumulable/);
   assert.match(rowsOf(env, 'Gestion')[1][2], /Roue de la chance » -20 %/);
   const R = rowsOf(env, 'Roue')[1];

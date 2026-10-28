@@ -276,8 +276,11 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     if (play && video.paused) video.play().catch(() => {});
     else if (!play && !video.paused) video.pause();
   }
+  // reduced motion: no autoplay, the still poster only (back to frame 0 = the poster image)
+  if (video && reduceMotion.matches) { video.removeAttribute('autoplay'); video.autoplay = false; video.pause(); video.currentTime = 0; }
+  reduceMotion.addEventListener('change', (e) => { if (video && e.matches) { video.pause(); video.currentTime = 0; } });
   // the autoplay attribute can start it after this script has run
-  video?.addEventListener('play', () => { if (!videoShouldPlay()) video.pause(); });
+  video?.addEventListener('play', () => { if (!videoShouldPlay()) { video.pause(); if (reduceMotion.matches) video.currentTime = 0; } });
   if (video && 'IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       videoOnScreen = entry.isIntersecting;
@@ -821,16 +824,13 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   // =========================================================
   const ACCT_KEY = 'kobg-account-v1';
   const ACCT_TOKEN = /^k1\.[A-Za-z0-9_-]{43}$/;
-  // set for good once an account session existed in this browser (stays after logout): the wheel stops opening by itself
-  const HAD_ACCT_KEY = 'kobg-had-account';
-  const markHadAcct = () => { try { if (localStorage.getItem(HAD_ACCT_KEY) !== '1') localStorage.setItem(HAD_ACCT_KEY, '1'); } catch (err) { /* ignore */ } };
   const acctStores = () => { const s = []; try { s.push(localStorage, sessionStorage); } catch (err) { /* storage blocked */ } return s; };
   const acctStore = {
     read() {
       for (const st of acctStores()) {
         try {
           const o = JSON.parse(st.getItem(ACCT_KEY) || 'null');
-          if (o && ACCT_TOKEN.test(o.token) && o.exp > Date.now() && o.profile && typeof o.profile === 'object') { markHadAcct(); return o; }
+          if (o && ACCT_TOKEN.test(o.token) && o.exp > Date.now() && o.profile && typeof o.profile === 'object') return o;
           if (o) st.removeItem(ACCT_KEY);
         } catch (err) { /* corrupt entry: ignored */ }
       }
@@ -843,7 +843,6 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       const o = { token: res.session || (cur && cur.token), exp: res.exp || (cur && cur.exp), profile: res.profile || (cur && cur.profile) || {}, remember: keep };
       if (!ACCT_TOKEN.test(o.token)) return null;
       this.clear();
-      markHadAcct();
       try { (keep ? localStorage : sessionStorage).setItem(ACCT_KEY, JSON.stringify(o)); } catch (err) { /* private mode: this page only */ }
       acctPaint();
       return o;

@@ -2,18 +2,13 @@
 // The DRAW happens on the server (_ops/order-apps-script.gs, WHEEL: the odds live there only). The server answers a
 // signed token + the slice index; this file only animates the wheel so it stops on that slice, keeps the token in
 // localStorage (same result on every later visit) and sends the visitor to compte to claim the prize.
-// Load after script.js. data-auto="1.5" on the <script> tag: opens by itself 1.5 s after the page starts loading, on every page load
-// for visitors who never had an account session in this browser (guests who already spun see their saved result and the
-// « Créer mon compte » button again; still one spin). Never opens by itself on the account, checkout, thank-you or admin pages.
+// Load after script.js. Never opens by itself: only the floating « Tentez votre chance » button (bottom left) or a link to
+// …#roue / ?roue opens it. Guests who already spun see their saved result and the « Créer mon compte » button again (still one spin).
 (() => {
   'use strict';
   const A = window.KOBGAccount;
   if (!A || !A.wheel || !window.HTMLDialogElement) return;
   const W = A.wheel;
-  const me = document.currentScript;
-  const AUTO = me && me.dataset.auto ? Math.min(2, Math.max(0.5, +me.dataset.auto || 1.5)) : 0;   // seconds, 2 s max
-  const NO_AUTO_PAGE = /(?:^|\/)(?:compte|commande|merci|admin|reglement-jeu)(?:\.html)?\/?$/i.test(location.pathname);
-  const HAD_ACCT_KEY = 'kobg-had-account';     // set by script.js once signed in / signed up here: no more automatic opening
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const esc = A.esc;
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -38,7 +33,6 @@
   const INK = (c) => (c === '#f3efe6' ? '#111111' : '#ffffff');
 
   const store = W.store;
-  const hadAccount = () => { if (A.store.read()) return true; try { return localStorage.getItem(HAD_ACCT_KEY) === '1'; } catch (err) { return false; } };
   const fmtDate = (ts) => new Date(ts).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const rand = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] / 4294967296; };   // cosmetic only
 
@@ -355,16 +349,7 @@
   document.body.appendChild(fab);
   window.addEventListener('storage', (e) => { if (e.key === 'kobg-wheel-v1' || e.key === null) fabPaint(); });
 
-  // ---------- automatic opening (every page load with data-auto, until the visitor has an account in this browser) ----------
-  const busyPage = () => document.querySelector('dialog[open]') || document.body.classList.contains('cart-open') || document.body.classList.contains('menu-open')
-    || document.activeElement?.matches?.('input, textarea, select');
-  if (AUTO && !NO_AUTO_PAGE && !hadAccount() && A.available() && !/[?&]roue=0\b/.test(location.search)) {
-    let t = setTimeout(function tryOpen() {
-      if (document.hidden || busyPage()) { t = setTimeout(tryOpen, 1000); return; }
-      if (!hadAccount()) open('auto');
-    }, Math.max(250, AUTO * 1000 - performance.now()));   // counted from the start of the page load, not from this script
-    window.addEventListener('pagehide', () => clearTimeout(t));
-  }
+  // explicit link to the wheel (…#roue, ?roue): open it; nothing else opens it by itself
   if (/[?&#]roue\b(?!=0)/.test(location.search + location.hash)) open('link');
 
   window.KOBGWheel = Object.freeze({ open, close, slices: SLICES.map((s) => s.key) });
