@@ -59,8 +59,10 @@ http.createServer((req, res) => {
   // old GitHub Pages sub-path (/KOBG/...): redirected to the root, as on the live site
   if (/^\/KOBG(?=\/|$)/i.test(url.pathname)) { res.writeHead(301, { Location: (url.pathname.replace(/^\/KOBG/i, '') || '/') + url.search }); return res.end(); }
 
+  // like GitHub Pages: /cgv serves cgv.html (clean URLs), /dir/ serves dir/index.html, names are case-sensitive
   let rel = decodeURIComponent(url.pathname);
   if (rel === '' || rel.endsWith('/')) rel += 'index.html';
+  else if (!path.extname(rel) && fs.existsSync(path.join(ROOT, rel + '.html'))) rel += '.html';
   const file = path.normalize(path.join(ROOT, rel));
   const inside = file.startsWith(ROOT + path.sep);
   const hidden = /[\\/](\.|_)/.test(file.slice(ROOT.length));       // _ops, _headers, .git... never served

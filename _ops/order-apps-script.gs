@@ -1,4 +1,4 @@
-/* Knockout Boxing Gear — commandes (paiement à la livraison) + API du panneau admin (admin.html).
+/* Knockout Boxing Gear — commandes (paiement à la livraison) + API du panneau admin (admin).
    Google Apps Script web app, rattaché au Google Sheet des commandes. Mise en place : _ops/README.md.
 
    Propriétés du script (Paramètres du projet › Propriétés du script) :
@@ -24,7 +24,7 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-28.4';
+const VERSION = '2026-10-28.5';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -104,7 +104,7 @@ function order_(b) {
   const want = wantPoints_(b.points);
   if (want < 0) return fail_('bad_points');
 
-  // signed in (compte.html)? the order is linked to the account; a stale token simply means a guest order
+  // signed in (compte)? the order is linked to the account; a stale token simply means a guest order
   // (unless points were asked for: those need the account, so the browser is told to sign in again)
   const acct = b.session ? session_(b.session) : null;
   if (want && !acct) return fail_('auth');
@@ -450,7 +450,7 @@ function stats_(orders, period, now) {
     caAEncaisser: due, caEncaisse: paid, by: by };
 }
 
-// ---------- customer accounts (compte.html) ----------
+// ---------- customer accounts (compte) ----------
 // Accounts are optional: guests still order with name / city / phone only.
 // - passwords: PBKDF2-HMAC-SHA256 with a random 128-bit salt per account (ACCT.iter rounds,
 //   stored per account so the count can be raised later: older hashes are upgraded at the next login);
@@ -648,7 +648,7 @@ function resetRequest_(b) {
   sweep_(props, (k2, v) => k2.indexOf('rst:') === 0 && v.u === user.id);     // only the newest link works
   const token = 'k1.' + rand_();
   props.setProperty('rst:' + sha_(token), JSON.stringify({ u: user.id, exp: Date.now() + ACCT.reset * 1000 }));
-  const link = SITE_URL + 'compte.html#reset=' + token;
+  const link = SITE_URL + 'compte#reset=' + token;
   try {
     MailApp.sendEmail({
       to: user.email,
@@ -968,7 +968,7 @@ function notify_(id, f, lines, t, warn) {
         t.points ? 'Points fidélité utilisés : -' + t.points + ' DH' : '',
         'À encaisser à la livraison : ' + t.total + ' DH',
         warn.length ? '\n' + warn.join('\n') : '', '',
-        'Gérer la commande : ' + SITE_URL + 'admin.html',
+        'Gérer la commande : ' + SITE_URL + 'admin',
       ].filter((x) => x !== null).join('\n'),
     });
   } catch (e) {
@@ -1230,7 +1230,7 @@ function adminClient_(b) {
 // ODDS: one line per slice, in %, clockwise from the pointer (top). They must add up to exactly 100
 // and none may be 0 (else the wheel refuses to spin: wheel_off). A prize on two slices has its odds split
 // between them. Keep « slices » in the SAME ORDER as SLICES in assets/wheel.js, and the list of prizes
-// (« Lots », article 4) in reglement-jeu.html in sync.
+// (« Lots », article 4) in reglement-jeu in sync.
 const WHEEL = {
   on: true,                               // false = the wheel answers wheel_off (the site hides it)
   slices: [

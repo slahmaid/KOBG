@@ -1,4 +1,4 @@
-// compte.html: sign in, create an account, forgotten / new password, then the customer area
+// compte: sign in, create an account, forgotten / new password, then the customer area
 // (orders with their status, delivery details, password, sign out). Uses window.KOBGAccount from script.js.
 (() => {
   'use strict';
@@ -24,7 +24,9 @@
   // after signing in: back to the page that sent us here (same site, a plain page name only)
   const retour = (() => {
     const r = new URLSearchParams(location.search).get('retour') || '';
-    return /^[a-z0-9-]{1,80}\.html$/.test(r) && r !== 'compte.html' ? r : '';
+    if (r === 'accueil') return '/';
+    const page = r.replace(/\.html$/, '');               // older links: page.html
+    return /^[a-z0-9-]{1,80}$/.test(page) && page !== 'compte' && page !== 'index' ? page : '';
   })();
 
   // ---------- validation (same rules as the server) ----------
@@ -327,7 +329,7 @@
     $('ordersCount').textContent = orders.length ? plural(orders.length, 'commande') : 'Commandes';
     list.innerHTML = orders.map(orderHTML).join('');
     msg.hidden = orders.length > 0;
-    msg.innerHTML = 'Aucune commande pour l’instant. <a href="gants.html">Découvrir les gants</a>';
+    msg.innerHTML = 'Aucune commande pour l’instant. <a href="gants">Découvrir les gants</a>';
   }
 
   // ---------- « Roue de la chance » ----------
@@ -347,7 +349,7 @@
     let html = '';
     if (w) {
       const [h, p] = (WHEEL_STATE[w.state] || WHEEL_STATE.credited)(w);
-      html = `<p class="acct-wheel-prize acct-wheel-prize--${A.esc(w.state)}"><strong>${A.esc(h)}</strong></p><p class="acct-wheel-txt">${A.esc(p)}</p>${w.state === 'active' ? '<p class="acct-wheel-cta"><a class="acct-wheel-go" href="gants.html">Choisir mes gants</a></p>' : ''}`;
+      html = `<p class="acct-wheel-prize acct-wheel-prize--${A.esc(w.state)}"><strong>${A.esc(h)}</strong></p><p class="acct-wheel-txt">${A.esc(p)}</p>${w.state === 'active' ? '<p class="acct-wheel-cta"><a class="acct-wheel-go" href="gants">Choisir mes gants</a></p>' : ''}`;
     }
     if (err) html += `<p class="acct-wheel-err">${w ? 'Dernier tirage non ajouté : ' : ''}${A.esc(err)}</p>`;
     body.innerHTML = html;

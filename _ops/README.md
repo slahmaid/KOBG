@@ -38,7 +38,7 @@ Customers can create an account (optional: guest checkout still works), sign in,
 - **Password speed:** in the function dropdown run **`benchmarkHash`** — it prints how long one sign-in takes. Around 1–3 s is fine. If it is much slower, lower `ACCT.iter` in the script (existing hashes keep working; each account stores its own count) and redeploy.
 - **E-mail quota:** reset links are sent with MailApp, which allows ~100 e-mails/day on a free Gmail account (1,500 on Google Workspace), shared with the `NOTIFY_EMAIL` order alerts. When the quota is used up, the customer sees "Envoi de l’e-mail impossible pour le moment" and can retry the next day; check the remaining quota in the execution log of `setup`.
 - **Limits:** 30 sign-ups/hour overall; 5 wrong passwords lock that e-mail for 15 min (a password reset unlocks it); 300 failed sign-ins per 15 min overall pause sign-in; 3 reset e-mails/hour per address and 40/hour overall; up to 10 signed-in devices per account; sessions last 30 days with "Rester connecté", 24 h otherwise; reset links are single-use and expire after 1 h.
-- **Reset link address:** e-mails link to `SITE_URL` + `compte.html`, so keep `SITE_URL` in sync if you move to a custom domain.
+- **Reset link address:** e-mails link to `SITE_URL` + `compte#reset=…`, so keep `SITE_URL` in sync if you move to a custom domain.
 - Test after deploying: create an account on the live site with your own e-mail, place one order while signed in, check that it appears in **Mon compte** and that `Compte client` is filled in the sheet, use "Mot de passe oublié", then set the test order to **Annulée** and delete the test row in **Clients**.
 
 ### Loyalty points (programme fidélité)
@@ -159,3 +159,15 @@ Limits to know about:
 - Apps Script can't see visitors' IP addresses, so rate limits are per phone number and global, not per visitor.
 - GitHub Pages can't send HTTP headers, so `frame-ancestors`/HSTS etc. only apply if you move to Netlify or Cloudflare Pages, which read the `_headers` file included here.
 - The shop is served from its own domain, `https://knockoutboxinggear.com/` (file `CNAME`; `www` points to `slahmaid.github.io`), so it has its own browser origin instead of sharing `slahmaid.github.io` with the account's other GitHub Pages sites. All links are relative, so the site works at the domain root; old `slahmaid.github.io/KOBG/...` addresses are redirected by GitHub Pages.
+
+### Clean addresses (no `.html` in the address bar)
+
+GitHub Pages serves `cgv.html` for `/cgv`, so every link, the sitemap, canonical/og:url tags, JSON-LD, the search index (`url`) and the e-mails use addresses without `.html` (home = `/`). Files keep their `.html` names on disk.
+
+- **Product pages** are named after the model and colour: `rb10-intelli-shock-noir-rouge.html` → `/rb10-intelli-shock-noir-rouge` (also `rb11-evolution-…`, `rs100-professional-…`, `rs11v-evolution-…`, `rs1-pro-20e-anniversaire-…`, `protecteur-corporel-…`). Product IDs (cart, orders, prices checked by the Apps Script, photos in `assets/p/`) did not change.
+- **Old product addresses** (`gants-de-sac-rival-…html`, `gants-de-sparring-…html`, `protecteur-corporel-rival-…html`) are small redirect pages (`assets/go.js` + `<meta http-equiv="refresh">`, `noindex`, canonical to the new address) that keep `?…` and `#…`. Do not delete them: old e-mails, shares and search results point there.
+- **Other pages** opened as `page.html` show `/page` in the address bar (`script.js`, `assets/admin.js`; no reload).
+- **Upper case / trailing slash** (`/RB10-INTELLI-SHOCK-NOIR-ROUGE`, `/cgv/`): GitHub Pages answers with `404.html`, whose script sends the visitor to the lower-case address without the slash.
+- **New page or product:** link it as `name` (no `.html`), add `https://knockoutboxinggear.com/name` to `sitemap.xml` and to its canonical/og:url.
+- `_ops/dev-server.js` serves `/name` from `name.html` like GitHub Pages.
+

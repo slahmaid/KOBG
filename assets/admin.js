@@ -3,6 +3,8 @@
    The admin key is checked by Google, server-side; it is never stored in the site files. */
 (function () {
   'use strict';
+  // opened as /admin.html: show the clean address /admin (GitHub Pages serves admin.html for /admin)
+  if (/\.html$/i.test(location.pathname)) { try { history.replaceState(history.state, '', location.pathname.replace(/\.html$/i, '') + location.search + location.hash); } catch (err) { /* ignore */ } }
 
   // never usable inside a frame (clickjacking): GitHub Pages can't send X-Frame-Options / frame-ancestors
   if (window.top !== window.self) { document.body.textContent = ''; return; }
@@ -625,7 +627,7 @@
     const slice = list.slice(S.cl.page * CPAGE, S.cl.page * CPAGE + CPAGE);
     el.crows.innerHTML = slice.map(cRowHtml).join('');
     el.cempty.hidden = !!slice.length;
-    if (!slice.length) el.cempty.innerHTML = all.length ? '<strong>Aucun résultat</strong>Aucun client ne correspond à la recherche.' : '<strong>Aucun compte client</strong>Les comptes créés sur compte.html apparaîtront ici.';
+    if (!slice.length) el.cempty.innerHTML = all.length ? '<strong>Aucun résultat</strong>Aucun client ne correspond à la recherche.' : '<strong>Aucun compte client</strong>Les comptes créés sur compte apparaîtront ici.';
     el.cpager.innerHTML = '<span>' + (list.length ? (S.cl.page * CPAGE + 1) + '–' + (S.cl.page * CPAGE + slice.length) + ' sur ' + list.length : '0') + ' client' + (list.length > 1 ? 's' : '') +
       (list.length !== all.length ? ' (filtrés, ' + all.length + ' au total)' : '') + '</span>' +
       (pages > 1 ? '<span class="pg"><button type="button" class="btn btn-ghost-d" data-pg="-1"' + (S.cl.page ? '' : ' disabled') + '>‹ Préc.</button><button type="button" class="btn btn-ghost-d" data-pg="1"' + (S.cl.page < pages - 1 ? '' : ' disabled') + '>Suiv. ›</button></span>' : '');
@@ -787,7 +789,7 @@
     const used = d.prizes.reduce((m, p) => m + (p.kind === 'remise' ? p.used : 0), 0);
     el.wstats.innerHTML =
       stat('Tours joués', num(d.spins), d.since ? 'depuis le ' + new Date(d.since).toLocaleDateString('fr-FR') : 'depuis la mise en ligne', 'dark') +
-      stat('Lots réclamés', num(d.claims), d.spins ? Math.round(d.claims / d.spins * 100) + ' % des tours (compte créé ou connecté)' : 'via compte.html') +
+      stat('Lots réclamés', num(d.claims), d.spins ? Math.round(d.claims / d.spins * 100) + ' % des tours (compte créé ou connecté)' : 'via compte') +
       stat('Cadeaux à remettre', num(gifts), 'gants / protecteurs gagnés', gifts ? 'red' : '') +
       stat('Remises utilisées', num(used), 'commandes passées avec la remise') +
       (!d.on || !d.valid ? stat('État', 'Arrêtée', !d.valid ? 'probabilités invalides (WHEEL)' : 'WHEEL.on = false', 'red') : '');

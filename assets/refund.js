@@ -1,11 +1,11 @@
 /* Politique de remboursement : bottom sheet opened by any link with class "js-refund"
-   (static link under each order form, href="cgv.html#remboursement" so it still works without JS).
+   (static link under each order form, href="cgv#remboursement" so it still works without JS).
    Content = summary of CGV articles 6–9 ter; the CGV stay the reference. */
 (() => {
   'use strict';
   if (window.kobgRefund) return;
   const MAIL = 'info@knockoutboxinggear.com';
-  const CGV = 'cgv.html#remboursement';
+  const CGV = 'cgv#remboursement';
   const html = `
   <div class="sheet-panel">
     <header class="sheet-head">

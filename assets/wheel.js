@@ -1,7 +1,7 @@
 // « Roue de la chance »: one free spin per visitor, prize attached to a customer account.
 // The DRAW happens on the server (_ops/order-apps-script.gs, WHEEL: the odds live there only). The server answers a
 // signed token + the slice index; this file only animates the wheel so it stops on that slice, keeps the token in
-// localStorage (same result on every later visit) and sends the visitor to compte.html to claim the prize.
+// localStorage (same result on every later visit) and sends the visitor to compte to claim the prize.
 // Load after script.js. data-auto="1.5" on the <script> tag: opens by itself 1.5 s after the page starts loading, on every page load
 // for visitors who never had an account session in this browser (guests who already spun see their saved result and the
 // « Créer mon compte » button again; still one spin). Never opens by itself on the account, checkout, thank-you or admin pages.
@@ -12,7 +12,7 @@
   const W = A.wheel;
   const me = document.currentScript;
   const AUTO = me && me.dataset.auto ? Math.min(2, Math.max(0.5, +me.dataset.auto || 1.5)) : 0;   // seconds, 2 s max
-  const NO_AUTO_PAGE = /(?:^|\/)(?:compte|commande|merci|admin|reglement-jeu)\.html$/i.test(location.pathname);
+  const NO_AUTO_PAGE = /(?:^|\/)(?:compte|commande|merci|admin|reglement-jeu)(?:\.html)?\/?$/i.test(location.pathname);
   const HAD_ACCT_KEY = 'kobg-had-account';     // set by script.js once signed in / signed up here: no more automatic opening
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const esc = A.esc;
@@ -109,7 +109,7 @@
         <p class="wheel-status" role="status" aria-live="polite"></p>
         <div class="wheel-result" hidden tabindex="-1"></div>
       </div>
-      <p class="wheel-legal">Sans obligation d’achat · 1 lot par personne · compte client requis. <a href="reglement-jeu.html">Règlement du jeu</a></p>
+      <p class="wheel-legal">Sans obligation d’achat · 1 lot par personne · compte client requis. <a href="reglement-jeu">Règlement du jeu</a></p>
     </div>`;
   const stage = dlg.querySelector('.wheel-stage');
   const startBtn = dlg.querySelector('.wheel-start');
@@ -151,8 +151,8 @@
     points: (p) => [`${p.value} points fidélité`, 'Crédités sur votre compte (1 point = 1 DH), pour une prochaine commande.'],
     remise: (p) => [`-${p.value} % de réduction`, 'Sur les articles de votre prochaine commande · valable 30 jours · non cumulable avec un code promo.'],
     cadeau: (p) => p.key === 'gant'
-      ? ['Gants de sac Rival RB10 Intelli-Shock Noir/Rouge', 'Offerts (valeur 2 390 DH) : notre équipe vous contacte pour la taille et la livraison gratuite.', 'gants-de-sac-rival-rb10-intelli-shock-noir-rouge.html']
-      : ['Protecteur corporel Rival (Body Shield)', 'Offert (valeur 4 559 DH) : notre équipe vous contacte pour le coloris, la taille et la livraison.', 'protecteur-corporel.html'],
+      ? ['Gants de sac Rival RB10 Intelli-Shock Noir/Rouge', 'Offerts (valeur 2 390 DH) : notre équipe vous contacte pour la taille et la livraison gratuite.', 'rb10-intelli-shock-noir-rouge']
+      : ['Protecteur corporel Rival (Body Shield)', 'Offert (valeur 4 559 DH) : notre équipe vous contacte pour le coloris, la taille et la livraison.', 'protecteur-corporel'],
   };
   function paintResult(w, claimMsg) {
     const p = w.prize;
@@ -161,15 +161,15 @@
     const until = w.claimBy ? fmtDate(w.claimBy) : '';
     let act;
     if (w.claimed) {
-      act = `<p class="wheel-ok">Lot ajouté à votre compte.</p><a class="wheel-btn" href="compte.html">Voir mon compte</a>`;
+      act = `<p class="wheel-ok">Lot ajouté à votre compte.</p><a class="wheel-btn" href="compte">Voir mon compte</a>`;
     } else if (w.refused) {
-      act = `<p class="wheel-err">${esc(W.errors[w.refused] || 'Ce lot ne peut pas être ajouté.')}</p><a class="wheel-btn wheel-btn--ghost" href="reglement-jeu.html">Voir le règlement</a>`;
+      act = `<p class="wheel-err">${esc(W.errors[w.refused] || 'Ce lot ne peut pas être ajouté.')}</p><a class="wheel-btn wheel-btn--ghost" href="reglement-jeu">Voir le règlement</a>`;
     } else if (s) {
       act = `<button type="button" class="wheel-btn js-wheel-claim">Ajouter à mon compte</button>${claimMsg ? `<p class="wheel-err">${esc(claimMsg)}</p>` : ''}
         <p class="wheel-small">Connecté : <span class="wheel-who">${esc(s.profile.email || s.profile.nom || 'mon compte')}</span> · un seul lot par personne.</p>`;
     } else {
-      act = `<a class="wheel-btn" href="compte.html#inscription">Créer mon compte et recevoir mon lot</a>
-        <a class="wheel-link" href="compte.html">J’ai déjà un compte : me connecter</a>
+      act = `<a class="wheel-btn" href="compte#inscription">Créer mon compte et recevoir mon lot</a>
+        <a class="wheel-link" href="compte">J’ai déjà un compte : me connecter</a>
         <p class="wheel-small">Ajouté automatiquement à votre nouveau compte (ou à un compte sans lot)${until ? `, jusqu’au ${esc(until)}` : ''}.</p>`;
     }
     resultEl.innerHTML = `<p class="wheel-won">${w.again ? 'Votre résultat' : 'Bravo, vous avez gagné'}</p>

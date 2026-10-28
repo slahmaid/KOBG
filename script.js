@@ -1,15 +1,30 @@
-// Old address (GitHub Pages sub-path /KOBG/...): the shop now lives at the root of knockoutboxinggear.com, so such a path
-// only reaches 404.html; send the visitor to the same page at the root.
-if (/^\/KOBG(?=\/|$)/i.test(location.pathname)) location.replace((location.pathname.replace(/^\/KOBG/i, '') || '/') + location.search + location.hash);
+// Clean addresses (knockoutboxinggear.com/cgv, /rb10-intelli-shock-noir-rouge: GitHub Pages serves cgv.html for /cgv).
+// - old GitHub Pages sub-path /KOBG/...: same page at the root;
+// - on the 404 page: /RB10-Intelli-Shock-Noir-Rouge (GitHub Pages is case-sensitive) -> lower case, /cgv/ -> /cgv;
+// - a page opened through its file name (/cgv.html, /index.html): the address bar shows the clean URL (same page, no reload).
+(() => {
+  const L = location, p = L.pathname, rest = L.search + L.hash;
+  if (/^\/KOBG(?=\/|$)/i.test(p)) { L.replace((p.replace(/^\/KOBG/i, '') || '/') + rest); return; }
+  if (document.body?.classList.contains('page-404') || document.querySelector('meta[name="kobg-404"]')) {
+    const q = p.replace(/\/+$/, '') || '/';
+    const low = q.toLowerCase();
+    if (low !== p) L.replace(low + rest);
+    return;
+  }
+  if (/\.html$/i.test(p)) {
+    const clean = p.replace(/(?:^|\/)index\.html$/i, '/').replace(/\.html$/i, '') || '/';
+    try { history.replaceState(history.state, '', clean + rest); } catch (err) { /* ignore */ }
+  }
+})();
 
 // =========================================================
 // CONFIG — edit here
-// ORDERS (cash on delivery): the order forms (product pages + commande.html) POST each order here.
+// ORDERS (cash on delivery): the order forms (product pages + commande) POST each order here.
 // Paste the URL of your Google Apps Script web app (ends with /exec, see order-apps-script.gs),
 // or a Formspree form URL (https://formspree.io/f/xxxx, then set ORDER_ENDPOINT_FORMAT = 'form').
 // Set (task 38) to the shop's Apps Script web app: every order, from any host (localhost too), is REALLY sent.
 // If emptied: real visitors get "Commande indisponible pour le moment" and NO order is taken; only on
-// localhost / 127.0.0.1 or with ?test=1 is a success then SIMULATED (labelled on merci.html, nothing sent).
+// localhost / 127.0.0.1 or with ?test=1 is a success then SIMULATED (labelled on merci, nothing sent).
 const ORDER_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlxT2m1l9jRQZQYQeIqsGXkxUw0GgKvOhk05uxn-eQwuQ4SzFYbBzZDWkN1MLoBUY42w/exec';
 const ORDER_ENDPOINT_FORMAT = 'json';   // 'json' = JSON text body (Apps Script) · 'form' = form-encoded (Formspree)
 // WhatsApp number used by the CONTACT links only (footer, FAQ, contact page). Orders never go through WhatsApp.
@@ -118,13 +133,13 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       window.scrollTo({ top, behavior: immediate || reduceMotion.matches ? 'instant' : 'smooth' });
     }
   }
-  // same-page anchors (#faq-tailles, gants.html#gants-de-sac from gants.html, breadcrumb, footer...)
+  // same-page anchors (#faq-tailles, gants#gants-de-sac from gants, breadcrumb, footer...)
   document.addEventListener('click', (e) => {
     if (!lenis || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest('a[href*="#"]');
     if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
     const url = new URL(a.href, location.href);
-    const page = (path) => path.replace(/\/index\.html$/, '/');
+    const page = (path) => path.replace(/\/index(?:\.html)?$/, '/').replace(/\.html$/, '');
     if (url.origin !== location.origin || page(url.pathname) !== page(location.pathname) || url.search !== location.search || url.hash.length < 2) return;
     let id = url.hash.slice(1);
     try { id = decodeURIComponent(id); } catch (err) { /* keep raw */ }
@@ -274,7 +289,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
   // ---------------------------------------------------------
   // Cart: client-side only. Items live in localStorage;
-  // "Acheter maintenant" goes to commande.html (cash-on-delivery form + summary).
+  // "Acheter maintenant" goes to commande (cash-on-delivery form + summary).
   // ---------------------------------------------------------
   const cartBtn = document.getElementById('cartBtn');
   const cartCount = document.getElementById('cartCount');
@@ -449,14 +464,15 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   // one cart line (drawer + checkout summary): photo, name, variant, qty stepper, remove, line total
   function itemHTML(it) {
     const label = esc(`${it.name}${it.variant ? ` ${it.variant.toLowerCase()}` : ''}`);
-    // the name links to the product page (<id>.html) when the product is in the search index
+    // the name links to the product page (its clean URL in the search index) when the product is in the index
     const pageId = String(it.id).split('--')[0];
-    const hasPage = (window.KOBG_SEARCH || []).some((p) => p.id === pageId);
+    const hit = (window.KOBG_SEARCH || []).find((p) => p.id === pageId);
+    const hasPage = !!(hit && hit.url);
     return `
     <li class="cart-item" data-id="${esc(it.id)}">
       <img class="cart-item-img" src="${esc(it.img || '')}" alt="" width="72" height="90" decoding="async">
       <div class="cart-item-info">
-        <p class="cart-item-name">${hasPage ? `<a class="cart-item-link" href="${esc(pageId)}.html">${esc(it.name)}</a>` : esc(it.name)}</p>
+        <p class="cart-item-name">${hasPage ? `<a class="cart-item-link" href="${esc(hit.url)}">${esc(it.name)}</a>` : esc(it.name)}</p>
         <p class="cart-item-meta">${it.variant ? `${esc(it.variant)} · ` : ''}${formatDH(it.price)}</p>
         <div class="qty" role="group" aria-label="Quantité, ${label}">
           <button type="button" class="qty-btn" data-act="dec" aria-label="Retirer un ${label}"${it.qty <= 1 ? ' disabled' : ''}>
@@ -675,7 +691,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     lastFocus = null;
     setCart(false);
   });
-  // "Acheter maintenant" -> commande.html; already there: just close the drawer and go to the form
+  // "Acheter maintenant" -> commande; already there: just close the drawer and go to the form
   cartCheckout.addEventListener('click', (e) => {
     if (!cart.length) { e.preventDefault(); return; }
     if (document.querySelector('[data-checkout]')) {
@@ -720,7 +736,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   render();
 
   // =========================================================
-  // Orders: cash-on-delivery forms (product pages + commande.html). One send function: sendOrder().
+  // Orders: cash-on-delivery forms (product pages + commande). One send function: sendOrder().
   // Never shows a success that didn't happen: no endpoint = "Commande indisponible", except in test mode.
   // =========================================================
   const ORDER_TEST = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
@@ -799,7 +815,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
 
   // =========================================================
-  // Customer accounts (optional; compte.html + assets/account.js). Same backend as the orders.
+  // Customer accounts (optional; compte + assets/account.js). Same backend as the orders.
   // The session token lives in localStorage ("Rester connecté") or sessionStorage (this tab only).
   // Signed in: the header icon gets a dot, order forms are pre-filled and orders are linked to the account.
   // =========================================================
@@ -897,16 +913,16 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const note = document.createElement('p');
     note.className = 'acct-note';
     fs.before(note);
-    const back = encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
+    const back = encodeURIComponent(location.pathname.split('/').pop().replace(/\.html$/, '') || 'accueil');
     const fill = () => {
       const s = acctStore.read();
       if (!s) {
-        note.innerHTML = `Vous avez un compte&nbsp;? <a href="compte.html?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées, suivre la commande et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
+        note.innerHTML = `Vous avez un compte&nbsp;? <a href="compte?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées, suivre la commande et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
         return;
       }
       const p = s.profile;
       const where = [p.adresse, p.ville].filter(Boolean).join(', ');
-      note.innerHTML = `<span class="acct-note-in"><strong>Connecté${p.nom ? ` : ${esc(p.nom)}` : ''}</strong> · commande enregistrée dans <a href="compte.html">votre compte</a>.</span>${where ? `<span class="acct-note-adr">Adresse enregistrée : ${esc(where)}</span>` : ''}`;
+      note.innerHTML = `<span class="acct-note-in"><strong>Connecté${p.nom ? ` : ${esc(p.nom)}` : ''}</strong> · commande enregistrée dans <a href="compte">votre compte</a>.</span>${where ? `<span class="acct-note-adr">Adresse enregistrée : ${esc(where)}</span>` : ''}`;
       [['nom', p.nom], ['telephone', p.telephone ? phonePretty(p.telephone) : ''], ['ville', p.ville]].forEach(([n, v]) => {
         const el = form.elements[n];
         if (el && v && !el.value.trim()) el.value = v;
@@ -1113,7 +1129,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     telephone: (v) => (!normPhone(v) ? 'Indiquez votre numéro de téléphone.'
       : phoneOK(v) ? '' : 'Numéro invalide : 06 ou 07 suivi de 8 chiffres (ou +212 6… / +212 7…).'),
   };
-  // wires one order form: inline French errors, honeypot, busy state (no double submit), send, then merci.html.
+  // wires one order form: inline French errors, honeypot, busy state (no double submit), send, then merci.
   // getOrder() returns { items, sub, source } or { blocked: 'message' } (it shows its own hint, e.g. the size).
   function codForm(form, { getOrder, onSuccess }) {
     const submit = form.querySelector('.cod-submit');
@@ -1147,7 +1163,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       submit.setAttribute('aria-busy', String(on));
       submitTxt.textContent = on ? 'Envoi en cours…' : 'Confirmer la commande';
     };
-    window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci.html
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci
     const wheel = wheelBox(form);
     const pts = pointsBox(form);
     acctOrderForm(form);
@@ -1217,12 +1233,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       onSuccess(done);
       form.reset();
       fields.forEach((el) => setErr(el, ''));
-      location.href = `merci.html?commande=${encodeURIComponent(done.orderId)}${new URLSearchParams(location.search).get('test') === '1' ? '&test=1' : ''}`;
+      location.href = `merci?commande=${encodeURIComponent(done.orderId)}${new URLSearchParams(location.search).get('test') === '1' ? '&test=1' : ''}`;
     });
     return { showAlert };
   }
 
-  // ---- commande.html: COD form + cart summary (collapsible on phones) ----
+  // ---- commande: COD form + cart summary (collapsible on phones) ----
   const coRoot = document.querySelector('[data-checkout]');
   if (coRoot) {
     const coGrid = document.getElementById('coGrid');
@@ -1280,7 +1296,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     });
   }
 
-  // ---- merci.html: order number + recap (sessionStorage, this visit only) ----
+  // ---- merci: order number + recap (sessionStorage, this visit only) ----
   const merciRoot = document.querySelector('[data-merci]');
   if (merciRoot) {
     const $ = (id) => document.getElementById(id);
@@ -1315,7 +1331,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       if (o.linked) {
         const p = document.createElement('p');
         p.className = 'acct-note acct-note--merci';
-        p.innerHTML = `Cette commande est enregistrée dans <a href="compte.html">votre compte</a> : suivez son statut à tout moment.${o.balance != null ? ` Solde de points fidélité : <strong>${formatDH(Math.max(0, +o.balance))}</strong>.` : ''} Elle vous rapportera des points une fois livrée (${formatDH(LOYALTY.reward)} tous les ${formatDH(LOYALTY.step)} d’achat).`;
+        p.innerHTML = `Cette commande est enregistrée dans <a href="compte">votre compte</a> : suivez son statut à tout moment.${o.balance != null ? ` Solde de points fidélité : <strong>${formatDH(Math.max(0, +o.balance))}</strong>.` : ''} Elle vous rapportera des points une fois livrée (${formatDH(LOYALTY.reward)} tous les ${formatDH(LOYALTY.step)} d’achat).`;
         $('merciCust').after(p);
       }
     }
@@ -1534,10 +1550,10 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     a.href = `https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(msg)}`;
   });
   else {
-    // no WhatsApp number yet: the two big WhatsApp buttons (FAQ, footer) become "Nous contacter" -> contact.html;
+    // no WhatsApp number yet: the two big WhatsApp buttons (FAQ, footer) become "Nous contacter" -> contact;
     // the small links and the contact-page card are hidden by CSS (html:not(.has-wa)).
     document.querySelectorAll('#faqWhatsapp, .footer-wa').forEach((a) => {
-      a.href = 'contact.html';
+      a.href = 'contact';
       a.removeAttribute('target');
       a.removeAttribute('rel');
       a.classList.remove('js-wa');
@@ -1552,7 +1568,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     [...document.querySelectorAll('.bar-logo, .nav-logo')].find((l) => l.offsetParent && !l.closest('[inert]'))?.focus({ preventScroll: true });
   });
   // ---------------------------------------------------------
-  // Shop pages (gants.html, protecteur-corporel.html): filter chips + price sort + #hash filters
+  // Shop pages (gants, protecteur-corporel): filter chips + price sort + #hash filters
   // ---------------------------------------------------------
   const shop = document.querySelector('[data-shop]');
   if (shop) {
@@ -1620,7 +1636,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   });
 
   // ---------------------------------------------------------
-  // Search: header field on every page (live suggestions) + recherche.html (all results).
+  // Search: header field on every page (live suggestions) + recherche (all results).
   // Static site: the product index is assets/search-index.js, generated by tools/build32.py
   // from the homepage cards. Matching ignores accents/case and tolerates small typos.
   // ---------------------------------------------------------
@@ -1700,7 +1716,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     return res.sort((a, b) => b.score - a.score || a.p.order - b.p.order).map((r) => r.p);
   }
   const resultsWord = (n) => `${n} résultat${n > 1 ? 's' : ''}`;
-  const searchUrl = (q) => `recherche.html?q=${encodeURIComponent(q.trim())}`;
+  const searchUrl = (q) => `recherche?q=${encodeURIComponent(q.trim())}`;
 
   // ---- header field: combobox with a listbox of up to 6 products + "Voir tous" ----
   const searchForm = document.querySelector('.header .search');
@@ -1771,7 +1787,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       none.hidden = !!res.length;
       if (!res.length) {
         none.innerHTML = `<p class="search-none-h">Aucun produit trouvé pour «&nbsp;${esc(q)}&nbsp;»</p>
-          <p class="search-none-links"><a href="gants.html">Gants</a><a href="protecteur-corporel.html">Protecteur corporel</a></p>`;
+          <p class="search-none-links"><a href="gants">Gants</a><a href="protecteur-corporel">Protecteur corporel</a></p>`;
       }
       opts = [...list.querySelectorAll('[role="option"]')];
       active = -1;
@@ -1821,7 +1837,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     window.addEventListener('resize', () => { if (isOpen()) syncViewport(); });
   }
 
-  // ---- recherche.html: every matching card (same markup as the collection pages) ----
+  // ---- recherche: every matching card (same markup as the collection pages) ----
   const searchPage = document.querySelector('[data-search-page]');
   if (searchPage) {
     const pageForm = searchPage.querySelector('.search-page-form');
@@ -1852,7 +1868,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       gridWrap.hidden = n === 0;
       document.title = q ? `${q} — Recherche — Knockout Boxing Gear` : 'Recherche — Knockout Boxing Gear';
     }
-    const setUrl = (q) => history.replaceState(null, '', q.trim() ? searchUrl(q) : 'recherche.html');
+    const setUrl = (q) => history.replaceState(null, '', q.trim() ? searchUrl(q) : 'recherche');
     const q0 = new URLSearchParams(location.search).get('q') || '';
     pageInput.value = q0;
     showResults(q0);
@@ -1870,7 +1886,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     });
   }
 
-  // ---- collection pages: gants.html#produit-<id> scrolls to that card and highlights it ----
+  // ---- collection pages: gants#produit-<id> scrolls to that card and highlights it ----
   function revealProduct() {
     const m = /^#produit-(.+)$/.exec(location.hash);
     if (!m) return;

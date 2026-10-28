@@ -320,7 +320,7 @@ function signup(env, extra = {}) {
     telephone: '0661 22 33 ' + String(acctSeq % 100).padStart(2, '0'), password: PW }, extra));
 }
 const sessionsOf = (env, uid) => [...env.props.entries()].filter(([k, v]) => k.startsWith('ses:') && JSON.parse(v).u === uid);
-const resetLink = (mail) => /compte\.html#reset=(k1\.[A-Za-z0-9_-]{43})/.exec(mail.body)[1];
+const resetLink = (mail) => /compte#reset=(k1\.[A-Za-z0-9_-]{43})/.exec(mail.body)[1];
 
 test('accounts: PBKDF2 matches the reference implementation (Node crypto)', () => {
   const env = makeEnv();
@@ -546,7 +546,7 @@ test('accounts: password reset by e-mail — same answer for unknown e-mails, si
   const m = env.mails[0];
   assert.equal(m.to, 'nadia@example.ma');
   assert.ok(!/[\r\n]/.test(m.subject));
-  assert.match(m.body, /https:\/\/knockoutboxinggear\.com\/compte\.html#reset=k1\./);
+  assert.match(m.body, /https:\/\/knockoutboxinggear\.com\/compte#reset=k1\./);
   assert.ok(!m.body.includes(PW));
   const tok = resetLink(m);
   assert.ok(![...env.props.keys(), ...env.props.values()].some((x) => x.includes(tok)));   // stored hashed

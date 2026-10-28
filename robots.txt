@@ -1,7 +1,8 @@
 User-agent: *
-Disallow: /admin.html
-Disallow: /commande.html
-Disallow: /compte.html
-Disallow: /merci.html
+# prefix rules: /admin also covers /admin.html
+Disallow: /admin
+Disallow: /commande
+Disallow: /compte
+Disallow: /merci
 
 Sitemap: https://knockoutboxinggear.com/sitemap.xml
