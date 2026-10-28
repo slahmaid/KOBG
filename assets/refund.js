@@ -3,7 +3,8 @@
    Content = summary of CGV articles 6–9 ter; the CGV stay the reference. */
 (() => {
   'use strict';
-  if (window.kobgRefund) return;
+  // no <dialog> (Safari < 15.4): the links keep their href, cgv#remboursement
+  if (window.kobgRefund || !window.HTMLDialogElement) return;
   const MAIL = 'info@knockoutboxinggear.com';
   const CGV = 'cgv#remboursement';
   const html = `

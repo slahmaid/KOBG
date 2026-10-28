@@ -153,11 +153,12 @@
     const [h, txt, url] = (PRIZE[p.kind] || PRIZE.points)(p);
     const s = A.store.read();
     const until = w.claimBy ? fmtDate(w.claimBy) : '';
+    const why = W.store.refusal(w);      // refused for the account signed in now, or past its 30 days
     let act;
     if (w.claimed) {
       act = `<p class="wheel-ok">Lot ajouté à votre compte.</p><a class="wheel-btn" href="compte">Voir mon compte</a>`;
-    } else if (w.refused) {
-      act = `<p class="wheel-err">${esc(W.errors[w.refused] || 'Ce lot ne peut pas être ajouté.')}</p><a class="wheel-btn wheel-btn--ghost" href="reglement-jeu">Voir le règlement</a>`;
+    } else if (why) {
+      act = `<p class="wheel-err">${esc(W.errors[why] || 'Ce lot ne peut pas être ajouté.')}</p><a class="wheel-btn wheel-btn--ghost" href="reglement-jeu">Voir le règlement</a>`;
     } else if (s) {
       act = `<button type="button" class="wheel-btn js-wheel-claim">Ajouter à mon compte</button>${claimMsg ? `<p class="wheel-err">${esc(claimMsg)}</p>` : ''}
         <p class="wheel-small">Connecté : <span class="wheel-who">${esc(s.profile.email || s.profile.nom || 'mon compte')}</span> · un seul lot par personne.</p>`;
@@ -340,13 +341,40 @@
   const fabTxt = fab.querySelector('.wheel-fab-txt');
   function fabPaint() {
     const w = store.read();
-    fabTxt.textContent = w ? (w.claimed ? 'Mon lot' : 'Mon lot à réclamer') : 'Tentez votre chance';
+    const settled = !!(w && (w.claimed || store.refusal(w)));    // nothing left to claim
+    fabTxt.textContent = w ? (settled ? 'Mon lot' : 'Mon lot à réclamer') : 'Tentez votre chance';
     fab.setAttribute('aria-label', w ? `Roue de la chance : ${fabTxt.textContent}` : 'Tentez votre chance : roue de la chance, un tour offert');
-    fab.classList.toggle('is-done', !!(w && w.claimed));
+    fab.classList.toggle('is-done', settled);
   }
   fab.addEventListener('click', () => open('button'));
   fabPaint();
+  // Icon only (label back on hover with a mouse) once the page is scrolled, on phone product pages, and whenever the
+  // label would sit on a promo code, a price or the add-to-cart button. Starts as the icon: nothing shrinks on load.
+  const narrow = window.matchMedia('(max-width: 760px)');
+  const productPage = document.body.classList.contains('pp-page');
+  const AVOID = '.promo-code, .copy-btn, .pp-price, .pp-add, .product-price';
+  const fabTxtW = () => fab.getBoundingClientRect().width + (fab.classList.contains('is-compact') ? 18 + fabTxt.scrollWidth : 0);
+  function covers() {
+    const r = fab.getBoundingClientRect();
+    const right = r.left + fabTxtW();
+    return [...document.querySelectorAll(AVOID)].some((el) => {
+      const e = el.getBoundingClientRect();
+      return e.width > 0 && e.right > r.left && e.left < right && e.bottom > r.top && e.top < r.bottom;
+    });
+  }
+  let compactRaf = 0;
+  const compact = () => {
+    compactRaf = 0;
+    fab.classList.toggle('is-compact', window.scrollY > 160 || (productPage && narrow.matches) || covers());
+  };
+  const later = () => { if (!compactRaf) compactRaf = requestAnimationFrame(compact); };
+  fab.classList.add('is-compact');
   document.body.appendChild(fab);
+  later();
+  window.addEventListener('scroll', later, { passive: true });
+  window.addEventListener('resize', later);
+  window.addEventListener('load', () => setTimeout(later, 1200));   // after the entrance animations moved the cards
+  narrow.addEventListener?.('change', later);
   window.addEventListener('storage', (e) => { if (e.key === 'kobg-wheel-v1' || e.key === null) fabPaint(); });
 
   // explicit link to the wheel (…#roue, ?roue): open it; nothing else opens it by itself

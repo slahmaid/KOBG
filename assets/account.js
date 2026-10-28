@@ -172,6 +172,8 @@
 
   async function signedIn(res, remember, msg) {
     A.store.save(res, remember);
+    // #inscription / #oubli belong to the signed-out forms: a later reload or sign-out shows the sign-in form
+    if (/^#(inscription|creer|oubli)/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
     // a prize won on the wheel in this browser is attached to the account now (the server checks it can be)
     const claim = await A.wheel.claim(res.session);
     if (retour && !(claim && claim.ok && !claim.already)) { location.href = retour; return; }
@@ -181,10 +183,11 @@
 
   // ---------- signed out ----------
   wire(forms.login, async (v, ui, f) => {
-    const res = await A.api('login', { email: v('email'), password: f.elements.password.value, remember: f.elements.remember.checked });
+    const remember = f.elements.remember.checked;     // read before f.reset() puts the box back to ticked
+    const res = await A.api('login', { email: v('email'), password: f.elements.password.value, remember });
     if (!res.ok) { refuse(res, ui); if (res.error === 'bad_login') f.elements.password.select(); return; }
     f.reset(); ui.reset();
-    await signedIn(res, f.elements.remember.checked, 'Vous êtes connecté.');
+    await signedIn(res, remember, 'Vous êtes connecté.');
   }, 'Se connecter');
 
   wire(forms.signup, async (v, ui, f) => {
@@ -225,7 +228,16 @@
     pf.elements.ville.value = p.ville || '';
     pw.elements.username.value = p.email || '';
   };
-  const lost = () => { show('login', true); forms.login.querySelector('.cod-alert').hidden = false; forms.login.querySelector('.cod-alert').textContent = A.errors.auth; };
+  // the signed-in panels are emptied on sign-out: the next account on this browser never sees them, even for a second
+  function wipeDash() {
+    $('ordersList').innerHTML = ''; $('ordersCount').textContent = 'Commandes';
+    $('ordersMsg').hidden = false; $('ordersMsg').textContent = 'Chargement de vos commandes…';
+    $('pointsList').innerHTML = ''; $('pointsBal').textContent = '';
+    $('pointsMsg').hidden = true; $('pointsMsg').textContent = '';
+    $('wheelCard').hidden = true; $('wheelBody').innerHTML = '';
+    [pf, pw].forEach((f) => { f.querySelector('.acct-ok').hidden = true; f.querySelector('.cod-alert').hidden = true; });
+  }
+  const lost = () => { wipeDash(); show('login', true); forms.login.querySelector('.cod-alert').hidden = false; forms.login.querySelector('.cod-alert').textContent = A.errors.auth; };
 
   wire(pf, async (v, ui) => {
     const s = A.store.read();
@@ -249,8 +261,25 @@
 
   async function logout(all) {
     const s = A.store.read();
-    A.store.clear();
-    if (s) await A.api('logout', { session: s.token, all });
+    if (all && s) {
+      // every device: only say so once the server has done it (offline, the other devices would stay signed in)
+      const btn = $('logoutAllBtn');
+      btn.disabled = true;
+      const res = await A.api('logout', { session: s.token, all: true });
+      btn.disabled = false;
+      if (!res.ok && res.error !== 'auth') {
+        const alertEl = pw.querySelector('.cod-alert');
+        pw.querySelector('.acct-ok').hidden = true;
+        alertEl.textContent = `Déconnexion des autres appareils impossible : ${A.message(res)}`;
+        alertEl.hidden = false;
+        return;
+      }
+      A.store.clear();
+    } else {
+      A.store.clear();
+      if (s) A.api('logout', { session: s.token, all: false });   // this device is signed out either way
+    }
+    wipeDash();
     show('login', true);
     say(all ? 'Vous êtes déconnecté de tous vos appareils.' : 'Vous êtes déconnecté.');
   }
@@ -282,7 +311,7 @@
         <p class="acct-order-id"><span>N°</span> <strong>${e(o.id)}</strong></p>
         <p class="acct-badge acct-badge--${st[2]}">${e(st[0])}</p>
       </div>
-      <p class="acct-order-meta">${e(o.recu)} · ${e(plural(+o.nb || 0, 'article'))}${o.promo ? ` · code ${e(o.promo)}` : ''}</p>
+      <p class="acct-order-meta">${e(o.recu)} · ${e(plural(+o.nb || 0, 'article'))}${o.promo === 'ROUE' ? ' · Roue de la chance' : o.promo ? ` · code ${e(o.promo)}` : ''}</p>
       <ul class="acct-order-items">${items}</ul>
       ${steps}
       ${+o.points || +o.pointsEarned ? `<p class="acct-order-pts">${+o.points ? `<span>Points utilisés : -${A.formatDH(+o.points)}</span>` : ''}${+o.pointsEarned > 0 ? `<span class="is-plus">Points gagnés : +${A.formatDH(+o.pointsEarned)}</span>` : ''}</p>` : ''}
@@ -364,9 +393,12 @@
   }
   paintWheelNote();
 
+  let dashToken = '';                      // the session the panels were filled for
   async function openDash(focus, claimed) {
     const s = A.store.read();
     if (!s) { show('login', focus); return; }
+    if (dashToken !== s.token) wipeDash();
+    dashToken = s.token;
     fillProfile(s.profile);
     show('dash', focus);
     loadOrders();
@@ -384,8 +416,8 @@
   window.addEventListener('storage', (e) => {
     if (e.key !== 'kobg-account-v1' && e.key !== null) return;
     const s = A.store.read();
-    if (s && dash.hidden && !resetToken) openDash(false);
-    else if (!s && !dash.hidden) show('login', false);
+    if (s && (dash.hidden || s.token !== dashToken) && !resetToken) openDash(false);
+    else if (!s && !dash.hidden) { wipeDash(); show('login', false); }
   });
 
   // the reset link opened in a tab already showing this page only changes the #fragment

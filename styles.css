@@ -1290,6 +1290,13 @@ img[src*="kobg-mark"] { object-fit: contain; }
 @media (pointer: coarse) {
   .search input { font-size: 16px; }
 }
+/* narrow phones: the field is 60–100px wide, so the 16px placeholder read « RECHER… »; only the placeholder shrinks
+   (no iOS zoom), and script.js drops it when even that does not fit */
+@media (pointer: coarse) and (max-width: 520px) {
+  .search input::placeholder { font-size: 12px; }
+}
+/* Chrome keeps room for the (invisible) clear button of an empty search field: give it back to the placeholder */
+.search input:placeholder-shown::-webkit-search-cancel-button { display: none; }
 
 /* Best-sellers: small category label above the product name (Gants / Casque / Plastron) */
 .product-cat {
@@ -4311,6 +4318,18 @@ html.wheel-open { overflow: hidden; }
 @media (prefers-reduced-motion: no-preference) { .wheel-fab:not(.is-done) svg { animation: wheel-fab-spin 6s linear infinite; } }
 @keyframes wheel-fab-spin { to { rotate: 360deg; } }
 @media (max-width: 420px) { .wheel-fab { font-size: 12px; padding-right: 13px; } }
+/* once the page is scrolled: icon only, so the label never sits on a price or a button (wheel.js sets .is-compact) */
+.wheel-fab-txt { overflow: hidden; white-space: nowrap; max-width: 15em; }
+@media (prefers-reduced-motion: no-preference) {
+  .wheel-fab { transition: padding .35s cubic-bezier(.2, .8, .2, 1), gap .35s cubic-bezier(.2, .8, .2, 1), background-color .2s ease; }
+  .wheel-fab-txt { transition: max-width .35s cubic-bezier(.2, .8, .2, 1), opacity .2s ease; }
+}
+.wheel-fab.is-compact { gap: 0; padding-right: 6px; }
+.wheel-fab.is-compact .wheel-fab-txt { max-width: 0; opacity: 0; }
+@media (hover: hover) {
+  .wheel-fab.is-compact:hover, .wheel-fab.is-compact:focus-visible { gap: 8px; padding-right: 16px; }
+  .wheel-fab.is-compact:hover .wheel-fab-txt, .wheel-fab.is-compact:focus-visible .wheel-fab-txt { max-width: 15em; opacity: 1; }
+}
 body.cart-open .wheel-fab, body.menu-open .wheel-fab, html.wheel-open .wheel-fab { visibility: hidden; }
 /* checkout: the « Roue de la chance » discount box (same look as the points box) */
 .wheel-box { border-color: var(--accent); }

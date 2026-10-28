@@ -250,7 +250,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   });
 
   // rotating into the desktop layout drops the mobile menu state
-  mobile.addEventListener('change', (e) => {
+  mobile.addEventListener?.('change', (e) => {
     if (!e.matches) setMenu(false);
   });
 
@@ -278,7 +278,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   }
   // reduced motion: no autoplay, the still poster only (back to frame 0 = the poster image)
   if (video && reduceMotion.matches) { video.removeAttribute('autoplay'); video.autoplay = false; video.pause(); video.currentTime = 0; }
-  reduceMotion.addEventListener('change', (e) => { if (video && e.matches) { video.pause(); video.currentTime = 0; } });
+  reduceMotion.addEventListener?.('change', (e) => { if (video && e.matches) { video.pause(); video.currentTime = 0; } });
   // the autoplay attribute can start it after this script has run
   video?.addEventListener('play', () => { if (!videoShouldPlay()) { video.pause(); if (reduceMotion.matches) video.currentTime = 0; } });
   if (video && 'IntersectionObserver' in window) {
@@ -287,7 +287,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       syncVideo();
     }).observe(video);
   }
-  reduceMotion.addEventListener('change', syncVideo);
+  reduceMotion.addEventListener?.('change', syncVideo);
   syncVideo();
 
   // ---------------------------------------------------------
@@ -530,7 +530,11 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       savePromo();
       input.value = '';
       render();
-      setMsg(`Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
+      // signed in with an unused « Roue de la chance » discount ticked: that one wins (not cumulable), say so
+      const wheelOn = [...document.querySelectorAll('form')].some((f) => wheelPct(f) > 0);
+      setMsg(wheelOn
+        ? `Code ${code} enregistré. Votre remise Roue de la chance s’applique à la place (non cumulable) : décochez-la pour utiliser ce code.`
+        : `Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
       remove.focus();
     };
     if (root.tagName === 'FORM') root.addEventListener('submit', (e) => { e.preventDefault(); apply(); });
@@ -735,6 +739,14 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     cart = loadCart();
     render();
   });
+  // back / forward cache (browser Back): the page returns as it was left, but the cart and code may have changed since
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    cart = loadCart();
+    try { const c = normCode(localStorage.getItem(PROMO_STORAGE_KEY)); promo = PROMO_CODES[c] ? c : ''; } catch (err) { /* ignore */ }
+    render();
+    acctPaint();
+  });
 
   render();
 
@@ -776,7 +788,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     too_many: 'Plusieurs commandes ont déjà été envoyées avec ce numéro : nous vous appelons très vite pour les confirmer. Pour une autre demande, écrivez-nous à info@knockoutboxinggear.com.',
     busy: 'Beaucoup de commandes en ce moment : réessayez dans une minute.',
     bad_points: 'Votre solde de points a changé : vérifiez le montant des points à utiliser puis confirmez à nouveau.',
-    auth: 'Votre session a expiré : reconnectez-vous pour utiliser vos points ou votre remise, ou décochez-les.',
+    auth: 'Votre session a expiré : le total a été recalculé sans vos points ni votre remise. Reconnectez-vous pour les utiliser, ou confirmez la commande sans eux.',
     bad_wheel: 'Votre remise « Roue de la chance » n’est plus disponible (déjà utilisée ou expirée). Vérifiez le total puis confirmez à nouveau.',
   };
   // POST one order. 'json': text/plain JSON (Apps Script reads e.postData.contents); 'form': urlencoded.
@@ -808,6 +820,9 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         return { ok: false, error: Object.prototype.hasOwnProperty.call(ORDER_ERRORS, data.error) ? data.error : 'http', field: data.field,
           balance: Number.isFinite(data.balance) ? data.balance : null, max: Number.isFinite(data.max) ? data.max : null };
       }
+      // the Apps Script always answers { ok: true, … } once the order is stored: anything else is not a confirmation
+      // (a retry re-sends the same order number, so it can't be stored twice)
+      if (ORDER_ENDPOINT_FORMAT === 'json' && !(data && data.ok === true)) return { ok: false, error: 'http' };
       return { ok: true, data };
     } catch (err) {
       return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
@@ -882,7 +897,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       let out = null;
       try { out = await res.json(); } catch (err) { out = null; }
       if (!out || typeof out !== 'object') return { ok: false, error: 'http' };
-      if (out.ok === false && out.error === 'auth') acctStore.clear();
+      if (out.ok === false && out.error === 'auth') acctSignedOut();
       return out.ok === false ? { ...out, error: String(out.error || 'http') } : { ...out, ok: true };
     } catch (err) {
       return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
@@ -902,8 +917,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     acctBtn.title = s ? 'Mon compte' : 'Se connecter';
   }
   const acctHooks = [];
+  // signed in / out / another account: order-form notes, points and discount boxes, then every total, re-drawn
+  const acctChanged = () => { acctHooks.forEach((fn) => fn()); renderHooks.forEach((fn) => fn()); };
+  // the server answered 'auth' (expired or revoked session): carry on as a guest, and show it at once
+  function acctSignedOut() { acctStore.clear(); acctChanged(); }
   acctPaint();
-  window.addEventListener('storage', (e) => { if (e.key === ACCT_KEY || e.key === null) { acctPaint(); acctHooks.forEach((fn) => fn()); } });
+  window.addEventListener('storage', (e) => { if (e.key === ACCT_KEY || e.key === null) { acctPaint(); acctChanged(); } });
 
   // order forms: pre-fill from the profile, a one-line "signed in / sign in" note above the fields
   function acctOrderForm(form) {
@@ -913,6 +932,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     note.className = 'acct-note';
     fs.before(note);
     const back = encodeURIComponent(location.pathname.split('/').pop().replace(/\.html$/, '') || 'accueil');
+    const filled = {};                     // what fill() typed in: replaced if another account signs in, never what the visitor typed
     const fill = () => {
       const s = acctStore.read();
       if (!s) {
@@ -924,7 +944,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       note.innerHTML = `<span class="acct-note-in"><strong>Connecté${p.nom ? ` : ${esc(p.nom)}` : ''}</strong> · commande enregistrée dans <a href="compte">votre compte</a>.</span>${where ? `<span class="acct-note-adr">Adresse enregistrée : ${esc(where)}</span>` : ''}`;
       [['nom', p.nom], ['telephone', p.telephone ? phonePretty(p.telephone) : ''], ['ville', p.ville]].forEach(([n, v]) => {
         const el = form.elements[n];
-        if (el && v && !el.value.trim()) el.value = v;
+        if (el && v && (!el.value.trim() || el.value === filled[n])) { el.value = v; filled[n] = v; }
       });
     };
     const box = ptsBoxes.get(form);
@@ -935,10 +955,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     // one quiet check that the session is still valid (profile current, points balance); a dead one = guest order.
     // Checkout: at once. Product pages: only when the order form comes near the screen.
     let asked = false;
+    let askedFor = '';                     // the session the points / discount below belong to
     const ask = () => {
       const s = acctStore.read();
       if (asked || !s) return;
       asked = true;
+      askedFor = s.token;
       acctApi('me', { session: s.token }).then((r) => {
         if (r.ok && r.profile) acctStore.save({ profile: r.profile });
         if (r.ok) wbox?.set(r.wheel || null);
@@ -952,7 +974,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); ask(); } }, { rootMargin: '400px 0px' });
       io.observe(form);
     }
-    acctHooks.push(() => { if (acctStore.read() && !box?.info()) { asked = false; ask(); } });
+    acctHooks.push(() => {
+      const s = acctStore.read();
+      // signed out, or another account: the previous one's points and discount go, then the new one is asked
+      if ((s ? s.token : '') !== askedFor) { askedFor = ''; asked = false; box?.set(null); wbox?.set(null); }
+      if (s && !box?.info()) { asked = false; ask(); }
+    });
     window.addEventListener('pageshow', (e) => { if (e.persisted) { asked = false; ask(); paint(); } });
   }
 
@@ -1054,6 +1081,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       },
     };
     check.addEventListener('change', redraw);
+    renderHooks.push(() => ctl.render());   // its « le code … ne sera pas appliqué » line follows the promo code
     wheelBoxes.set(form, ctl);
     return ctl;
   }
@@ -1101,9 +1129,18 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     },
     save(o) { try { localStorage.setItem(WHEEL_KEY, JSON.stringify(o)); } catch (err) { /* private mode: this visit only */ } },
     patch(x) { const o = this.read(); if (o) this.save({ ...o, ...x }); return o ? { ...o, ...x } : null; },
+    // why this spin can't be attached (for whoever is signed in now), '' if it still can. A refusal about one account
+    // (« already has a prize ») doesn't stop another person on this browser; past its 30 days an unclaimed spin is expired.
+    refusal(o) {
+      if (!o || o.claimed) return '';
+      if (o.refused && (!o.refusedBy || o.refusedBy === acctEmail())) return o.refused;
+      return o.claimBy && o.claimBy <= Date.now() ? 'wheel_expired' : '';
+    },
     // a prize still to attach to an account (not yet claimed, not refused, claim window open)
-    pending() { const o = this.read(); return o && !o.claimed && !o.refused && (!o.claimBy || o.claimBy > Date.now()) ? o : null; },
+    pending() { const o = this.read(); return o && !o.claimed && !this.refusal(o) ? o : null; },
   };
+  const WHEEL_ACCOUNT_ERRORS = ['wheel_account', 'wheel_person'];    // about the account that tried, not about the spin
+  const acctEmail = () => { const s = acctStore.read(); return s ? String(s.profile.email || '').toLowerCase() : ''; };
   // attach the stored prize to the signed-in account: { ok, wheel, balance } | { ok:false, error, message } | null (nothing to claim)
   async function wheelClaim(session) {
     const w = wheelStore.pending();
@@ -1111,7 +1148,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const r = await acctApi('wheel_claim', { session, token: w.token });
     if (r.ok) { wheelStore.patch({ claimed: true }); return r; }
     if (r.error === 'wheel_used' && r.mine) { wheelStore.patch({ claimed: true }); return { ok: true, already: true }; }
-    if (WHEEL_ERRORS[r.error]) wheelStore.patch({ refused: r.error });                    // final: not retried
+    // final (not retried): for the spin, or for this account only
+    if (WHEEL_ERRORS[r.error]) wheelStore.patch({ refused: r.error, refusedBy: WHEEL_ACCOUNT_ERRORS.includes(r.error) ? acctEmail() : '' });
     return { ...r, message: WHEEL_ERRORS[r.error] || acctMsg(r) };
   }
 
@@ -1166,6 +1204,9 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const wheel = wheelBox(form);
     const pts = pointsBox(form);
     acctOrderForm(form);
+    // One order number per order: a retry after a timeout or a lost reply re-sends the same number, and the server
+    // stores it only once (same number + same phone). Anything changed (items, phone, points, discount) = a new number.
+    let pending = null;                    // { key, id } of the last attempt that did not succeed
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (busy) return;
@@ -1182,8 +1223,10 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       if (val('kobg_hp')) { showAlert(ORDER_ERRORS.hp); return; }       // honeypot: bots fill every field
       const t = calcTotals(order.sub, form);
       const used = pts.apply(t.total);
+      const key = JSON.stringify([order.items, phoneLocal(val('telephone')), used, t.wheel, t.pct && !t.wheel ? promo : '']);
+      if (!pending || pending.key !== key) pending = { key, id: newOrderId() };
       const payload = {
-        orderId: newOrderId(),
+        orderId: pending.id,
         date: new Date().toISOString(),
         nom: val('nom'),
         telephone: phoneLocal(val('telephone')),
@@ -1210,7 +1253,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         const bad = res.error === 'bad_field' && fields.find((el) => el.name === res.field);
         if (bad) setErr(bad, 'Vérifiez ce champ.');
         if (res.error === 'bad_points' && res.balance != null && pts.info()) pts.set({ ...pts.info(), balance: res.balance });
-        if (res.error === 'auth') acctStore.clear();
+        if (res.error === 'auth') acctSignedOut();       // the total on screen drops the points / discount at once
         if (res.error === 'bad_wheel') wheel.set(null);
         showAlert(res.error === 'bad_points' && res.balance != null
           ? `Votre solde de points a changé : ${formatDH(Math.max(0, res.balance))} disponibles. Vérifiez le montant puis confirmez à nouveau.`
@@ -1228,6 +1271,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total, linked: srv.linked === true,
         points: +srv.points || 0, balance: Number.isFinite(srv.balance) ? srv.balance : null, wheel: +srv.wheel || 0,
       } : payload;
+      pending = null;
       try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !!res.test })); } catch (err) { /* private mode */ }
       onSuccess(done);
       form.reset();
@@ -1274,6 +1318,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     };
     renderHooks.push(coRender);
     coRender();
+    // Back from merci (back / forward cache): the summary follows the cart again
+    window.addEventListener('pageshow', (e) => { if (e.persisted) { coLeaving = false; coRender(); } });
     coList.addEventListener('click', (e) => listAction(e, coList, () => (cart.length ? null : $('coEmptyH'))));
     coToggle.addEventListener('click', () => {
       const open = coToggle.getAttribute('aria-expanded') !== 'true';
@@ -1737,6 +1783,25 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     let opts = [];
     let active = -1;
     let liveTimer;
+
+    // narrow phones: the field can be ~60 px wide; when « RECHERCHER » does not fit, the magnifier alone says it
+    // (no half word; the aria-label is unchanged). Re-checked whenever the field changes size (header shrinks on scroll).
+    const phText = searchInput.placeholder;
+    const phMeasure = document.createElement('span');
+    phMeasure.setAttribute('aria-hidden', 'true');
+    phMeasure.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;text-transform:uppercase';
+    phMeasure.textContent = phText;
+    const phFit = () => {
+      const cs = getComputedStyle(searchInput, '::placeholder');
+      Object.assign(phMeasure.style, { fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight,
+        fontVariationSettings: cs.fontVariationSettings, letterSpacing: cs.letterSpacing });
+      document.body.appendChild(phMeasure);
+      const fits = phMeasure.getBoundingClientRect().width <= searchInput.clientWidth + 1;
+      phMeasure.remove();
+      if (searchInput.placeholder !== (fits ? phText : '')) searchInput.placeholder = fits ? phText : '';
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(phFit).observe(searchInput);
+    document.fonts?.ready.then(phFit);
 
     const syncViewport = () => {
       // on phones the on-screen keyboard shrinks the visual viewport: keep the panel above it
