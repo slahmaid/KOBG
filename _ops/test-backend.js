@@ -861,7 +861,7 @@ test('setup() creates the Points tab and the points column', () => {
 
 // ---------- admin « Clients » view ----------
 const SAFE_CLIENT_KEYS = ['id', 'email', 'nom', 'tel', 'adresse', 'ville', 'cree', 'creeTs', 'vu', 'gone', 'balance', 'spend', 'earned', 'step', 'reward', 'progress', 'next',
-  'moves', 'orders', 'active', 'lastOrder', 'lastOrderTs', 'lastOrderId'].sort();
+  'moves', 'orders', 'active', 'lastOrder', 'lastOrderTs', 'lastOrderId', 'wheel'].sort();
 
 test('clients: needs the admin key (or a signed admin session); a customer session is not enough', () => {
   const env = env0();
@@ -970,4 +970,317 @@ test('clients: a deleted account that still has points stays listed as « compte
   const d = env.post({ action: 'client', key: KEY, client: a.profile.id });
   assert.equal(d.profile.gone, true);
   assert.equal(d.client.balance, 70);
+});
+
+// ---------- prize wheel (« Roue de la chance ») ----------
+const vm = require('node:vm');
+const SLICE_KEYS = ['pts10', 'gant', 'pts25', 'pts50', 'pct50', 'pts10', 'protecteur', 'pts25', 'pct20', 'pts100'];
+const PPM = [241575, 100, 241575, 16650, 100, 241575, 100, 241575, 16650, 100];      // odds × 10 000
+let wheelSeq = 0;
+// a validly signed token for slice i (what the server would have drawn), made with the env's own secret
+function mint(env, i, extra = {}) {
+  wheelSeq += 1;
+  const sp = Object.assign({ id: ('TestSpin' + String(wheelSeq).padStart(8, '0')).slice(0, 16), i: i, key: SLICE_KEYS[i], t: Date.now() }, extra);
+  return env.ctx.wheelToken_(env.ctx.wheelSecret_(true), sp);
+}
+function wheelUser(env, tel, extra = {}) {
+  return signup(env, Object.assign({ telephone: tel }, extra));
+}
+const meOf = (env, s) => env.post({ action: 'me', session: s });
+
+test('wheel: the odds table is exactly the one published (1 000 000 tickets, none at 0)', () => {
+  const env = env0();
+  const ppm = env.ctx.wheelOdds_();
+  assert.deepEqual(Array.from(ppm), PPM);
+  assert.equal(ppm.reduce((a, b) => a + b, 0), 1000000);
+  // every ticket maps to exactly one slice, and each slice gets exactly its share
+  const count = new Array(10).fill(0);
+  for (let r = 0; r < 1000000; r++) count[env.ctx.wheelPick_(r, ppm)]++;
+  assert.deepEqual(count, PPM);
+  // grouped per prize: 0.01 % each for the 4 jackpots, 1.665 % for 50 points / -20 %, 24.1575 % per small slice
+  const per = {};
+  SLICE_KEYS.forEach((k, i) => { per[k] = (per[k] || 0) + count[i] / 10000; });
+  assert.deepEqual(per, { pts10: 48.315, gant: 0.01, pts25: 48.315, pts50: 1.665, pct50: 0.01, protecteur: 0.01, pct20: 1.665, pts100: 0.01 });
+  // a slice at 0 % (or a total ≠ 100 %) disables the wheel instead of giving wrong odds
+  vm.runInContext('WHEEL.slices[1].odds = 0; WHEEL.slices[0].odds += 0.01;', env.ctx);
+  assert.equal(env.ctx.wheelOdds_(), null);
+  assert.equal(env.post({ action: 'wheel_spin' }).error, 'wheel_off');
+  vm.runInContext('WHEEL.slices[1].odds = 0.01; WHEEL.slices[0].odds = 24.1575; WHEEL.slices[2].odds = 25;', env.ctx);
+  assert.equal(env.ctx.wheelOdds_(), null);
+});
+
+test('wheel: the random source is uniform (chi-square) and the real draw follows the odds', () => {
+  const env = env0();
+  // randBelow_: 10 buckets × 200 000 draws; 9 degrees of freedom, p = 0.001 critical value 27.88
+  const N = 200000, b = new Array(10).fill(0);
+  for (let i = 0; i < N; i++) b[env.ctx.randBelow_(10)]++;
+  const chiU = b.reduce((s, o) => s + (o - N / 10) ** 2 / (N / 10), 0);
+  assert.ok(chiU < 27.88, 'uniformity chi² = ' + chiU);
+  for (let i = 0; i < 2000; i++) { const x = env.ctx.randBelow_(1000000); assert.ok(Number.isInteger(x) && x >= 0 && x < 1000000); }
+  // the full draw (randBelow_ + wheelPick_), 400 000 spins, grouped into the 6 cells with an expected count >= 5:
+  // the 4 jackpots together (0.04 % = 160 expected), 50 points, -20 %, and the 4 small slices
+  const M = 400000, ppm = env.ctx.wheelOdds_();
+  const got = new Array(10).fill(0);
+  for (let i = 0; i < M; i++) got[env.ctx.wheelPick_(env.ctx.randBelow_(1000000), ppm)]++;
+  const cells = [[1, 4, 6, 9], [3], [8], [0], [2], [5], [7]];
+  const chi = cells.reduce((s, c) => {
+    const e = c.reduce((n, i) => n + PPM[i], 0) / 1e6 * M, o = c.reduce((n, i) => n + got[i], 0);
+    return s + (o - e) ** 2 / e;
+  }, 0);
+  assert.ok(chi < 22.46, 'distribution chi² = ' + chi + ' ' + got.join(','));          // 6 df, p = 0.001
+  assert.ok(got[1] + got[4] + got[6] + got[9] > 80 && got[1] + got[4] + got[6] + got[9] < 260);
+  [0, 2, 5, 7].forEach((i) => assert.ok(Math.abs(got[i] / M - 0.241575) < 0.005));
+});
+
+test('wheel: spin answers a signed token; sending it back gives the same result; counts spins', () => {
+  const env = env0();
+  const a = env.post({ action: 'wheel_spin' });
+  assert.equal(a.ok, true, JSON.stringify(a));
+  assert.match(a.token, /^w1\.[A-Za-z0-9]{16}\.\d+\.[a-z0-9]+\.[0-9a-z]+\.[A-Za-z0-9_-]{43}$/);
+  assert.equal(SLICE_KEYS[a.slice], a.prize.key);
+  assert.ok(env.props.get('WHEEL_SECRET').length >= 64);                      // created at the first spin
+  const again = env.post({ action: 'wheel_spin', token: a.token });
+  assert.equal(again.again, true);
+  assert.equal(again.slice, a.slice);
+  assert.equal(again.token, a.token);
+  const st = JSON.parse(env.props.get('WHEEL_STATS'));
+  assert.equal(st.n, 1);                                                        // the replay is not a new spin
+  assert.equal(st.by[a.prize.key], 1);
+  // no odds or secret in the answer
+  assert.ok(!JSON.stringify(a).includes(env.props.get('WHEEL_SECRET')));
+  assert.equal(a.odds, undefined);
+});
+
+test('wheel: a tampered token is refused (slice, prize, time or signature edited)', () => {
+  const env = env0();
+  const a = signup(env);
+  const tok = mint(env, 0);                                                   // 10 points
+  const p = tok.split('.');
+  const forged = [
+    [p[0], p[1], '9', 'pts100', p[4], p[5]].join('.'),                         // pretend it landed on 100 points
+    [p[0], p[1], p[2], 'pts100', p[4], p[5]].join('.'),
+    [p[0], p[1], p[2], p[3], (Date.now() + 1).toString(36), p[5]].join('.'),
+    [p[0], 'X' + p[1].slice(1), p[2], p[3], p[4], p[5]].join('.'),
+    tok.slice(0, -1) + (tok.slice(-1) === 'A' ? 'B' : 'A'),
+    'w1.' + 'A'.repeat(16) + '.9.pts100.' + Date.now().toString(36) + '.' + 'A'.repeat(43),
+    'nope', '', 42, null,
+  ];
+  forged.forEach((f) => {
+    assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: f }).error, 'wheel_bad', String(f));
+    const s = env.post({ action: 'wheel_spin', token: f });
+    assert.equal(s.ok, true);
+    assert.equal(s.again, undefined);                                           // a forged token just gets a fresh draw
+  });
+  // signed with another secret (another deployment, or the secret rotated)
+  const other = env0();
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: mint(other, 9) }).error, 'wheel_bad');
+  assert.equal(env.sheets.Roue, undefined);                                   // nothing claimed, nothing written
+  // the genuine one still works
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: tok }).ok, true);
+});
+
+test('wheel: claim needs a session; points prize credits the ledger « Roue de la chance »', () => {
+  const env = env0();
+  const tok = mint(env, 2);                                                   // 25 points
+  assert.equal(env.post({ action: 'wheel_claim', token: tok }).error, 'auth');
+  assert.equal(env.post({ action: 'wheel_claim', token: tok, session: 'k1.' + 'A'.repeat(43) }).error, 'auth');
+  const a = wheelUser(env, '0612000001');
+  const c = env.post({ action: 'wheel_claim', session: a.session, token: tok });
+  assert.equal(c.ok, true, JSON.stringify(c));
+  assert.equal(c.balance, 25);
+  assert.equal(c.wheel.kind, 'points');
+  assert.equal(c.wheel.state, 'credited');
+  const L = rowsOf(env, 'Points');
+  assert.equal(L[1][4], 'roue');
+  assert.equal(L[1][5], 25);
+  assert.match(L[1][8], /^Roue de la chance : 25 points/);
+  const me = meOf(env, a.session);
+  assert.equal(me.points.balance, 25);
+  assert.equal(me.points.earned, 0);                                           // not « earned from purchases »
+  assert.equal(me.wheel.label, '25 points');
+  assert.equal(me.wheel.spin, undefined);
+  const h = env.post({ action: 'my_points', session: a.session }).history[0];
+  assert.equal(h.label, 'Roue de la chance');
+  assert.equal(h.pts, 25);
+  const R = rowsOf(env, 'Roue');
+  assert.equal(R[1][11], 'Crédité');
+  assert.equal(R[1][7], a.profile.id);
+});
+
+test('wheel: one claim per spin, per account, per e-mail and per phone number', () => {
+  const env = env0();
+  const a = wheelUser(env, '0612000011');
+  const tok = mint(env, 0);
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: tok }).ok, true);
+  // same token again: same account, or another account
+  const again = env.post({ action: 'wheel_claim', session: a.session, token: tok });
+  assert.equal(again.error, 'wheel_used');
+  assert.equal(again.mine, true);
+  const b = wheelUser(env, '0612000012');
+  assert.equal(env.post({ action: 'wheel_claim', session: b.session, token: tok }).error, 'wheel_used');
+  // a new spin (storage cleared) for the same account
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 9) }).error, 'wheel_account');
+  // another account with the same phone number (formatted differently)
+  const c = wheelUser(env, '+212 6 12 00 00 11');
+  assert.equal(env.post({ action: 'wheel_claim', session: c.session, token: mint(env, 9) }).error, 'wheel_person');
+  // the first account's e-mail is changed by hand in the sheet: still blocked on e-mail for a new account using it
+  const R = rowsOf(env, 'Roue');
+  assert.equal(R.length, 2);
+  const d = wheelUser(env, '0612000013');
+  R[1][8] = d.profile.email;                                                 // claim row now carries d's e-mail
+  assert.equal(env.post({ action: 'wheel_claim', session: d.session, token: mint(env, 9) }).error, 'wheel_person');
+  // b (fresh account, own phone and e-mail) can claim its own new spin
+  assert.equal(env.post({ action: 'wheel_claim', session: b.session, token: mint(env, 5) }).ok, true);
+  assert.equal(rowsOf(env, 'Roue').length, 3);
+  assert.equal(meOf(env, a.session).points.balance, 10);
+});
+
+test('wheel: a spin can be claimed for 30 days; every claim write holds the lock', () => {
+  const env = env0();
+  const a = wheelUser(env, '0612000021');
+  const old = mint(env, 0, { t: Date.now() - 31 * 864e5 });
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: old }).error, 'wheel_expired');
+  env.lock.busy = true;
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 0) }).error, 'busy');
+  assert.equal(env.post({ action: 'wheel_spin' }).error, 'busy');
+  env.lock.busy = false;
+  assert.equal(env.sheets.Roue, undefined);                                    // nothing written
+  assert.equal(env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 0, { t: Date.now() - 29 * 864e5 }) }).ok, true);
+});
+
+test('wheel: global hourly cap on new spins (a replayed token is not a new spin)', () => {
+  const env = env0();
+  const first = env.post({ action: 'wheel_spin' });
+  env.cache.put('wh:h:' + Math.floor(Date.now() / 3600000), '400', 3600);
+  assert.equal(env.post({ action: 'wheel_spin' }).error, 'busy');
+  assert.equal(env.post({ action: 'wheel_spin', token: first.token }).ok, true);
+});
+
+test('wheel: -20 % discount — applied to the items at checkout, once, not with a promo code', () => {
+  const env = env0();
+  const a = wheelUser(env, '0612000031');
+  const c = env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 8) });
+  assert.equal(c.wheel.kind, 'remise');
+  assert.equal(c.wheel.state, 'active');
+  assert.equal(c.wheel.value, 20);
+  const until = c.wheel.untilTs;
+  assert.ok(Math.abs(until - (Date.now() + 30 * 864e5)) < 60000);
+  assert.equal(meOf(env, a.session).wheel.state, 'active');
+  // guests, other accounts: refused
+  assert.equal(env.post(order({ wheel: true })).error, 'auth');
+  const b = wheelUser(env, '0612000032');
+  assert.equal(env.post(order({ wheel: true, session: b.session })).error, 'bad_wheel');
+  assert.equal(rowsOf(env, 'Commandes').length, 1);
+  // 1 750 DH: -350 DH, delivery still 25 DH (the free-delivery threshold looks at the subtotal before discount)
+  const o = env.post(order({ wheel: true, session: a.session, promoCode: 'KOBG26', total: 1425 }));
+  assert.equal(o.ok, true, JSON.stringify(o));
+  assert.equal(o.discountPct, 20);
+  assert.equal(o.discount, 350);
+  assert.equal(o.promoCode, 'ROUE');
+  assert.equal(o.delivery, 25);
+  assert.equal(o.total, 1425);
+  assert.equal(o.wheel, 20);
+  assert.equal(o.adjusted, true);                                              // the promo code was dropped (noted)
+  const row = rowsOf(env, 'Commandes')[1];
+  assert.equal(row[10], 'ROUE');
+  assert.equal(row[11], 20);
+  assert.equal(row[13], 1425);
+  assert.match(rowsOf(env, 'Gestion')[1][2], /non cumulable/);
+  assert.match(rowsOf(env, 'Gestion')[1][2], /Roue de la chance » -20 %/);
+  const R = rowsOf(env, 'Roue')[1];
+  assert.equal(R[11], 'Utilisée');
+  assert.equal(R[12], o.orderId);
+  assert.equal(meOf(env, a.session).wheel.state, 'used');
+  // single use
+  assert.equal(env.post(order({ wheel: true, session: a.session })).error, 'bad_wheel');
+  // without the wheel the promo code works as usual
+  assert.equal(env.post(order({ session: a.session, promoCode: 'KOBG26' })).discountPct, 10);
+});
+
+test('wheel: a cancelled order gives the discount back; re-activating takes it again; expiry is enforced', () => {
+  const env = env0();
+  const a = wheelUser(env, '0612000041');
+  env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 4) });     // -50 %
+  const o = env.post(order({ wheel: true, session: a.session, items: [{ id: BODY, qty: 1, unitPrice: 4559 }] }));
+  assert.equal(o.discount, 2280);                                                    // round(4559 / 2)
+  assert.equal(o.delivery, 0);
+  assert.equal(o.total, 2279);
+  const tok = env.post({ action: 'auth', key: KEY }).token;
+  const u = env.post({ action: 'update', key: tok, id: o.orderId, status: 'Annulée' });
+  assert.equal(u.ok, true);
+  assert.ok(u.order.hist.some((h) => /remise -50 % rendue/.test(h.note || '')));
+  assert.equal(meOf(env, a.session).wheel.state, 'active');
+  env.post({ action: 'update', key: tok, id: o.orderId, status: 'Confirmée' });
+  assert.equal(meOf(env, a.session).wheel.state, 'used');
+  env.post({ action: 'update', key: tok, id: o.orderId, status: 'Retournée' });
+  assert.equal(meOf(env, a.session).wheel.state, 'active');
+  // expired: refused at checkout, shown as expired
+  rowsOf(env, 'Roue')[1][10] = new Date(Date.now() - 1000);
+  assert.equal(meOf(env, a.session).wheel.state, 'expired');
+  assert.equal(env.post(order({ wheel: true, session: a.session })).error, 'bad_wheel');
+});
+
+test('wheel: gift prizes wait in the customer file, flagged on their orders, marked « remis » by the admin', () => {
+  const env = env0();
+  const a = wheelUser(env, '0612000051');
+  const c = env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 1) });
+  assert.equal(c.wheel.kind, 'cadeau');
+  assert.equal(c.wheel.state, 'pending');
+  assert.equal(c.balance, undefined);
+  assert.ok(!env.sheets.Points || rowsOf(env, 'Points').length === 1);              // no points for a gift
+  const o = env.post(order({ session: a.session }));
+  assert.match(rowsOf(env, 'Gestion')[1][2], /Cadeau « Roue de la chance » à remettre à ce client : Gants de sac Rival RB10 Intelli-Shock Noir\/Rouge/);
+  const tok = env.post({ action: 'auth', key: KEY }).token;
+  const list = env.post({ action: 'list', key: tok });
+  assert.equal(list.clients[a.profile.id].wheel.state, 'pending');
+  const d = env.post({ action: 'client', key: tok, client: a.profile.id });
+  assert.equal(d.client.wheel.label, 'Gants de sac Rival RB10 Intelli-Shock Noir/Rouge');
+  const spin = d.client.wheel.spin;
+  assert.equal(env.post({ action: 'wheel_gift', spin: spin }).error, 'bad_key');
+  assert.equal(env.post({ action: 'wheel_gift', key: tok, spin: 'nope' }).error, 'not_found');
+  const g = env.post({ action: 'wheel_gift', key: tok, spin: spin, given: true });
+  assert.equal(g.ok, true);
+  assert.equal(g.wheel.state, 'given');
+  assert.equal(rowsOf(env, 'Roue')[1][11], 'Remis');
+  assert.equal(meOf(env, a.session).wheel.state, 'given');
+  assert.equal(env.post({ action: 'wheel_gift', key: tok, spin: spin, given: false }).wheel.state, 'pending');
+  assert.ok(o.ok);
+});
+
+test('wheel: admin stats — spins and claims per prize with the configured odds; no secrets', () => {
+  const env = env0();
+  for (let i = 0; i < 5; i++) env.post({ action: 'wheel_spin' });
+  const a = wheelUser(env, '0612000061');
+  env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 8) });
+  const tok = env.post({ action: 'auth', key: KEY }).token;
+  assert.equal(env.post({ action: 'wheel' }).error, 'bad_key');
+  assert.equal(env.post({ action: 'wheel', session: a.session }).error, 'bad_key');
+  const s = env.post({ action: 'wheel', key: tok });
+  assert.equal(s.ok, true);
+  assert.equal(s.spins, 5);
+  assert.equal(s.claims, 1);
+  assert.equal(s.valid, true);
+  assert.equal(s.prizes.length, 8);
+  const by = Object.fromEntries(s.prizes.map((p) => [p.key, p]));
+  assert.equal(by.pts10.odds, 48.315);
+  assert.equal(by.pts10.slices, 2);
+  assert.equal(by.gant.odds, 0.01);
+  assert.equal(by.pct20.claims, 1);
+  assert.equal(by.pct20.open, 1);
+  assert.equal(s.prizes.reduce((n, p) => n + p.spins, 0), 5);
+  assert.equal(s.recent[0].email, a.profile.email);
+  const txt = JSON.stringify(s) + JSON.stringify(env.post({ action: 'client', key: tok, client: a.profile.id }));
+  assert.ok(!txt.includes(env.props.get('WHEEL_SECRET')));
+  assert.ok(!/"(sel|hash|iter|session|token)"/.test(txt));
+});
+
+test('setup() creates the Roue tab and the wheel secret', () => {
+  const env = env0();
+  env.run('setup');
+  assert.deepEqual(rowsOf(env, 'Roue')[0].slice(0, 4), ['Réclamé le', 'ID tirage', 'Tiré le', 'Lot']);
+  const sec = env.props.get('WHEEL_SECRET');
+  assert.ok(sec.length >= 64);
+  env.run('setup');
+  assert.equal(env.props.get('WHEEL_SECRET'), sec);                                // kept: old tokens stay valid
+  assert.ok(env.logs.some((l) => /probabilités OK/.test(l)));
 });

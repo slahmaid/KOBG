@@ -32,14 +32,17 @@
     reset: $('#resetBtn'), csv: $('#csvBtn'), rows: $('#rows'), empty: $('#empty'), pager: $('#pager'), table: $('#otable'),
     drawer: $('#drawer'), scrim: $('#scrim'), toasts: $('#toasts'),
     views: $('#views'), clientsN: $('#clientsN'), kpiBoard: $('#kpiBoard'), ordersBoard: $('#ordersBoard'), clientsBoard: $('#clientsBoard'),
-    cq: $('#cq'), csort: $('#csort'), creset: $('#cresetBtn'), ccsv: $('#ccsvBtn'), crows: $('#crows'), cempty: $('#cempty'), cpager: $('#cpager'), ctable: $('#ctable'), cstats: $('#cstats')
+    cq: $('#cq'), csort: $('#csort'), creset: $('#cresetBtn'), ccsv: $('#ccsvBtn'), crows: $('#crows'), cempty: $('#cempty'), cpager: $('#cpager'), ctable: $('#ctable'), cstats: $('#cstats'),
+    wheelBoard: $('#wheelBoard'), wstats: $('#wstats'), wbody: $('#wbody'), giftsN: $('#giftsN')
   };
 
   const S = {
     key: '', orders: [], loaded: false, today: '', serverSkew: 0, lastSync: 0, busy: false, failing: false,
     period: localStorage.getItem(LS_PERIOD) || 'today', status: 'all', q: '', from: '', to: '', sort: 'new', page: 0,
     open: null, pending: {}, seen: readSeen(), freshIds: new Set(), clients: {},
-    view: location.hash === '#clients' ? 'clients' : 'orders', back: null,
+    view: location.hash === '#clients' ? 'clients' : location.hash === '#roue' ? 'wheel' : 'orders', back: null,
+    // « Roue » view: spins and claims of the prize wheel (action 'wheel'); gifts are marked handed over with 'wheel_gift'
+    wh: { data: null, loaded: false, busy: false, error: '' },
     // « Clients » view: every customer account with its points balance (action 'clients'), one account's file (action 'client')
     cl: { list: [], loaded: false, busy: false, stale: false, q: '', sort: 'bal', page: 0, open: null, detail: {}, error: '' }
   };
@@ -90,7 +93,7 @@
     // (e.g. the old script's {ok:false,error:'missing fields'} or {ok:true,service:…}) means old code.
     const KNOWN = ['bad_key', 'expired', 'locked', 'no_admin_key', 'bad_action', 'server', 'not_found', 'bad_status', 'busy', 'bad_points', 'bad_reason'];
     // an older script (before the Clients view) answers 'bad_action' to 'clients' / 'client'
-    if (data && data.ok !== true && data.error === 'bad_action' && (action === 'clients' || action === 'client')) throw new ApiError('old_clients', data);
+    if (data && data.ok !== true && data.error === 'bad_action' && (action === 'clients' || action === 'client' || action === 'wheel' || action === 'wheel_gift')) throw new ApiError('old_clients', data);
     if (!data || typeof data !== 'object') throw new ApiError('bad_reply');
     if (data.ok !== true) {
       const err = data.error;
@@ -113,7 +116,7 @@
       case 'network': return 'Réseau indisponible ou script injoignable. Vérifiez la connexion internet.';
       case 'timeout': return 'Google ne répond pas (délai dépassé). Réessayez.';
       case 'not_found': return 'Introuvable dans la feuille.';
-      case 'old_clients': return 'Vue Clients indisponible : le script Google n\'est pas à jour. Collez le nouveau order-apps-script.gs dans Apps Script, puis Déployer › Gérer les déploiements › crayon › Version : Nouvelle version › Déployer.';
+      case 'old_clients': return 'Vue indisponible : le script Google n\'est pas à jour. Collez le nouveau order-apps-script.gs dans Apps Script, puis Déployer › Gérer les déploiements › crayon › Version : Nouvelle version › Déployer.';
       case 'busy': return 'Le script est occupé, réessayez dans quelques secondes.';
       case 'bad_status': return 'Statut refusé par le script.';
       case 'bad_points': return 'Montant de points refusé : un nombre entier, positif ou négatif, non nul (100 000 au plus).';
@@ -311,7 +314,7 @@
     return '<tr data-id="' + esc(o.id) + '" class="' + (isNew(o) ? 'is-new' : '') + (S.open === o.id ? ' is-open' : '') + '" tabindex="0">' +
       '<td class="c-id">' + esc(o.id) + (isNew(o) ? '<span class="new-tag">Nouveau</span>' : '') + '<span class="c-date-m">' + esc(o.recu) + '</span></td>' +
       '<td class="c-date">' + esc(o.recu) + '</td>' +
-      '<td class="c-name">' + esc(o.nom) + '</td>' +
+      '<td class="c-name">' + esc(o.nom) + giftTag(o.client && S.clients[o.client] && S.clients[o.client].wheel) + '</td>' +
       '<td class="c-tel">' + esc(o.tel) + '</td>' +
       '<td class="c-city">' + esc(o.ville) + '</td>' +
       '<td class="c-art"><span>' + esc(o.articles) + (n > 1 || o.nb > 1 ? ' <em>· ' + o.nb + ' art.</em>' : '') + '</span></td>' +
@@ -393,11 +396,11 @@
       '<div class="d-card"><span class="d-h">Articles (' + o.nb + ')</span><div class="items">' +
         its.map((it) => '<div class="item"><b>' + esc(it.name) + '</b><b>' + (it.qty > 1 ? '× ' + it.qty : '') + '</b><span>' + [it.size && 'Taille ' + esc(it.size), it.colour && 'Couleur ' + esc(it.colour)].filter(Boolean).join(' · ') + '</span></div>').join('') +
       '</div><div class="tots"><div><span>Sous-total</span><span>' + dh(o.sousTotal) + '</span></div>' +
-        (o.remise ? '<div><span>Remise ' + esc(o.promo || '') + ' (' + o.remise + ' %)</span><span>− ' + dh(disc) + '</span></div>' : '') +
+        (o.remise ? '<div><span>Remise ' + esc(String(o.promo).toUpperCase() === 'ROUE' ? 'Roue de la chance' : o.promo || '') + ' (' + o.remise + ' %)</span><span>− ' + dh(disc) + '</span></div>' : '') +
         '<div><span>Livraison</span><span>' + (o.livraison ? dh(o.livraison) : 'Offerte') + '</span></div>' +
         (o.points ? '<div class="pts-line"><span>Points fidélité utilisés</span><span>− ' + dh(o.points) + '</span></div>' : '') +
         '<div class="grand"><span>Total à encaisser</span><span>' + dh(o.total) + '</span></div></div></div>' +
-      ptsCard(o) +
+      ptsCard(o) + (o.client && S.clients[o.client] ? wheelCard(S.clients[o.client].wheel, o.id) : '') +
       '<div class="d-card note"><div class="d-row"><span class="d-h">Note interne</span><small>' + (o.maj ? 'Mis à jour le ' + esc(o.maj) : '') + '</small></div>' +
         '<textarea id="noteTa" maxlength="1000" placeholder="Ex. rappeler après 18 h, adresse précise…">' + esc(o.note) + '</textarea>' +
         '<div class="d-row"><small>Visible uniquement dans l\'admin et l\'onglet Gestion.</small><button type="button" class="btn btn-dark" data-note>Enregistrer la note</button></div></div>' +
@@ -550,12 +553,13 @@
     last: (a, b) => (b.lastOrderTs - a.lastOrderTs) || CSORT.name(a, b)
   };
   function setView(v, quiet) {
-    S.view = v === 'clients' ? 'clients' : 'orders';
-    const cl = S.view === 'clients';
+    S.view = v === 'clients' || v === 'wheel' ? v : 'orders';
+    const cl = S.view === 'clients', wh = S.view === 'wheel';
     el.views.querySelectorAll('button[data-v]').forEach((b) => { const on = b.dataset.v === S.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-    el.kpiBoard.hidden = cl; el.ordersBoard.hidden = cl; el.clientsBoard.hidden = !cl;
-    try { history.replaceState(null, '', cl ? '#clients' : location.pathname + location.search); } catch (e) {}
+    el.kpiBoard.hidden = cl || wh; el.ordersBoard.hidden = cl || wh; el.clientsBoard.hidden = !cl; el.wheelBoard.hidden = !wh;
+    try { history.replaceState(null, '', cl ? '#clients' : wh ? '#roue' : location.pathname + location.search); } catch (e) {}
     if (cl) { renderClients(); if (!quiet && (!S.cl.loaded || S.cl.stale)) loadClients(false); }
+    else if (wh) { renderWheel(); if (!quiet) loadWheel(false); }
     else render();
   }
   async function loadClients(manual) {
@@ -632,7 +636,7 @@
   }
   function cRowHtml(c) {
     return '<tr data-cid="' + esc(c.id) + '" class="' + (S.cl.open === c.id ? 'is-open' : '') + (c.gone ? ' is-gone' : '') + '" tabindex="0">' +
-      '<td class="c-who"><b>' + esc(c.nom || '—') + (c.gone ? ' <span class="gone-tag">Compte supprimé</span>' : '') + '</b><small>' + esc(c.email) + '</small></td>' +
+      '<td class="c-who"><b>' + esc(c.nom || '—') + (c.gone ? ' <span class="gone-tag">Compte supprimé</span>' : '') + giftTag(c.wheel) + '</b><small>' + esc(c.email) + '</small></td>' +
       '<td class="c-tel">' + esc(c.tel || '—') + '</td>' +
       '<td class="c-city">' + esc(c.ville || '—') + '</td>' +
       '<td class="c-date c-since"><span class="m-l">Inscrit le </span>' + esc(c.cree || '—') + '</td>' +
@@ -691,6 +695,7 @@
         (d && d.client ? '<span class="d-h">Historique des points (' + d.client.history.length + ')</span>' + (hist ? '<ul class="hist pts-hist pts-hist-l">' + hist + '</ul>' : '<small class="pts-muted">Aucun mouvement de points.</small>') : '') +
         (d && d.client && !p.gone ? ptsForm() : '') + '</div>';
     }
+    if (d && d.client) h += wheelCard(d.client.wheel);
     if (d && d.orders) {
       h += '<div class="d-card"><span class="d-h">Commandes (' + d.orders.length + ')</span>' +
         (d.orders.length ? '<div class="corders">' + d.orders.map((o) => {
@@ -733,6 +738,94 @@
       btn.disabled = false; btn.textContent = 'Ajuster le solde';
     }
   }
+  // ---------- « Roue de la chance » ----------
+  const WSTATE = { credited: 'Points crédités', active: 'Remise à utiliser', used: 'Remise utilisée', expired: 'Remise expirée', pending: 'Cadeau à remettre', given: 'Cadeau remis' };
+  function giftTag(w) {
+    return w && w.kind === 'cadeau' && w.state === 'pending' ? ' <span class="gift-tag" title="' + esc('Roue de la chance : ' + w.label + ' à remettre') + '">🎁 Cadeau à remettre</span>' : '';
+  }
+  function prizeName(w) { return w.kind === 'points' ? w.value + ' points' : w.kind === 'remise' ? '-' + w.value + ' % sur les articles' : w.label; }
+  function wheelCard(w, orderId) {
+    if (!w) return '';
+    const st = WSTATE[w.state] || w.state;
+    let txt = 'Gagné à la Roue de la chance, ajouté au compte le ' + esc(w.claimed) + '. ';
+    if (w.kind === 'points') txt += 'Points crédités dans l\'onglet « Points » (motif « Roue de la chance »).';
+    else if (w.kind === 'remise') txt += w.state === 'used' ? 'Utilisée sur la commande ' + esc(w.order) + (orderId && w.order === orderId ? ' (celle-ci)' : '') + '.'
+      : w.state === 'active' ? 'Une seule commande, valable jusqu\'au ' + esc(w.until) + ', appliquée automatiquement au paiement (articles uniquement, non cumulable avec un code promo).' : 'Non utilisée avant le ' + esc(w.until) + '.';
+    else txt += w.state === 'given' ? 'Cadeau remis au client.' : 'À remettre : contactez le client pour le modèle et la taille, puis marquez-le remis.';
+    const btn = w.kind === 'cadeau' ? '<button type="button" class="btn ' + (w.state === 'given' ? 'btn-ghost-d' : 'btn-red') + '" data-gift="' + esc(w.spin) + '" data-given="' + (w.state === 'given' ? '0' : '1') + '">' + (w.state === 'given' ? 'Annuler « remis »' : 'Marquer remis') + '</button>' : '';
+    return '<div class="d-card wcard' + (w.state === 'pending' ? ' is-pending' : '') + '"><div class="d-row"><span class="d-h">Roue de la chance</span><span class="wst" data-w="' + esc(w.state) + '">' + esc(st) + '</span></div>' +
+      '<b class="wprize">' + esc(prizeName(w)) + '</b><small class="pts-muted">' + txt + '</small>' +
+      (w.note ? '<small class="pts-muted wnote">' + esc(w.note).replace(/\n/g, '<br>') + '</small>' : '') + btn + '</div>';
+  }
+  async function loadWheel(manual) {
+    if (S.wh.busy) return;
+    S.wh.busy = true;
+    el.refresh.classList.add('spin');
+    try {
+      S.wh.data = await api('wheel');
+      S.wh.loaded = true; S.wh.error = '';
+      if (manual) toast('Roue à jour');
+    } catch (e) {
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked' || e.code === 'no_admin_key') { dropKey(); S.key = ''; showLogin(errText(e)); return; }
+      S.wh.error = errText(e);
+      if (manual || S.view === 'wheel') toast(errText(e), true);
+    } finally { S.wh.busy = false; el.refresh.classList.remove('spin'); renderWheel(); }
+  }
+  function pct(n) { return (Math.round(n * 10000) / 10000).toString().replace('.', ',') + ' %'; }
+  function renderWheel() {
+    const d = S.wh.data;
+    const gifts = d ? d.gifts.length : 0;
+    el.giftsN.hidden = !gifts; el.giftsN.textContent = gifts ? String(gifts) : '';
+    if (S.view !== 'wheel') return;
+    document.title = 'Admin · Roue — Knockout Boxing Gear';
+    if (!d) {
+      el.wstats.innerHTML = '';
+      el.wbody.innerHTML = S.wh.error ? '<div class="empty"><strong>Chargement impossible</strong>' + esc(S.wh.error) + '</div>' : '<div class="empty"><strong>Chargement…</strong></div>';
+      return;
+    }
+    const stat = (l, v, s, cls) => '<div class="cstat' + (cls ? ' ' + cls : '') + '"><span class="kpi-l">' + esc(l) + '</span><b>' + v + '</b><small>' + esc(s) + '</small></div>';
+    const used = d.prizes.reduce((m, p) => m + (p.kind === 'remise' ? p.used : 0), 0);
+    el.wstats.innerHTML =
+      stat('Tours joués', num(d.spins), d.since ? 'depuis le ' + new Date(d.since).toLocaleDateString('fr-FR') : 'depuis la mise en ligne', 'dark') +
+      stat('Lots réclamés', num(d.claims), d.spins ? Math.round(d.claims / d.spins * 100) + ' % des tours (compte créé ou connecté)' : 'via compte.html') +
+      stat('Cadeaux à remettre', num(gifts), 'gants / protecteurs gagnés', gifts ? 'red' : '') +
+      stat('Remises utilisées', num(used), 'commandes passées avec la remise') +
+      (!d.on || !d.valid ? stat('État', 'Arrêtée', !d.valid ? 'probabilités invalides (WHEEL)' : 'WHEEL.on = false', 'red') : '');
+    const rows = d.prizes.map((p) => '<tr><td><b>' + esc(prizeName(p)) + '</b>' + (p.slices > 1 ? '<small> · ' + p.slices + ' cases</small>' : '') + '</td><td class="num">' + esc(pct(p.odds)) + '</td>' +
+      '<td class="num">' + num(p.spins) + '<small>' + (d.spins ? ' (' + pct(p.spins / d.spins * 100) + ')' : '') + '</small></td><td class="num">' + num(p.claims) + '</td>' +
+      '<td class="num">' + (p.kind === 'points' ? '—' : num(p.open)) + '</td><td class="num">' + (p.kind === 'points' ? '—' : num(p.used)) + '</td></tr>').join('');
+    const claim = (w) => '<tr><td>' + esc(w.claimed) + '</td><td><button type="button" class="linkish" data-client="' + esc(w.client) + '">' + esc(w.email || w.client) + '</button></td>' +
+      '<td>' + esc(prizeName(w)) + '</td><td><span class="wst" data-w="' + esc(w.state) + '">' + esc(WSTATE[w.state] || w.state) + '</span>' + (w.order ? ' <small>' + esc(w.order) + '</small>' : '') + '</td>' +
+      '<td class="act-h">' + (w.kind === 'cadeau' ? '<button type="button" class="qbtn" data-gift="' + esc(w.spin) + '" data-given="' + (w.state === 'given' ? '0' : '1') + '">' + (w.state === 'given' ? 'Annuler « remis »' : 'Marquer remis') + '</button>' : '') + '</td></tr>';
+    el.wbody.innerHTML =
+      (gifts ? '<div class="wsec"><h3>Cadeaux à remettre (' + gifts + ')</h3><div class="table-wrap"><table class="otable wtable"><thead><tr><th scope="col">Réclamé le</th><th scope="col">Client</th><th scope="col">Lot</th><th scope="col">État</th><th scope="col" class="act-h">Action</th></tr></thead><tbody>' + d.gifts.map(claim).join('') + '</tbody></table></div></div>' : '') +
+      '<div class="wsec"><h3>Lots et probabilités</h3><div class="table-wrap"><table class="otable wtable"><thead><tr><th scope="col">Lot</th><th scope="col" class="num">Probabilité</th><th scope="col" class="num">Tirés</th><th scope="col" class="num">Réclamés</th><th scope="col" class="num">En attente</th><th scope="col" class="num">Utilisés / remis</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<small class="pts-muted">Probabilités réglées dans WHEEL (order-apps-script.gs). « Tirés » compte les tours (un visiteur qui vide son navigateur peut rejouer, mais un seul lot est réclamable par compte, e-mail et téléphone).</small></div>' +
+      '<div class="wsec"><h3>Derniers lots réclamés (' + d.recent.length + ')</h3>' + (d.recent.length ? '<div class="table-wrap"><table class="otable wtable"><thead><tr><th scope="col">Réclamé le</th><th scope="col">Client</th><th scope="col">Lot</th><th scope="col">État</th><th scope="col" class="act-h">Action</th></tr></thead><tbody>' + d.recent.map(claim).join('') + '</tbody></table></div>' : '<div class="empty"><strong>Aucun lot réclamé</strong>Les lots ajoutés à un compte client apparaîtront ici.</div>') + '</div>';
+  }
+  async function markGift(spin, given, btn) {
+    if (!spin) return;
+    if (!window.confirm(given ? 'Confirmer que le cadeau a été remis au client ?' : 'Remettre ce cadeau en « à remettre » ?')) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+    try {
+      const d = await api('wheel_gift', { spin: spin, given: given });
+      const w = d.wheel;
+      toast(given ? 'Cadeau marqué remis' : 'Cadeau de nouveau à remettre');
+      if (w && w.client) {
+        if (S.clients[w.client]) S.clients[w.client].wheel = w;
+        const row = S.cl.list.find((x) => x.id === w.client); if (row) row.wheel = w;
+        const det = S.cl.detail[w.client]; if (det && det.client) det.client.wheel = w;
+      }
+      if (S.wh.data) loadWheel(false);
+      if (S.cl.open) renderClientDrawer(S.cl.open, true);
+      else if (S.open && byId(S.open)) renderDrawer(byId(S.open), true);
+      render(); renderClients();
+    } catch (e) {
+      toast('Non enregistré. ' + errText(e), true);
+      if (e.code === 'bad_key' || e.code === 'expired' || e.code === 'locked') { dropKey(); showLogin(errText(e)); return; }
+      if (btn) { btn.disabled = false; btn.textContent = given ? 'Marquer remis' : 'Annuler « remis »'; }
+    }
+  }
   function exportClientsCsv() {
     const list = cFiltered();
     if (!list.length) { toast('Rien à exporter', true); return; }
@@ -747,7 +840,7 @@
     toast(list.length + ' client' + (list.length > 1 ? 's' : '') + ' exporté' + (list.length > 1 ? 's' : '') + ' (CSV)');
   }
   function refreshView(manual) {
-    if (S.view === 'clients') { loadClients(manual); load(false); } else load(manual);
+    if (S.view === 'clients') { loadClients(manual); load(false); } else if (S.view === 'wheel') { loadWheel(manual); load(false); } else load(manual);
     if (S.cl.open) { delete S.cl.detail[S.cl.open]; fetchClient(S.cl.open); }
   }
 
@@ -796,6 +889,11 @@
     const s = e.target.closest('[data-to]'); if (s && S.open) return setStatus(S.open, s.dataset.to);
     if (e.target.closest('[data-note]') && S.open) return saveNote(S.open);
     const c = e.target.closest('[data-copy]'); if (c) return copy(c.dataset.copy);
+    const g = e.target.closest('[data-gift]'); if (g) return markGift(g.dataset.gift, g.dataset.given === '1', g);
+  });
+  el.wbody.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-gift]'); if (g) return markGift(g.dataset.gift, g.dataset.given === '1', g);
+    const cl = e.target.closest('[data-client]'); if (cl) return openClient(cl.dataset.client);
   });
   el.drawer.addEventListener('submit', (e) => {
     const f = e.target.closest('form[data-pts]'); if (!f) return;
@@ -809,20 +907,20 @@
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
     if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
     const box = S.view === 'clients' ? el.cq : el.q;
-    if (e.key === '/') { e.preventDefault(); box.focus(); box.select(); }
+    if (e.key === '/' && S.view !== 'wheel') { e.preventDefault(); box.focus(); box.select(); }
     else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); refreshView(true); }
   });
 
   // ---------- auto refresh ----------
   let timer = null;
-  function startTimer() { stopTimer(); timer = setInterval(() => { if (!document.hidden && !el.app.hidden) { load(false); if (S.view === 'clients' && !S.cl.open) loadClients(false); } }, REFRESH_MS); }
+  function startTimer() { stopTimer(); timer = setInterval(() => { if (!document.hidden && !el.app.hidden) { load(false); if (S.view === 'clients' && !S.cl.open) loadClients(false); if (S.view === 'wheel' && !S.cl.open && !S.open) loadWheel(false); } }, REFRESH_MS); }
   function stopTimer() { if (timer) clearInterval(timer); timer = null; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !el.app.hidden && S.key && Date.now() - S.lastSync > REFRESH_MS) load(false); });
 
   function startApp() {
     el.login.hidden = true; el.app.hidden = false;
     if (!S.loaded) skeleton();
-    render(); setView(S.view, true); load(false); if (S.view === 'clients') loadClients(false); startTimer();
+    render(); setView(S.view, true); load(false); if (S.view === 'clients') loadClients(false); loadWheel(false); startTimer();
   }
 
   // ---------- boot ----------

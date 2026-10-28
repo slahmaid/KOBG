@@ -58,7 +58,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   };
   const lenisSync = () => {
     if (!lenis) return;
-    if (document.body.classList.contains('menu-open') || document.body.classList.contains('cart-open')) lenis.stop();
+    if (document.body.classList.contains('menu-open') || document.body.classList.contains('cart-open') || document.documentElement.matches('.wheel-open, .sheet-open')) lenis.stop();
     else lenis.start();
   };
   function startLenis() {
@@ -347,11 +347,16 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     try { promo ? localStorage.setItem(PROMO_STORAGE_KEY, promo) : localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
   }
   // one rule everywhere (cart, checkout, product form): % off the subtotal; delivery free from 2000 DH of products
-  function calcTotals(sub) {
-    const pct = promo ? PROMO_CODES[promo] : 0;
+  // An order form (checkout, product page) may carry a « Roue de la chance » discount (signed in, ticked):
+  // it replaces the promo code (not cumulable) and, like it, comes off the items subtotal only.
+  const wheelBoxes = new WeakMap();
+  const wheelPct = (form) => (form && wheelBoxes.has(form) ? wheelBoxes.get(form).pct() : 0);
+  function calcTotals(sub, form) {
+    const w = wheelPct(form);
+    const pct = w || (promo ? PROMO_CODES[promo] : 0);
     const discount = Math.round(sub * pct / 100);
     const shipping = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
-    return { sub, pct, discount, shipping, total: sub - discount + shipping };
+    return { sub, pct, discount, shipping, total: sub - discount + shipping, wheel: !!w, code: w ? 'Roue de la chance' : promo };
   }
   const totals = () => calcTotals(totalPrice());
   const plainDH = (n) => formatDH(n).replace(/\u00a0/g, ' ');
@@ -748,7 +753,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     too_many: 'Plusieurs commandes ont déjà été envoyées avec ce numéro : nous vous appelons très vite pour les confirmer. Pour une autre demande, écrivez-nous à info@knockoutboxinggear.com.',
     busy: 'Beaucoup de commandes en ce moment : réessayez dans une minute.',
     bad_points: 'Votre solde de points a changé : vérifiez le montant des points à utiliser puis confirmez à nouveau.',
-    auth: 'Votre session a expiré : reconnectez-vous pour utiliser vos points, ou décochez « Utiliser mes points ».',
+    auth: 'Votre session a expiré : reconnectez-vous pour utiliser vos points ou votre remise, ou décochez-les.',
+    bad_wheel: 'Votre remise « Roue de la chance » n’est plus disponible (déjà utilisée ou expirée). Vérifiez le total puis confirmez à nouveau.',
   };
   // POST one order. 'json': text/plain JSON (Apps Script reads e.postData.contents); 'form': urlencoded.
   // Both are "simple" requests: no CORS preflight. Success = HTTP 2xx and the reply isn't {ok:false}.
@@ -795,13 +801,16 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   // =========================================================
   const ACCT_KEY = 'kobg-account-v1';
   const ACCT_TOKEN = /^k1\.[A-Za-z0-9_-]{43}$/;
+  // set for good once an account session existed in this browser (stays after logout): the wheel stops opening by itself
+  const HAD_ACCT_KEY = 'kobg-had-account';
+  const markHadAcct = () => { try { if (localStorage.getItem(HAD_ACCT_KEY) !== '1') localStorage.setItem(HAD_ACCT_KEY, '1'); } catch (err) { /* ignore */ } };
   const acctStores = () => { const s = []; try { s.push(localStorage, sessionStorage); } catch (err) { /* storage blocked */ } return s; };
   const acctStore = {
     read() {
       for (const st of acctStores()) {
         try {
           const o = JSON.parse(st.getItem(ACCT_KEY) || 'null');
-          if (o && ACCT_TOKEN.test(o.token) && o.exp > Date.now() && o.profile && typeof o.profile === 'object') return o;
+          if (o && ACCT_TOKEN.test(o.token) && o.exp > Date.now() && o.profile && typeof o.profile === 'object') { markHadAcct(); return o; }
           if (o) st.removeItem(ACCT_KEY);
         } catch (err) { /* corrupt entry: ignored */ }
       }
@@ -814,6 +823,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       const o = { token: res.session || (cur && cur.token), exp: res.exp || (cur && cur.exp), profile: res.profile || (cur && cur.profile) || {}, remember: keep };
       if (!ACCT_TOKEN.test(o.token)) return null;
       this.clear();
+      markHadAcct();
       try { (keep ? localStorage : sessionStorage).setItem(ACCT_KEY, JSON.stringify(o)); } catch (err) { /* private mode: this page only */ }
       acctPaint();
       return o;
@@ -899,7 +909,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       });
     };
     const box = ptsBoxes.get(form);
-    const paint = () => { fill(); box?.render(); };
+    const wbox = wheelBoxes.get(form);
+    const paint = () => { fill(); box?.render(); wbox?.render(); };
     fill();
     acctHooks.push(paint);
     // one quiet check that the session is still valid (profile current, points balance); a dead one = guest order.
@@ -911,6 +922,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       asked = true;
       acctApi('me', { session: s.token }).then((r) => {
         if (r.ok && r.profile) acctStore.save({ profile: r.profile });
+        if (r.ok) wbox?.set(r.wheel || null);
         if (r.ok && r.points) box?.set(r.points);
         else asked = false;
         paint();
@@ -993,6 +1005,39 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     ptsBoxes.set(form, ctl);
     return ctl;
   }
+  // ---- « Roue de la chance » discount at checkout (signed in, won on the wheel, claimed, not used, not expired) ----
+  function wheelBox(form) {
+    const box = document.createElement('div');
+    box.className = 'wheel-box';
+    box.hidden = true;
+    box.innerHTML = `
+      <p class="pts-head"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/></svg><span>Roue de la chance</span><strong class="wheel-val"></strong></p>
+      <label class="pts-use"><input type="checkbox" class="wheel-check" checked><span class="wheel-use-txt"></span></label>
+      <p class="wheel-hint" aria-live="polite"></p>`;
+    (form.querySelector('.cod-due') || form.querySelector('.cod-alert')).before(box);
+    const check = box.querySelector('.wheel-check');
+    let info = null;
+    const redraw = () => renderHooks.forEach((fn) => fn());
+    const ctl = {
+      info: () => info,
+      set(w) {
+        info = w && w.kind === 'remise' && w.state === 'active' && +w.value > 0 && +w.value <= 100 ? { ...w, value: +w.value } : null;
+        ctl.render(); redraw();
+      },
+      on: () => !!(info && acctStore.read() && check.checked),
+      pct: () => (ctl.on() ? info.value : 0),
+      render() {
+        box.hidden = !(acctStore.read() && info);
+        if (box.hidden) return;
+        box.querySelector('.wheel-val').textContent = `-${info.value}\u00a0%`;
+        box.querySelector('.wheel-use-txt').textContent = `Utiliser ma remise de -${info.value}\u00a0% sur les articles`;
+        box.querySelector('.wheel-hint').textContent = `${info.until ? `Valable jusqu’au ${info.until}, ` : ''}une seule commande. Non cumulable avec un code promo${check.checked && promo ? ` : le code ${promo} ne sera pas appliqué` : ''}.`;
+      },
+    };
+    check.addEventListener('change', redraw);
+    wheelBoxes.set(form, ctl);
+    return ctl;
+  }
   // the "Points fidélité -X DH" line, created once just above a summary's total line
   function ptsLine(totalStrong, cls) {
     const row = totalStrong?.closest('p');
@@ -1014,8 +1059,46 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     line.querySelector('strong').textContent = `-${formatDH(used)}`;
   }
 
+  // ---- « Roue de la chance »: the visitor's spin (signed token from the server), kept in this browser ----
+  // { token, slice, prize, at, claimBy, claimed, refused? }. The token is what proves the result: the browser
+  // can't change the prize (signature), and the server allows one claim per spin, account, e-mail and phone.
+  const WHEEL_KEY = 'kobg-wheel-v1';
+  const WHEEL_TOKEN = /^w1\.[A-Za-z0-9]{16}\.\d{1,2}\.[a-z0-9]{1,24}\.[0-9a-z]{6,10}\.[A-Za-z0-9_-]{43}$/;
+  const WHEEL_ERRORS = {
+    wheel_used: 'Ce lot a déjà été attribué à un autre compte.',
+    wheel_account: 'Votre compte a déjà reçu un lot de la Roue de la chance : un seul lot par personne.',
+    wheel_person: 'Un lot de la Roue de la chance a déjà été attribué avec cet e-mail ou ce numéro de téléphone : un seul lot par personne.',
+    wheel_expired: 'Ce tirage date de plus de 30 jours : le lot ne peut plus être réclamé.',
+    wheel_bad: 'Ce tirage n’est pas valable.',
+    wheel_off: 'La Roue de la chance est terminée pour le moment.',
+  };
+  const wheelStore = {
+    read() {
+      try {
+        const o = JSON.parse(localStorage.getItem(WHEEL_KEY) || 'null');
+        if (o && WHEEL_TOKEN.test(o.token) && o.prize && typeof o.prize === 'object') return o;
+      } catch (err) { /* blocked or corrupt */ }
+      return null;
+    },
+    save(o) { try { localStorage.setItem(WHEEL_KEY, JSON.stringify(o)); } catch (err) { /* private mode: this visit only */ } },
+    patch(x) { const o = this.read(); if (o) this.save({ ...o, ...x }); return o ? { ...o, ...x } : null; },
+    // a prize still to attach to an account (not yet claimed, not refused, claim window open)
+    pending() { const o = this.read(); return o && !o.claimed && !o.refused && (!o.claimBy || o.claimBy > Date.now()) ? o : null; },
+  };
+  // attach the stored prize to the signed-in account: { ok, wheel, balance } | { ok:false, error, message } | null (nothing to claim)
+  async function wheelClaim(session) {
+    const w = wheelStore.pending();
+    if (!w || !session) return null;
+    const r = await acctApi('wheel_claim', { session, token: w.token });
+    if (r.ok) { wheelStore.patch({ claimed: true }); return r; }
+    if (r.error === 'wheel_used' && r.mine) { wheelStore.patch({ claimed: true }); return { ok: true, already: true }; }
+    if (WHEEL_ERRORS[r.error]) wheelStore.patch({ refused: r.error });                    // final: not retried
+    return { ...r, message: WHEEL_ERRORS[r.error] || acctMsg(r) };
+  }
+
   window.KOBGAccount = Object.freeze({
     api: acctApi, store: acctStore, message: acctMsg, errors: ACCT_ERRORS,
+    wheel: Object.freeze({ store: wheelStore, claim: wheelClaim, errors: WHEEL_ERRORS }),
     phoneOK, phoneLocal, phonePretty, normPhone, esc, formatDH, firstName,
     available: () => !!orderEndpoint() && ORDER_ENDPOINT_FORMAT !== 'form',
   });
@@ -1061,6 +1144,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       submitTxt.textContent = on ? 'Envoi en cours…' : 'Confirmer la commande';
     };
     window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci.html
+    const wheel = wheelBox(form);
     const pts = pointsBox(form);
     acctOrderForm(form);
     form.addEventListener('submit', async (e) => {
@@ -1077,7 +1161,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         return;
       }
       if (val('kobg_hp')) { showAlert(ORDER_ERRORS.hp); return; }       // honeypot: bots fill every field
-      const t = calcTotals(order.sub);
+      const t = calcTotals(order.sub, form);
       const used = pts.apply(t.total);
       const payload = {
         orderId: newOrderId(),
@@ -1088,7 +1172,8 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         items: order.items,
         itemCount: order.items.reduce((n, it) => n + it.qty, 0),
         subtotal: t.sub,
-        promoCode: t.pct ? promo : '',
+        promoCode: t.pct && !t.wheel ? promo : '',
+        ...(t.wheel ? { wheel: true } : {}),
         discountPct: t.pct,
         discount: t.discount,
         delivery: t.shipping,
@@ -1107,6 +1192,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         if (bad) setErr(bad, 'Vérifiez ce champ.');
         if (res.error === 'bad_points' && res.balance != null && pts.info()) pts.set({ ...pts.info(), balance: res.balance });
         if (res.error === 'auth') acctStore.clear();
+        if (res.error === 'bad_wheel') wheel.set(null);
         showAlert(res.error === 'bad_points' && res.balance != null
           ? `Votre solde de points a changé : ${formatDH(Math.max(0, res.balance))} disponibles. Vérifiez le montant puis confirmez à nouveau.`
           : ORDER_ERRORS[res.error] || ORDER_ERRORS.network);
@@ -1121,7 +1207,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         items: Array.isArray(srv.items) ? srv.items : payload.items,
         subtotal: +srv.subtotal || 0, promoCode: srv.promoCode || '', discountPct: +srv.discountPct || 0,
         discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total, linked: srv.linked === true,
-        points: +srv.points || 0, balance: Number.isFinite(srv.balance) ? srv.balance : null,
+        points: +srv.points || 0, balance: Number.isFinite(srv.balance) ? srv.balance : null, wheel: +srv.wheel || 0,
       } : payload;
       try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !!res.test })); } catch (err) { /* private mode */ }
       onSuccess(done);
@@ -1145,7 +1231,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const coRender = () => {
       if (coLeaving) return;
       const qty = totalQty();
-      const t = totals();
+      const t = calcTotals(totalPrice(), $('codForm'));
       const wasEmpty = coGrid.hidden;
       coGrid.hidden = !qty;
       coEmpty.hidden = !!qty;
@@ -1156,7 +1242,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       $('coDiscLine').hidden = !t.pct;
       if (t.pct) {
         $('coDisc').textContent = `-${formatDH(t.discount)}`;
-        coSum.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = promo; });
+        coSum.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = t.code; });
         coSum.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
       }
       $('coShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
@@ -1215,7 +1301,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
           <span class="merci-item-qty">${esc(it.qty)} × ${formatDH(+it.unitPrice || 0)}</span><strong class="merci-item-total">${formatDH(+it.lineTotal || 0)}</strong></li>`).join('');
       $('merciTotals').innerHTML = `
         <p class="cart-line cart-line--sub"><span>Sous-total</span><strong>${formatDH(o.subtotal || 0)}</strong></p>
-        ${o.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${esc(o.promoCode)} (-${esc(o.discountPct)}&nbsp;%)</span><strong>-${formatDH(o.discount)}</strong></p>` : ''}
+        ${o.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${o.promoCode === 'ROUE' ? 'Roue de la chance' : esc(o.promoCode)} (-${esc(o.discountPct)}&nbsp;%)</span><strong>-${formatDH(o.discount)}</strong></p>` : ''}
         <p class="cart-line"><span>Livraison</span><strong>${o.delivery ? formatDH(o.delivery) : 'Offerte'}</strong></p>
         ${o.points ? `<p class="cart-line cod-line--pts"><span>Points fidélité</span><strong>-${formatDH(+o.points)}</strong></p>` : ''}
         <p class="cart-total"><span>À payer à la livraison</span><strong>${formatDH(o.total || 0)}</strong></p>`;
@@ -1879,7 +1965,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       const d = ppAddBtn.dataset;
       const size = ppSize();
       const qty = ppQtyVal();
-      const t = calcTotals(qty * (+d.price || 0));
+      const t = calcTotals(qty * (+d.price || 0), ppCod);
       const needSize = ppBuy?.hasAttribute('data-need-size');
       $c('codSel').innerHTML = `${esc(d.variant || '')}${needSize ? ` · ${size ? esc(size) : '<button type="button" class="cod-pick" id="codPick">Taille à choisir</button>'}` : ''}`;
       $c('codUnit').textContent = formatDH(+d.price || 0);
@@ -1888,7 +1974,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       $c('codDiscLine').hidden = !t.pct;
       if (t.pct) {
         $c('codDisc').textContent = `-${formatDH(t.discount)}`;
-        ppCod.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = promo; });
+        ppCod.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = t.code; });
         ppCod.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
       }
       $c('codShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';

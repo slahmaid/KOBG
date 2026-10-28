@@ -39,6 +39,7 @@
         <nav class="views" id="views" role="tablist" aria-label="Vue">
           <button type="button" role="tab" data-v="orders" aria-selected="true" class="on">Commandes</button>
           <button type="button" role="tab" data-v="clients" aria-selected="false">Clients<b id="clientsN" hidden></b></button>
+          <button type="button" role="tab" data-v="wheel" aria-selected="false">Roue<b id="giftsN" hidden></b></button>
         </nav></div>
       <button type="button" class="top-new" id="newBadge" hidden></button>
       <div class="top-sync" id="sync" aria-live="polite"><span class="dot"></span><span id="syncTxt">Chargement…</span></div>
@@ -128,6 +129,12 @@
         <div class="empty" id="cempty" hidden></div>
       </div>
       <div class="pager" id="cpager"></div>
+    </section>
+
+    <!-- ============ ROUE DE LA CHANCE (spins, claims, gifts to hand over) ============ -->
+    <section class="board wboard" id="wheelBoard" aria-label="Roue de la chance" hidden>
+      <div class="tools"><div class="cstats" id="wstats"></div></div>
+      <div id="wbody"></div>
     </section>
   </div>
 

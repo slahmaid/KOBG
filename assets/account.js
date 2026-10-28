@@ -168,11 +168,13 @@
     });
   });
 
-  function signedIn(res, remember, msg) {
+  async function signedIn(res, remember, msg) {
     A.store.save(res, remember);
-    if (retour) { location.href = retour; return; }
-    openDash(true);
-    say(msg);
+    // a prize won on the wheel in this browser is attached to the account now (the server checks it can be)
+    const claim = await A.wheel.claim(res.session);
+    if (retour && !(claim && claim.ok && !claim.already)) { location.href = retour; return; }
+    openDash(true, claim);
+    say(claim && claim.ok && !claim.already ? `${msg} Votre lot de la Roue de la chance a été ajouté à votre compte.` : msg);
   }
 
   // ---------- signed out ----------
@@ -180,7 +182,7 @@
     const res = await A.api('login', { email: v('email'), password: f.elements.password.value, remember: f.elements.remember.checked });
     if (!res.ok) { refuse(res, ui); if (res.error === 'bad_login') f.elements.password.select(); return; }
     f.reset(); ui.reset();
-    signedIn(res, f.elements.remember.checked, 'Vous êtes connecté.');
+    await signedIn(res, f.elements.remember.checked, 'Vous êtes connecté.');
   }, 'Se connecter');
 
   wire(forms.signup, async (v, ui, f) => {
@@ -191,7 +193,7 @@
     if (!res.ok) { refuse(res, ui); if (res.error === 'email_taken') ui.field('email', 'Un compte existe déjà avec cet e-mail.'); return; }
     const remember = f.elements.remember.checked;
     f.reset(); ui.reset();
-    signedIn(res, remember, 'Compte créé, vous êtes connecté.');
+    await signedIn(res, remember, 'Compte créé, vous êtes connecté.');
   }, 'Créer mon compte');
 
   wire(forms.forgot, async (v, ui) => {
@@ -206,7 +208,7 @@
     if (!res.ok) { refuse(res, ui); return; }
     resetToken = '';
     f.reset(); ui.reset();
-    signedIn(res, true, 'Nouveau mot de passe enregistré, vous êtes connecté.');
+    await signedIn(res, true, 'Nouveau mot de passe enregistré, vous êtes connecté.');
   }, 'Enregistrer et me connecter');
 
   // ---------- signed in ----------
@@ -328,16 +330,50 @@
     msg.innerHTML = 'Aucune commande pour l’instant. <a href="gants.html">Découvrir les gants</a>';
   }
 
-  function openDash(focus) {
+  // ---------- « Roue de la chance » ----------
+  const WHEEL_STATE = {
+    credited: (w) => [`${w.label} crédités`, `Ajoutés à votre solde de points${w.claimed ? ` le ${w.claimed}` : ''} : à utiliser sur une prochaine commande.`],
+    active: (w) => [`-${w.value} % sur votre prochaine commande`, `Valable jusqu’au ${w.until}, pour une seule commande, sur le prix des articles (hors livraison). Non cumulable avec un code promo. La remise vous est proposée automatiquement au moment de commander, une fois connecté.`],
+    used: (w) => [`Remise -${w.value} % utilisée`, w.order ? `Appliquée à la commande ${w.order}.` : 'Déjà appliquée à une commande.'],
+    expired: (w) => [`Remise -${w.value} % expirée`, `Elle était valable jusqu’au ${w.until}.`],
+    pending: (w) => [`Cadeau : ${w.label}`, 'Notre équipe vous contacte pour convenir du modèle, de la taille et de la remise de votre cadeau (avec votre prochaine commande ou par livraison). Offert, sans frais.'],
+    given: (w) => [`Cadeau : ${w.label}`, 'Votre cadeau vous a été remis. Merci et bon entraînement !'],
+  };
+  function paintWheel(w, claim) {
+    const card = $('wheelCard'), body = $('wheelBody');
+    const err = claim && !claim.ok && claim.message ? claim.message : '';
+    card.hidden = !w && !err;
+    if (card.hidden) return;
+    let html = '';
+    if (w) {
+      const [h, p] = (WHEEL_STATE[w.state] || WHEEL_STATE.credited)(w);
+      html = `<p class="acct-wheel-prize acct-wheel-prize--${A.esc(w.state)}"><strong>${A.esc(h)}</strong></p><p class="acct-wheel-txt">${A.esc(p)}</p>${w.state === 'active' ? '<p class="acct-wheel-cta"><a class="acct-wheel-go" href="gants.html">Choisir mes gants</a></p>' : ''}`;
+    }
+    if (err) html += `<p class="acct-wheel-err">${w ? 'Dernier tirage non ajouté : ' : ''}${A.esc(err)}</p>`;
+    body.innerHTML = html;
+  }
+  // signed-out forms: the stored prize will be attached at sign-in / sign-up
+  function paintWheelNote() {
+    const w = A.wheel.store.pending();
+    root.querySelectorAll('.js-wheel-note').forEach((el) => {
+      el.hidden = !w;
+      if (w) el.textContent = `🎁 Votre lot de la Roue de la chance « ${w.prize.label} » sera ajouté automatiquement à votre compte (nouveau compte, ou compte qui n’a encore reçu aucun lot).`;
+    });
+  }
+  paintWheelNote();
+
+  async function openDash(focus, claimed) {
     const s = A.store.read();
     if (!s) { show('login', focus); return; }
     fillProfile(s.profile);
     show('dash', focus);
     loadOrders();
+    // a prize still waiting in this browser (already signed in when it was won): attach it first
+    const claim = claimed !== undefined ? claimed : await A.wheel.claim(s.token);
     loadPoints();
     // fresh profile (the team may have corrected it in the sheet); a dead session falls back to the sign-in form
     A.api('me', { session: s.token }).then((r) => {
-      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); paintPoints(r.points); }
+      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); paintPoints(r.points); paintWheel(r.wheel || null, claim); }
       else if (r.error === 'auth') lost();
     });
   }

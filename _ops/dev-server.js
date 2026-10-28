@@ -46,6 +46,15 @@ http.createServer((req, res) => {
     return;
   }
   if (url.pathname === '/__mails') return send(res, 200, 'application/json', JSON.stringify(backend.mails));
+  // DEV ONLY (this preview, never the real script): /__wheel?slice=8 makes the NEXT spin land on slice 8 (tests and
+  // screenshots); the draw itself stays the script's (signed token, same claim rules)
+  if (url.pathname === '/__wheel') {
+    const i = Number(url.searchParams.get('slice'));
+    if (!Number.isInteger(i) || i < 0 || i > 9) return send(res, 400, 'application/json', '{"ok":false}');
+    if (!backend.ctx.__pick) backend.ctx.__pick = backend.ctx.wheelPick_;
+    backend.ctx.wheelPick_ = function (r, ppm) { backend.ctx.wheelPick_ = backend.ctx.__pick; return i; };
+    return send(res, 200, 'application/json', JSON.stringify({ ok: true, next: i }));
+  }
   if (url.pathname === '/__dev.js') return send(res, 200, TYPES['.js'], DEV_JS);
   if (url.pathname === '/' ) { res.writeHead(302, { Location: '/KOBG/' }); return res.end(); }
 

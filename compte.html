@@ -114,6 +114,7 @@
         <form class="cod cod--panel acct-form" id="loginForm" role="tabpanel" aria-labelledby="tabLogin" novalidate>
           <div class="cod-head">
             <h2 class="cod-h" tabindex="-1">Connexion</h2>
+            <p class="acct-wheel-note js-wheel-note" hidden></p>
           </div>
           <fieldset class="cod-fields">
             <legend class="sr-only">Vos identifiants</legend>
@@ -144,6 +145,7 @@
           <div class="cod-head">
             <h2 class="cod-h" tabindex="-1">Créer un compte</h2>
             <p class="cod-intro">Vos coordonnées seront pré-remplies à chaque commande et vous suivrez vos commandes ici. Le paiement reste à la livraison.</p>
+            <p class="acct-wheel-note js-wheel-note" hidden></p>
           </div>
           <fieldset class="cod-fields">
             <legend class="sr-only">Vos informations</legend>
@@ -259,6 +261,15 @@
       </section>
 
       <div class="acct-side">
+        <section class="pp-card acct-wheel" id="wheelCard" aria-labelledby="wheelH" hidden>
+          <div class="acct-card-head">
+            <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span><span>Roue de la chance</span></p>
+            <h2 class="pp-card-h" id="wheelH">Mon lot</h2>
+          </div>
+          <div class="acct-wheel-body" id="wheelBody" aria-live="polite"></div>
+          <p class="acct-muted acct-small">Un seul lot par personne, sans valeur monétaire. <a href="reglement-jeu.html">Règlement du jeu</a></p>
+        </section>
+
         <section class="pp-card acct-points" id="pointsCard" aria-labelledby="pointsH">
           <div class="acct-card-head">
             <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span><span>Programme fidélité</span></p>

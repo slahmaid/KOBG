@@ -18,10 +18,13 @@
      session tokens, lock after 5 wrong passwords, password reset by e-mail (see "customer accounts");
    - loyalty points (onglet « Points », see "loyalty points"): the balance is the sum of a ledger
      written only here, under the script lock; points used at checkout are checked against it
-     (never the browser's figure), credited / reverted / refunded when the admin changes a status. */
+     (never the browser's figure), credited / reverted / refunded when the admin changes a status;
+   - « Roue de la chance » (onglet « Roue », see "prize wheel"): the result is drawn HERE with a
+     cryptographic random source and handed out as an HMAC-signed token; a prize can be claimed once
+     per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-28.2';
+const VERSION = '2026-10-28.3';
 const SITE_URL = 'https://slahmaid.github.io/KOBG/';            // where the shop is published
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -91,7 +94,7 @@ function order_(b) {
   if (priced.error) return fail_(priced.error, priced.data);
   const lines = priced.lines;
 
-  const t = totals_(lines.reduce((n, l) => n + l.lineTotal, 0), b.promoCode);
+  let t = totals_(lines.reduce((n, l) => n + l.lineTotal, 0), b.promoCode);
   const units = lines.reduce((n, l) => n + l.qty, 0);
   const warn = [];
   if (!cat) warn.push('⚠ Prix NON vérifiés (catalogue du site injoignable) : contrôlez le total avant d’expédier.');
@@ -105,6 +108,9 @@ function order_(b) {
   // (unless points were asked for: those need the account, so the browser is told to sign in again)
   const acct = b.session ? session_(b.session) : null;
   if (want && !acct) return fail_('auth');
+  // « Roue de la chance » discount: { wheel: true } asks for the account's won discount (checked in the lock)
+  const wantWheel = b.wheel === true;
+  if (wantWheel && !acct) return fail_('auth');
   const acctNote = acct ? ['Client connecté : ' + acct.user.email + (acct.user.adresse ? ' · adresse enregistrée : ' + acct.user.adresse
     + (acct.user.ville ? ', ' + acct.user.ville : '') : '')] : [];
 
@@ -136,6 +142,20 @@ function order_(b) {
     const nAll = Number(cache.get('rl:all') || 0);
     if (nAll >= LIMITS.global) return fail_('busy');
 
+    // wheel discount: read INSIDE the lock too, so it can only be used by one order
+    const W = acct ? wheelRows_(ss) : null;
+    let wheelRow = null;
+    if (wantWheel) {
+      wheelRow = wheelActive_(W.rows, acct.user.id);
+      if (!wheelRow) return fail_('bad_wheel');
+      if (t.pct) warn.push('Code promo ' + t.code + ' non appliqué : remise « Roue de la chance » utilisée (non cumulable).');
+      t = totals_(t.sub, '', wheelRow.value);
+    }
+    if (acct) {
+      const gift = W.rows.filter((r) => r.client === acct.user.id && r.kind === 'cadeau' && r.status !== WS.given)[0];
+      if (gift) acctNote.push('🎁 Cadeau « Roue de la chance » à remettre à ce client : ' + gift.label + ' (marquez-le « remis » dans sa fiche client).');
+    }
+
     // points: read the balance INSIDE the lock, so two orders can't spend the same points
     let used = 0, ledger = null;
     if (want) {
@@ -148,6 +168,7 @@ function order_(b) {
     const paid = t.total - used;             // what the courier collects (and what counts for future points)
     if (Number(b.total) !== paid) warn.push('⚠ Total recalculé par le serveur : ' + paid + ' DH (le navigateur annonçait ' + clean_(b.total, 12) + ' DH).');
     if (used) acctNote.push('Points fidélité utilisés : ' + used + ' DH (déjà déduits du total à encaisser).');
+    if (wheelRow) acctNote.push('Remise « Roue de la chance » -' + wheelRow.value + ' % sur les articles (tirage ' + wheelRow.spin + ').');
 
     const now = new Date();
     const recu = fmt_(now, 'dd/MM/yyyy HH:mm');
@@ -162,6 +183,7 @@ function order_(b) {
     if (acct) put(acctCol_(sh, true), "'" + acct.user.id);
     if (used) put(extraCol_(sh, ORDER_PTS_COL, true), used);
     sh.appendRow(row);
+    if (wheelRow) wheelWrite_(W, wheelRow, { status: WS.used, order: id, note: 'Utilisée sur la commande ' + id });
     let balance = null;
     if (used) balance = addPoints_(ledger, { client: acct.user, order: id, type: 'utilisation', pts: -used, motif: 'Utilisés sur la commande ' + id }).balance;
     else if (acct) balance = pointsOf_(ledger_(ss), acct.user.id).balance;
@@ -172,7 +194,8 @@ function order_(b) {
     cache.put(kTel, String(nTel + 1), LIMITS.perPhoneSec);
     cache.put('rl:all', String(nAll + 1), LIMITS.globalSec);
     reply = { orderId: id, items: lines, subtotal: t.sub, promoCode: t.pct ? t.code : '', discountPct: t.pct,
-      discount: t.discount, delivery: t.delivery, points: used, total: paid, adjusted: warn.length > 0, linked: !!acct };
+      discount: t.discount, delivery: t.delivery, points: used, total: paid, adjusted: warn.length > 0, linked: !!acct,
+      wheel: wheelRow ? wheelRow.value : 0 };
     if (balance != null) reply.balance = balance;
   } finally {
     lock.releaseLock();
@@ -219,10 +242,10 @@ function lines_(items, cat) {
   return { lines: out };
 }
 
-// same rule as calcTotals() in script.js
-function totals_(sub, promoCode) {
-  const code = String(promoCode || '').trim().toUpperCase().replace(/\s+/g, '');
-  const pct = code && has(PROMO_CODES, code) ? Number(PROMO_CODES[code]) || 0 : 0;
+// same rule as calcTotals() in script.js; wheelPct (a won « Roue de la chance » discount) replaces the promo code
+function totals_(sub, promoCode, wheelPct) {
+  const code = wheelPct > 0 ? WHEEL_CODE : String(promoCode || '').trim().toUpperCase().replace(/\s+/g, '');
+  const pct = wheelPct > 0 ? wheelPct : code && has(PROMO_CODES, code) ? Number(PROMO_CODES[code]) || 0 : 0;
   const discount = Math.round(sub * pct / 100);
   const delivery = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
   return { code: code, sub: sub, pct: pct, discount: discount, delivery: delivery, total: sub - discount + delivery };
@@ -271,7 +294,7 @@ function parseCatalog_(text) {
 // ---------- admin ----------
 function admin_(b, ctx) {
   const action = String(b.action);
-  if (['auth', 'list', 'stats', 'update', 'points', 'points_adjust', 'clients', 'client'].indexOf(action) < 0) return fail_('bad_action');
+  if (['auth', 'list', 'stats', 'update', 'points', 'points_adjust', 'clients', 'client', 'wheel', 'wheel_gift'].indexOf(action) < 0) return fail_('bad_action');
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
   if (!key) return fail_('no_admin_key', { reason: 'missing', min: LIMITS.adminKeyMin });
@@ -307,6 +330,8 @@ function admin_(b, ctx) {
   if (action === 'points_adjust') return adjustPoints_(b);
   if (action === 'clients') return adminClients_();
   if (action === 'client') return adminClient_(b);
+  if (action === 'wheel') return adminWheel_();
+  if (action === 'wheel_gift') return wheelGift_(b);
   const orders = readOrders_();
   const now = Date.now();
   if (action === 'stats') {
@@ -367,7 +392,7 @@ function update_(b) {
     const ex = extras_(sh);
     const v = sh.getRange(at + 2, 1, 1, ex.width).getValues()[0];
     // loyalty points follow the status (idempotent: the ledger already says what this order did)
-    const moves = hasStatus ? syncPoints_(ss, v, ex, r.statut) : [];
+    const moves = hasStatus ? syncPoints_(ss, v, ex, r.statut).concat(wheelSync_(ss, v, ex, r.statut)) : [];
     moves.forEach((m) => r.hist.push({ at: when, note: m, by: 'serveur' }));
     writeGestion_(g, r);
     const o = toOrder_(v, at + 2, r, ex, ledger_(ss));
@@ -440,7 +465,7 @@ const CLIENT_HEAD = ['ID client', 'E-mail', 'Nom', 'Téléphone', 'Adresse', 'Vi
   'Dernière connexion', 'Sel', 'Empreinte', 'Itérations'];
 const C = { id: 0, email: 1, nom: 2, tel: 3, adresse: 4, ville: 5, cree: 6, maj: 7, vu: 8, sel: 9, hash: 10, iter: 11 };
 const ACCOUNT_ACTIONS = ['register', 'login', 'logout', 'me', 'update_profile', 'change_password', 'my_orders', 'my_points',
-  'reset_request', 'reset_confirm'];
+  'reset_request', 'reset_confirm', 'wheel_spin', 'wheel_claim'];
 const ACCT = {
   iter: 5000, pwMin: 8, pwMax: 128,
   session: 30 * 86400, sessionShort: 86400, reset: 3600, maxSessions: 10,
@@ -460,6 +485,7 @@ function account_(b) {
   if (a === 'login') return login_(b);
   if (a === 'reset_request') return resetRequest_(b);
   if (a === 'reset_confirm') return resetConfirm_(b);
+  if (a === 'wheel_spin') return wheelSpin_(b);            // public: no account needed to play
   if (a === 'logout') {                     // { all: true } = every device of this account
     const h = tokenHash_(b.session);
     if (!h) return ok_({});
@@ -470,7 +496,11 @@ function account_(b) {
   }
   const s = session_(b.session);
   if (!s) return fail_('auth');
-  if (a === 'me') return ok_({ profile: profile_(s.user), points: summary_(pointsOf_(ledger_(book_()), s.user.id)) });
+  if (a === 'me') {
+    const ss = book_();
+    return ok_({ profile: profile_(s.user), points: summary_(pointsOf_(ledger_(ss), s.user.id)), wheel: wheelOf_(wheelRows_(ss).rows, s.user.id) });
+  }
+  if (a === 'wheel_claim') return wheelClaim_(s, b);
   if (a === 'my_points') {
     const p = pointsOf_(ledger_(book_()), s.user.id);
     return ok_({ points: summary_(p), history: p.rows.slice(-PTS.history).reverse().map(historyLine_) });
@@ -967,6 +997,7 @@ const USE_TYPES = ['utilisation', 'remboursement'];   // points spent on an orde
 const PTS_LABELS = {                                   // what the customer sees (the team's « Motif » stays internal)
   gain: 'Commande livrée', retrait: 'Commande retournée ou annulée : achat décompté',
   utilisation: 'Utilisés sur une commande', remboursement: 'Points rendus (commande annulée ou retournée)',
+  roue: 'Roue de la chance',
 };
 
 function pointsSheet_(ss) {
@@ -1060,10 +1091,11 @@ function syncPoints_(ss, v, ex, status) {
   return out;
 }
 // admin view of one customer: profile, balance, latest ledger lines with the team's motif
-function clientInfo_(L, user, limit) {
+function clientInfo_(L, user, limit, wheel) {
   const p = pointsOf_(L, user.id);
   return Object.assign({ id: user.id, email: user.email || '', nom: user.nom || '', gone: !!user.gone }, summary_(p), {
     history: p.rows.slice(-(limit || PTS.adminHistory)).reverse().map((r) => Object.assign(historyLine_(r), { motif: r.motif, solde: r.bal })),
+    wheel: wheel ? wheelOf_(wheel, user.id, true) : null,
   });
 }
 // the customers behind a list of orders (admin 'list' / 'update')
@@ -1073,9 +1105,10 @@ function clientsOf_(orders) {
   if (!Object.keys(ids).length) return {};
   const ss = book_();
   const L = ledger_(ss);
+  const W = wheelRows_(ss).rows;
   const out = {};
-  users_(clientsSheet_(ss)).forEach((u) => { if (ids[u.id]) out[u.id] = clientInfo_(L, u); });
-  Object.keys(ids).forEach((id) => { if (!out[id]) out[id] = clientInfo_(L, { id: id, email: '', nom: '', gone: true }); });
+  users_(clientsSheet_(ss)).forEach((u) => { if (ids[u.id]) out[u.id] = clientInfo_(L, u, 0, W); });
+  Object.keys(ids).forEach((id) => { if (!out[id]) out[id] = clientInfo_(L, { id: id, email: '', nom: '', gone: true }, 0, W); });
   return out;
 }
 function adminPoints_(b) {
@@ -1083,7 +1116,7 @@ function adminPoints_(b) {
   const ss = book_();
   const user = uid && users_(clientsSheet_(ss)).filter((u) => u.id === uid)[0];
   if (!user) return fail_('not_found');
-  return ok_({ client: clientInfo_(ledger_(ss), user) });
+  return ok_({ client: clientInfo_(ledger_(ss), user, 0, wheelRows_(ss).rows) });
 }
 // manual correction from the admin panel: whole points, + or -, with a reason (kept in « Motif »)
 function adjustPoints_(b) {
@@ -1101,7 +1134,7 @@ function adjustPoints_(b) {
     if (!user) return fail_('not_found');
     const L = ledger_(ss);
     addPoints_(L, { client: user, order: order, type: 'ajustement', pts: delta, motif: 'Ajustement admin : ' + reason });
-    return ok_({ client: clientInfo_(L, user) });
+    return ok_({ client: clientInfo_(L, user, 0, wheelRows_(ss).rows) });
   } finally {
     lock.releaseLock();
   }
@@ -1137,6 +1170,7 @@ function adminClients_() {
   const users = users_(clientsSheet_(ss));
   const L = ledger_(ss);
   const byOrders = ordersByClient_(ss);
+  const W = wheelRows_(ss).rows;
   const sums = {};
   L.rows.forEach((r) => {
     const t = sums[r.client] = sums[r.client] || { balance: 0, spend: 0, earned: 0, moves: 0 };
@@ -1146,10 +1180,11 @@ function adminClients_() {
   const row = (u) => {
     const t = sums[u.id] || { balance: 0, spend: 0, earned: 0, moves: 0 };
     const os = byOrders[u.id] || [];
-    const last = os.reduce((m, o) => (o.ts > (m ? m.ts : -1) ? o : m), null);
+    const last = os.reduce((m, o) => (o.ts >= (m ? m.ts : -1) ? o : m), null);
     return Object.assign(adminProfile_(u), summary_(t), { moves: t.moves, orders: os.length,
       active: os.filter((o) => o.statut !== 'Annulée' && o.statut !== 'Retournée').length,
-      lastOrder: last ? last.recu : '', lastOrderTs: last ? last.ts : 0, lastOrderId: last ? last.id : '' });
+      lastOrder: last ? last.recu : '', lastOrderTs: last ? last.ts : 0, lastOrderId: last ? last.id : '',
+      wheel: wheelOf_(W, u.id, true) });
   };
   const known = {};
   const list = users.map((u) => { known[u.id] = 1; return row(u); });
@@ -1176,7 +1211,280 @@ function adminClient_(b) {
     user = { id: uid, email: (mine[0] || {}).email || '', nom: '', gone: true };
   }
   os.forEach((o) => { const p = orderPoints_(L, o.id); o.pointsEarned = p.earned; });
-  return ok_({ profile: adminProfile_(user), client: clientInfo_(L, user, PTS.clientHistory), orders: os });
+  return ok_({ profile: adminProfile_(user), client: clientInfo_(L, user, PTS.clientHistory, wheelRows_(ss).rows), orders: os });
+}
+
+// ---------- prize wheel (« Roue de la chance ») ----------
+// One spin per visitor, drawn HERE (the browser only animates the answer):
+// - the draw uses Utilities.getUuid() (Java's UUID.randomUUID, a SecureRandom source) through SHA-256,
+//   with rejection sampling, so every one of the 1 000 000 « tickets » is equally likely;
+// - the result goes back as a token « w1.<spin>.<slice>.<prize>.<time>.<HMAC-SHA256> » signed with the
+//   WHEEL_SECRET script property (created by setup() or at the first spin): the browser keeps it and
+//   shows the same result on every visit; an edited token fails the signature;
+// - claim (signed-in customer): one claim per spin, per account, per e-mail and per phone number,
+//   checked in the « Roue » tab under the script lock. Points go to the loyalty ledger (type « roue »),
+//   a discount becomes a one-time, 30-day discount checked again at checkout, a gift waits in the
+//   customer's file for the team (« À remettre » -> « Remis »).
+// Clearing the browser's storage gives a new SPIN, never a second PRIZE: the claim is what is unique.
+//
+// ODDS: one line per slice, in %, clockwise from the pointer (top). They must add up to exactly 100
+// and none may be 0 (else the wheel refuses to spin: wheel_off). A prize on two slices has its odds split
+// between them. Keep « slices » in the SAME ORDER as SLICES in assets/wheel.js, and the list of prizes
+// (« Lots », article 4) in reglement-jeu.html in sync.
+const WHEEL = {
+  on: true,                               // false = the wheel answers wheel_off (the site hides it)
+  slices: [
+    { key: 'pts10',      label: '10 points',           kind: 'points', value: 10,  odds: 24.1575 },
+    { key: 'gant',       label: 'Gants de sac Rival RB10 Intelli-Shock Noir/Rouge', kind: 'cadeau', value: 0,   odds: 0.01 },
+    { key: 'pts25',      label: '25 points',           kind: 'points', value: 25,  odds: 24.1575 },
+    { key: 'pts50',      label: '50 points',           kind: 'points', value: 50,  odds: 1.665 },
+    { key: 'pct50',      label: '50 % de réduction',   kind: 'remise', value: 50,  odds: 0.01 },
+    { key: 'pts10',      label: '10 points',           kind: 'points', value: 10,  odds: 24.1575 },
+    { key: 'protecteur', label: 'Protecteur corporel Rival (Body Shield)', kind: 'cadeau', value: 0,   odds: 0.01 },
+    { key: 'pts25',      label: '25 points',           kind: 'points', value: 25,  odds: 24.1575 },
+    { key: 'pct20',      label: '20 % de réduction',   kind: 'remise', value: 20,  odds: 1.665 },
+    { key: 'pts100',     label: '100 points',          kind: 'points', value: 100, odds: 0.01 },
+  ],
+  claimDays: 30,        // a spin can be claimed (account created / signed in) up to 30 days later
+  discountDays: 30,     // a won discount is valid 30 days after the claim, for ONE order
+  perHour: 400,         // spins per hour for the whole site (brake against scripted spinning)
+};
+const WHEEL_CODE = 'ROUE';                // « Code promo » column of an order that used a wheel discount
+const SHEET_WHEEL = 'Roue';
+const WHEEL_HEAD = ['Réclamé le', 'ID tirage', 'Tiré le', 'Lot', 'Code lot', 'Type', 'Valeur', 'ID client', 'E-mail', 'Téléphone',
+  'Valable jusqu’au', 'Statut', 'Commande', 'Mis à jour le', 'Note'];
+const WC = { at: 0, spin: 1, drawn: 2, label: 3, key: 4, kind: 5, value: 6, client: 7, email: 8, tel: 9, until: 10, status: 11, order: 12, maj: 13, note: 14 };
+const WS = { credited: 'Crédité', toUse: 'À utiliser', used: 'Utilisée', toGive: 'À remettre', given: 'Remis' };
+const SPIN_RE = /^w1\.([A-Za-z0-9]{16})\.(\d{1,2})\.([a-z0-9]{1,24})\.([0-9a-z]{6,10})\.([A-Za-z0-9_-]{43})$/;
+
+// odds -> integer « tickets » out of 1 000 000 per slice, or null when the config is invalid
+function wheelOdds_() {
+  const ppm = WHEEL.slices.map((s) => Math.round(Number(s.odds) * 10000));
+  const total = ppm.reduce((a, b) => a + b, 0);
+  return total === 1000000 && ppm.every((p) => p > 0) ? ppm : null;
+}
+// ticket r in [0, 1e6) -> slice index
+function wheelPick_(r, ppm) {
+  let acc = 0;
+  for (let i = 0; i < ppm.length; i++) { acc += ppm[i]; if (r < acc) return i; }
+  return ppm.length - 1;
+}
+// uniform integer in [0, n), n <= 2^32: 32 bits of SHA-256(two random UUIDs), rejection sampling (no modulo bias)
+function randBelow_(n) {
+  const lim = Math.floor(4294967296 / n) * n;
+  for (;;) {
+    const d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid() + Utilities.getUuid(), Utilities.Charset.UTF_8);
+    const x = (((d[0] & 255) * 16777216) + ((d[1] & 255) << 16) + ((d[2] & 255) << 8) + (d[3] & 255)) >>> 0;
+    if (x < lim) return x % n;
+  }
+}
+function wheelSecret_(create) {
+  const props = PropertiesService.getScriptProperties();
+  let s = props.getProperty('WHEEL_SECRET') || '';
+  if (s.length < 32 && create) { s = rand_() + rand_(); props.setProperty('WHEEL_SECRET', s); }
+  return s.length >= 32 ? s : '';
+}
+function wheelSign_(secret, body) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature('kobg-wheel:' + body, secret)).replace(/=+$/, '');
+}
+function wheelToken_(secret, sp) {
+  const body = ['w1', sp.id, sp.i, sp.key, sp.t.toString(36)].join('.');
+  return body + '.' + wheelSign_(secret, body);
+}
+// a token from the browser -> { id, i, key, t, slice } when the signature is right, else null
+function wheelRead_(token) {
+  const m = typeof token === 'string' ? SPIN_RE.exec(token) : null;
+  if (!m) return null;
+  const secret = wheelSecret_(false);
+  if (!secret) return null;
+  if (!safeEq_(m[5], wheelSign_(secret, token.slice(0, token.lastIndexOf('.'))))) return null;
+  const i = Number(m[2]);
+  // the prize is the one that was drawn, even if the slices were reordered since
+  const slice = WHEEL.slices[i] && WHEEL.slices[i].key === m[3] ? WHEEL.slices[i] : WHEEL.slices.filter((s) => s.key === m[3])[0];
+  if (!slice) return null;
+  return { id: m[1], i: WHEEL.slices.indexOf(slice), key: m[3], t: parseInt(m[4], 36), slice: slice };
+}
+function wheelReply_(token, sp, claimed) {
+  const s = sp.slice;
+  return { token: token, slice: sp.i, prize: { key: s.key, label: s.label, kind: s.kind, value: s.value },
+    at: sp.t, claimBy: sp.t + WHEEL.claimDays * 864e5, claimed: !!claimed, discountDays: WHEEL.discountDays };
+}
+
+// { token? } -> the visitor's result: the same one again for a valid token, else a new draw
+function wheelSpin_(b) {
+  const ppm = wheelOdds_();
+  if (!ppm) console.error('WHEEL : les probabilités doivent faire 100 % au total, sans case à 0.');
+  if (!WHEEL.on || !ppm) return fail_('wheel_off');
+  if (b.token != null) {
+    const sp = wheelRead_(b.token);
+    if (sp) return ok_(Object.assign(wheelReply_(b.token, sp, wheelRows_(book_()).rows.some((r) => r.spin === sp.id)), { again: true }));
+  }
+  const cache = CacheService.getScriptCache();
+  const hk = 'wh:h:' + Math.floor(Date.now() / 3600000);
+  const n = Number(cache.get(hk) || 0);
+  if (n >= WHEEL.perHour) return fail_('busy');
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return fail_('busy');
+  let token, sp;
+  try {
+    const secret = wheelSecret_(true);
+    const i = wheelPick_(randBelow_(1000000), ppm);
+    let id = '';
+    while (id.length < 16) id += rand_().replace(/[^A-Za-z0-9]/g, '');
+    sp = { id: id.slice(0, 16), i: i, key: WHEEL.slices[i].key, t: Date.now(), slice: WHEEL.slices[i] };
+    token = wheelToken_(secret, sp);
+    // spin counters (claims are in the « Roue » tab): { n, by: { prizeKey: n }, since }
+    const props = PropertiesService.getScriptProperties();
+    const st = parse_(props.getProperty('WHEEL_STATS')) || {};
+    const by = st.by && typeof st.by === 'object' ? st.by : {};
+    by[sp.key] = (Number(by[sp.key]) || 0) + 1;
+    props.setProperty('WHEEL_STATS', JSON.stringify({ n: (Number(st.n) || 0) + 1, by: by, since: Number(st.since) || Date.now() }));
+    cache.put(hk, String(n + 1), 3700);
+  } finally {
+    lock.releaseLock();
+  }
+  return ok_(wheelReply_(token, sp, false));
+}
+
+// { token, session } -> the prize goes to the signed-in account (once per spin / account / e-mail / phone)
+function wheelClaim_(s, b) {
+  if (!WHEEL.on) return fail_('wheel_off');
+  const sp = wheelRead_(b.token);
+  if (!sp) return fail_('wheel_bad');
+  if (Date.now() - sp.t > WHEEL.claimDays * 864e5) return fail_('wheel_expired');
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const ss = book_();
+    const W = wheelRows_(ss, true);
+    const u = s.user;
+    if (W.rows.some((r) => r.spin === sp.id)) return fail_('wheel_used', { mine: W.rows.some((r) => r.spin === sp.id && r.client === u.id) });
+    if (W.rows.some((r) => r.client === u.id)) return fail_('wheel_account');
+    if (W.rows.some((r) => (r.email && r.email === u.email) || (u.tel && r.tel === u.tel))) return fail_('wheel_person');
+    const p = sp.slice;
+    const now = new Date();
+    const until = p.kind === 'remise' ? new Date(now.getTime() + WHEEL.discountDays * 864e5) : '';
+    const status = p.kind === 'points' ? WS.credited : p.kind === 'remise' ? WS.toUse : WS.toGive;
+    const r = { row: W.sh.getLastRow() + 1, at: now, spin: sp.id, drawn: new Date(sp.t), label: p.label, key: p.key, kind: p.kind,
+      value: p.value, client: u.id, email: u.email, tel: u.tel, until: until, status: status, order: '', maj: now, note: '' };
+    W.sh.appendRow([now, "'" + r.spin, r.drawn, cell_(r.label), r.key, r.kind, r.value, "'" + u.id, cell_(u.email), "'" + (u.tel || ''),
+      until, status, '', now, '']);
+    W.rows.push(r);
+    let balance = null;
+    if (p.kind === 'points') balance = addPoints_(ledger_(ss), { client: u, type: 'roue', pts: p.value, motif: 'Roue de la chance : ' + p.label + ' (tirage ' + sp.id + ')' }).balance;
+    const out = { wheel: wheelOf_(W.rows, u.id) };
+    if (balance != null) out.balance = balance;
+    return ok_(out);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function wheelSheet_(ss) {
+  let sh = ss.getSheetByName(SHEET_WHEEL);
+  if (!sh) sh = ss.insertSheet(SHEET_WHEEL);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, WHEEL_HEAD.length).setValues([WHEEL_HEAD]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+// the claims: { sh, rows } (sh is null when the tab doesn't exist yet and create is false)
+function wheelRows_(ss, create) {
+  const sh = create ? wheelSheet_(ss) : ss.getSheetByName(SHEET_WHEEL);
+  if (!sh || sh.getLastRow() < 2) return { sh: sh, rows: [] };
+  const q = (v) => str_(v).replace(/^'/, '');
+  return { sh: sh, rows: sh.getRange(2, 1, sh.getLastRow() - 1, WHEEL_HEAD.length).getValues().map((v, i) => ({
+    row: i + 2, at: v[WC.at], spin: q(v[WC.spin]), drawn: v[WC.drawn], label: str_(v[WC.label]), key: str_(v[WC.key]),
+    kind: fold_(v[WC.kind]), value: num_(v[WC.value]), client: q(v[WC.client]), email: str_(v[WC.email]).toLowerCase(), tel: tel_(v[WC.tel]),
+    until: v[WC.until], status: str_(v[WC.status]), order: q(v[WC.order]), maj: v[WC.maj], note: str_(v[WC.note]),
+  })).filter((r) => r.spin) };
+}
+// lock held: change the status / order / note of a claim
+function wheelWrite_(W, r, f) {
+  const now = new Date();
+  if (f.status != null) { r.status = f.status; W.sh.getRange(r.row, WC.status + 1).setValue(f.status); }
+  if (f.order != null) { r.order = f.order; W.sh.getRange(r.row, WC.order + 1).setValue(f.order ? "'" + f.order : ''); }
+  if (f.note) { r.note = (r.note ? r.note + '\n' : '') + fmt_(now, 'dd/MM/yyyy HH:mm') + ' ' + f.note; W.sh.getRange(r.row, WC.note + 1).setValue(cell_(r.note, true)); }
+  r.maj = now;
+  W.sh.getRange(r.row, WC.maj + 1).setValue(now);
+}
+// a claim as the customer (and the admin panel) sees it; state: credited | active | used | expired | pending | given
+function wheelView_(r, admin) {
+  const until = asDate_(r.until), at = asDate_(r.at);
+  const state = r.kind === 'points' ? 'credited'
+    : r.kind === 'remise' ? (r.status === WS.used ? 'used' : until && until.getTime() > Date.now() ? 'active' : 'expired')
+      : (r.status === WS.given ? 'given' : 'pending');
+  const o = { key: r.key, label: r.label, kind: r.kind, value: r.value, state: state, claimed: at ? fmt_(at, 'dd/MM/yyyy') : '',
+    until: until ? fmt_(until, 'dd/MM/yyyy') : '', untilTs: until ? until.getTime() : 0, order: r.order };
+  if (admin) Object.assign(o, { spin: r.spin, client: r.client, email: r.email, status: r.status, note: r.note, claimedTs: at ? at.getTime() : 0 });
+  return o;
+}
+function wheelOf_(rows, uid, admin) {
+  const r = rows.filter((x) => x.client === uid)[0];
+  return r ? wheelView_(r, admin) : null;
+}
+// the account's discount that can be used now (claimed, not used, not expired)
+function wheelActive_(rows, uid) {
+  return rows.filter((r) => r.client === uid && r.kind === 'remise' && r.status !== WS.used && !r.order
+    && asDate_(r.until) && asDate_(r.until).getTime() > Date.now() && r.value > 0 && r.value <= 100)[0] || null;
+}
+// status change of an order that used a wheel discount (lock held): cancelled / returned gives it back
+// (while still valid), back to an active status takes it again if it is still free
+function wheelSync_(ss, v, ex, status) {
+  if (str_(v[10]).toUpperCase() !== WHEEL_CODE) return [];
+  const id = str_(v[1]);
+  const uid = ex.acct ? str_(v[ex.acct - 1]).replace(/^'/, '') : '';
+  const W = wheelRows_(ss);
+  const mine = W.rows.filter((r) => r.kind === 'remise' && r.order === id)[0];
+  if (status === 'Annulée' || status === 'Retournée') {
+    if (!mine) return [];
+    wheelWrite_(W, mine, { status: WS.toUse, order: '', note: 'Rendue : commande ' + id + ' passée en « ' + status + ' »' });
+    const until = asDate_(mine.until);
+    return ['Roue de la chance : remise -' + mine.value + ' % rendue au client' + (until ? ' (valable jusqu’au ' + fmt_(until, 'dd/MM/yyyy') + ')' : '') + '.'];
+  }
+  if (mine) return [];
+  const free = uid ? W.rows.filter((r) => r.client === uid && r.kind === 'remise' && r.status !== WS.used && !r.order)[0] : null;
+  if (free) {
+    wheelWrite_(W, free, { status: WS.used, order: id, note: 'De nouveau utilisée : commande ' + id + ' repassée en « ' + status + ' »' });
+    return ['Roue de la chance : remise -' + free.value + ' % de nouveau utilisée par cette commande.'];
+  }
+  return ['⚠ Roue de la chance : la remise de cette commande a été réutilisée ailleurs : vérifiez le total à encaisser.'];
+}
+
+// admin: spins, claims per prize, latest claims
+function adminWheel_() {
+  const st = parse_(PropertiesService.getScriptProperties().getProperty('WHEEL_STATS')) || {};
+  const by = st.by && typeof st.by === 'object' ? st.by : {};
+  const rows = wheelRows_(book_()).rows;
+  const prizes = [], seen = {};
+  WHEEL.slices.forEach((s) => {
+    if (seen[s.key]) { seen[s.key].odds = Math.round((seen[s.key].odds + Number(s.odds)) * 10000) / 10000; seen[s.key].slices++; return; }
+    const mine = rows.filter((r) => r.key === s.key).map((r) => wheelView_(r));
+    prizes.push(seen[s.key] = { key: s.key, label: s.label, kind: s.kind, value: s.value, odds: Number(s.odds), slices: 1,
+      spins: Number(by[s.key]) || 0, claims: mine.length,
+      open: mine.filter((x) => x.state === 'active' || x.state === 'pending').length,
+      used: mine.filter((x) => x.state === 'used' || x.state === 'given').length });
+  });
+  const recent = rows.map((r) => wheelView_(r, true)).sort((a, b) => b.claimedTs - a.claimedTs).slice(0, 200);
+  return ok_({ on: WHEEL.on, valid: !!wheelOdds_(), since: Number(st.since) || 0, spins: Number(st.n) || 0, claims: rows.length,
+    prizes: prizes, recent: recent, gifts: recent.filter((x) => x.state === 'pending') });
+}
+// admin: { spin, given: true|false } — a gift handed to the customer (or back to « À remettre »)
+function wheelGift_(b) {
+  const spin = str_(b.spin).slice(0, 20);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const W = wheelRows_(book_());
+    const r = W.rows.filter((x) => x.spin === spin && x.kind === 'cadeau')[0];
+    if (!r) return fail_('not_found');
+    const to = b.given === false ? WS.toGive : WS.given;
+    if (r.status !== to) wheelWrite_(W, r, { status: to, note: to === WS.given ? 'Marqué remis (admin)' : 'Remis annulé (admin)' });
+    return ok_({ wheel: wheelView_(r, true) });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ---------- helpers ----------
@@ -1246,9 +1554,13 @@ function setup() {
   gestion_(ss);
   clientsSheet_(ss);
   pointsSheet_(ss);
+  wheelSheet_(ss);
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
-  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' » et « ' + SHEET_POINTS + ' » prêts.');
+  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' », « ' + SHEET_POINTS + ' » et « ' + SHEET_WHEEL + ' » prêts.');
+  console.log(wheelSecret_(true) ? 'WHEEL_SECRET prêt (signature des tirages de la roue).' : 'ATTENTION : WHEEL_SECRET impossible à créer.');
+  console.log(wheelOdds_() ? 'Roue de la chance : probabilités OK (total 100 %), ' + (WHEEL.on ? 'activée.' : 'DÉSACTIVÉE (WHEEL.on = false).')
+    : 'ATTENTION : probabilités de la roue invalides (total ≠ 100 % ou case à 0) : la roue refusera de tourner.');
   console.log('E-mails restants aujourd’hui (liens de réinitialisation, notifications) : ' + MailApp.getRemainingDailyQuota());
   console.log(key.length >= LIMITS.adminKeyMin ? 'ADMIN_KEY configurée.' : 'ADMIN_KEY manquante : lancez generateAdminKey().');
   console.log(catalog_() ? 'Catalogue du site lu : ' + CATALOG_URL : 'ATTENTION : catalogue illisible à ' + CATALOG_URL);

@@ -81,6 +81,37 @@ The admin has two tabs at the top: **Commandes** (unchanged) and **Clients**. Th
 
 **Backend:** two admin actions, `clients` (list) and `client` (one file), behind the same admin key / session token as the rest of the admin. They return a fixed whitelist of fields (ID, e-mail, name, phone, address, city, sign-up and last sign-in dates); **password salt/hash/iterations, session tokens and reset tokens are never sent**, which the tests check. Both read the Clients, Points and Commandes tabs on each call (no write); with thousands of accounts the list takes a few seconds to load.
 
+### Prize wheel « Roue de la chance »
+
+A promotional game: one free spin per visitor, the prize goes to a customer account. Rules page: `reglement-jeu.html` (linked from the wheel, the CGV article 9 ter and the legal pages' menu).
+
+**Go-live (on top of the Clients-view version):**
+
+1. Apps Script → select all → paste the new `order-apps-script.gs` → **Save**.
+2. Run **`setup`** once: it creates the **Roue** tab (one row per prize claimed) and the `WHEEL_SECRET` script property that signs every spin. (If you skip it, both are created at the first spin.) **Never share or edit `WHEEL_SECRET`**: changing it invalidates every spin not yet claimed.
+3. **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL).
+4. Publish the site files (section 2): `assets/wheel.js`, `reglement-jeu.html`, `styles.css`, `script.js`, `assets/account.js`, `compte.html`, `admin.html`, `assets/admin.js`, `assets/admin.css`, the pages that load the wheel, the legal pages and `sitemap.xml`. If the site goes out before step 3, the old Apps Script answers `bad_action` to `wheel_spin`: the wheel shows « La Roue de la chance ouvre très bientôt… » (and the browser console says the deployment is outdated); nothing else is affected. The wheel opens by itself 1.5 s after a page starts loading (`data-auto="1.5"` on its script tag) for visitors who never spun and didn't close it in the last 7 days; never on `compte.html`, `commande.html`, `merci.html`, `admin.html` or `reglement-jeu.html`; `?roue=0` disables it for tests.
+
+**What visitors see:** on the home page the wheel opens by itself after 8 s (the `data-auto="8"` attribute of its `<script>` tag in `index.html`; remove the attribute to turn auto-open off). It never opens over the cart, the menu or a form being typed in; closing it without spinning snoozes it for 7 days. A floating **« Tentez votre chance »** button (bottom left) on the home, Gants and Protecteur corporel pages opens it at any time (it becomes « Mon lot à réclamer » / « Mon lot » after the spin). `…/index.html#roue` opens it directly; `?roue=0` keeps it closed. Only the **START** button in the centre spins. The server draws the prize and the wheel stops on that slice. The result asks to create an account (the prize is added automatically) or sign in. A signed-in customer gets it at once. The prize then shows in **Mon compte › Mon lot**.
+
+**The prizes:**
+
+- **Points** (10/25/50/100) go into the loyalty ledger with the reason « Roue de la chance » and can be spent right away.
+- **Discounts** (-20 % / -50 %) can be used once, on the items of one order placed while signed in, within 30 days. They are not combined with a promo code: the code is ignored, and the customer can untick the discount to keep it for later. They do combine with points. Free delivery is still judged on the price before the discount. The discount comes back if the order is set to **Annulée** or **Retournée**. Orders that used it have « ROUE » in the « Code promo » column.
+- **Gifts** (gloves, body protector) wait for the team. The order drawer, the client row and file and the **Roue** tab show « 🎁 Cadeau à remettre ». Call the customer to choose model and size, hand it over (for example with their next order), then click **Marquer remis**.
+
+**Admin, Roue tab (`admin.html#roue`):** totals (spins since launch, counted in the `WHEEL_STATS` script property; prizes claimed; gifts to hand over; discounts used); the list of gifts to hand over; each prize with its odds, how often it was drawn and claimed, still open and used; the last prizes claimed (click an e-mail to open the client file). The admin endpoint returns the spin ID, client, e-mail, status and dates only — no token, no secret, no password data.
+
+**Changing the odds or prizes:** edit `WHEEL` in `order-apps-script.gs` (odds in %, must add up to exactly 100, none may be 0 — otherwise the wheel refuses to spin). Keep the **same slice order** in `SLICES` in `assets/wheel.js` (labels, photos) and in `FILL` (colours), and update the prize list (« Lots », article 4) in `reglement-jeu.html`. To stop the game: `on: false` in `WHEEL` (the wheel then says it is unavailable) and remove the `<script src="assets/wheel.js">` tags; already-won prizes stay valid.
+
+**One spin per person — what is and is not enforced:**
+
+- The spin result is an HMAC-signed token kept in the browser (`localStorage`). Reloading or coming back shows the same result. An edited token is refused.
+- **Clearing the browser's storage (or another browser / private window) gives a new spin, but never a second prize**: the claim is checked on the server, one per spin, per account, per e-mail and per phone number. An account that already received a prize cannot claim another one. Someone could still spin many times before creating one account and keep the best result. That is why the rare prizes are very rare and spins are capped at 400/hour for the whole site (Apps Script cannot see IP addresses).
+- A spin must be claimed within 30 days.
+
+**Local test:** `node _ops/dev-server.js` serves the site with the fake backend. Dev-only: `http://localhost:8080/__wheel?slice=8` makes the *next* spin land on slice 8 (0–9, same order as `WHEEL`), to try a discount or a gift. It only exists in the local preview, not in the Apps Script.
+
 ## 2. Publish the site
 
 Upload/commit everything (including `_ops/` and `_headers`; they are not served by GitHub Pages) to the repository GitHub Pages builds from.
@@ -104,6 +135,7 @@ Also:
 ## 4. Keep in sync when you change things
 
 - **Prices, sizes, products:** the backend reads them from `assets/search-index.js` on the live site (cached 10 min). Regenerate that file whenever product cards change — nothing to edit in the script.
+- **Prize wheel:** `WHEEL` in `order-apps-script.gs`, `SLICES`/`FILL` in `assets/wheel.js` and the prize list in `reglement-jeu.html` must describe the same 10 slices in the same order.
 - **Promo codes, delivery fee, free-delivery threshold:** set in **both** the CONFIG block of `script.js` and the CONFIG block of `order-apps-script.gs` (then redeploy, step 1.6).
 - **Moving to a custom domain** (recommended, see below): update `SITE_URL` in the `.gs` (also used in password-reset e-mails), the canonical/OG URLs in every page, `sitemap.xml` and `robots.txt`.
 - **New pages:** copy the header from an existing page; it includes the account icon (`#acctBtn`) next to the cart. `compte.html` is `noindex`, blocked in `robots.txt` and deliberately left out of `sitemap.xml`.
