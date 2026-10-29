@@ -4414,11 +4414,11 @@ html.sheet-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .sheet-panel, .sheet::backdrop { transition: none; } }
 
 /* --- hero logo badge (replaces "Knockout Rival" text) --- */
-.panel--feature > .headline--badge { display: flex; align-items: center; gap: clamp(10px, 1.2vw, 18px); text-shadow: none; }
-.hero-badge { display: block; width: min(17vh, 10vw); height: auto; border-radius: 50%; flex: 0 0 auto; filter: drop-shadow(0 4px 18px rgba(0,0,0,.45)); }
+.panel--feature > .headline--badge { z-index: 3; display: flex !important; opacity: 1 !important; visibility: visible !important; align-items: center; gap: clamp(10px, 1.2vw, 18px); text-shadow: none; }
+.hero-badge { display: block !important; position: relative; z-index: 3; opacity: 1 !important; visibility: visible !important; width: min(11vh, 6.5vw); min-width: 56px; height: auto; border-radius: 50%; flex: 0 0 auto; filter: drop-shadow(0 4px 18px rgba(0,0,0,.45)); }
 .hero-badge-text { font-size: clamp(10px, .8vw, 13px); font-weight: 700; font-variation-settings: "wdth" 100; letter-spacing: .14em; line-height: 1.35; color: var(--white, #fff); text-shadow: 0 1px 8px rgba(0,0,0,.6); white-space: nowrap; }
 @media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
-  .hero-badge { width: min(24vw, 13vh); }
+  .hero-badge { width: min(16vw, 9vh); }
 }
 @media (max-width: 420px) {
   .panel--feature > .headline--badge { flex-direction: column; align-items: flex-start; gap: 8px; }
