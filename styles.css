@@ -4424,3 +4424,23 @@ html.sheet-open { overflow: hidden; }
   .panel--feature > .headline--badge { flex-direction: column; align-items: flex-start; gap: 8px; }
   .hero-badge-text { font-size: 9.5px; }
 }
+
+/* --- hero: protectors collection card (replaces laurel seal) --- */
+.panel--coll { position: relative; overflow: hidden; display: flex; align-items: stretch; text-decoration: none; color: var(--black, #000); }
+.panel--coll .coll-txt { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: clamp(14px, 1.6vw, 26px); max-width: 60%; }
+.panel--coll .coll-txt small { font-size: clamp(9px, .7vw, 12px); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #a8823a; }
+.panel--coll .coll-txt strong { font-size: clamp(16px, 1.7vw, 30px); font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: -.01em; }
+.panel--coll .coll-sub { font-size: clamp(9px, .7vw, 12px); font-weight: 600; opacity: .6; margin-top: 4px; }
+.panel--coll .coll-img { position: absolute; right: -4%; bottom: -6%; height: 112%; width: auto; object-fit: contain; z-index: 1; transition: transform .5s var(--ease, ease); mix-blend-mode: multiply; }
+.panel--coll:hover .coll-img { transform: scale(1.05) rotate(-2deg); }
+.panel--coll { background: #fff; }
+.panel--coll .coll-img { right: -6%; bottom: 0; height: 100%; max-width: 62%; object-fit: cover; object-position: center; }
+.panel--coll .coll-fade { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, #fff 38%, rgba(255,255,255,.85) 52%, rgba(255,255,255,0) 72%); }
+.panel--coll .coll-txt { z-index: 3; }
+.panel--coll .corner-arrow { z-index: 4; }
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .panel--coll .coll-img { max-width: 55%; right: -14%; }
+  .panel--coll .coll-txt { max-width: 72%; padding: 12px; }
+  .panel--coll .coll-txt strong { font-size: clamp(13px, 4vw, 18px); }
+}
+.panel--coll .corner-arrow { z-index: 3; }
