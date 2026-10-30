@@ -28,7 +28,7 @@ const VERSION = '2026-10-28.5';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
-const PROMO_CODES = { KOBG26: 10 };                              // code -> % off the subtotal
+const PROMO_CODES = {};                                         // promo codes removed (the 10 % KOBG26 code no longer exists); any code sent is refused
 const SHIPPING_FEE = 0;                                         // delivery is free for every order
 const FREE_SHIPPING_FROM = 2000;                                 // unused while SHIPPING_FEE is 0
 // loyalty programme (also in the CONFIG block of script.js): 1 point = 1 DH off a future order;

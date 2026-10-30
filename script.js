@@ -33,9 +33,7 @@ const ORDER_ENDPOINT_FORMAT = 'json';   // 'json' = JSON text body (Apps Script)
 // Fill it in here (this one line) and the buttons appear everywhere with the right link.
 const WHATSAPP_NUMBER = '';
 const CART_STORAGE_KEY = 'kobg-cart-v1';
-// Promo codes accepted in the cart and order forms (static site: checked client-side, the team confirms by phone).
-const PROMO_CODES = { KOBG26: 10 };          // code -> % off the subtotal
-const PROMO_STORAGE_KEY = 'kobg-promo-v1';
+const PROMO_STORAGE_KEY = 'kobg-promo-v1';   // the promo-code feature was removed: this old key is only cleared
 // Delivery: free for every order (no minimum).
 const SHIPPING_FEE = 0;
 const FREE_SHIPPING_FROM = 2000;
@@ -361,30 +359,23 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   const totalQty = () => cart.reduce((n, it) => n + it.qty, 0);
   const totalPrice = () => cart.reduce((n, it) => n + it.qty * it.price, 0);
 
-  // ---- promo code ----
-  const normCode = (v) => String(v || '').trim().toUpperCase().replace(/\s+/g, '');
-  let promo = (() => {
-    try { const c = normCode(localStorage.getItem(PROMO_STORAGE_KEY)); return PROMO_CODES[c] ? c : ''; } catch (err) { return ''; }
-  })();
-  function savePromo() {
-    try { promo ? localStorage.setItem(PROMO_STORAGE_KEY, promo) : localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
-  }
+  // promo codes were removed: drop a code saved by an older version of the site
+  try { localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
   // one rule everywhere (cart, checkout, product form): % off the subtotal; delivery always free
   // An order form (checkout, product page) may carry a « Roue de la chance » discount (signed in, ticked):
-  // it replaces the promo code (not cumulable) and, like it, comes off the items subtotal only.
+  // it comes off the items subtotal only.
   const wheelBoxes = new WeakMap();
   const wheelPct = (form) => (form && wheelBoxes.has(form) ? wheelBoxes.get(form).pct() : 0);
   function calcTotals(sub, form) {
     const w = wheelPct(form);
-    const pct = w || (promo ? PROMO_CODES[promo] : 0);
+    const pct = w;
     const discount = Math.round(sub * pct / 100);
     const shipping = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
-    return { sub, pct, discount, shipping, total: sub - discount + shipping, wheel: !!w, code: w ? 'Roue de la chance' : promo };
+    return { sub, pct, discount, shipping, total: sub - discount + shipping, wheel: !!w, code: w ? 'Roue de la chance' : '' };
   }
   const totals = () => calcTotals(totalPrice());
   const plainDH = (n) => formatDH(n).replace(/\u00a0/g, ' ');
   const renderHooks = [];     // checkout summary, product order form: re-drawn with the cart
-  const promoWidgets = [];    // every promo field on the page (drawer, product form, checkout) stays in sync
 
   function render() {
     const qty = totalQty();
@@ -397,11 +388,10 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     discountLine.hidden = !t.pct;
     if (t.pct) {
       discountEl.textContent = `-${formatDH(t.discount)}`;
-      discountCode.textContent = promo;
+      discountCode.textContent = t.code;
     }
     shippingEl.textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
     totalEl.textContent = formatDH(t.total);
-    promoWidgets.forEach((w) => w.sync());
     cartEmpty.hidden = qty > 0;
     cartFoot.hidden = qty === 0;
     cartList.hidden = qty === 0;
@@ -510,99 +500,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
 
-  // promo fields: the drawer's is a <form>; the ones inside an order form are a group (no nested forms)
-  function bindPromo(root) {
-    const input = root.querySelector('.cart-promo-input');
-    const row = root.querySelector('.cart-promo-row');
-    const on = root.querySelector('.cart-promo-on');
-    const codeEl = root.querySelector('.cart-promo-code');
-    const msg = root.querySelector('.cart-promo-msg');
-    const remove = root.querySelector('.cart-promo-remove');
-    if (!input || !row || !on || !remove) return;
-    const setMsg = (text, isError) => {
-      if (msg) { msg.textContent = text; msg.classList.toggle('is-error', !!isError); }
-      input.setAttribute('aria-invalid', isError ? 'true' : 'false');
-    };
-    const apply = () => {
-      const code = normCode(input.value);
-      if (!code) { setMsg('Saisissez un code promo.', true); input.focus(); return; }
-      if (!PROMO_CODES[code]) { setMsg(`Le code « ${code} » n’est pas valide.`, true); input.select(); return; }
-      promo = code;
-      savePromo();
-      input.value = '';
-      render();
-      // signed in with an unused « Roue de la chance » discount ticked: that one wins (not cumulable), say so
-      const wheelOn = [...document.querySelectorAll('form')].some((f) => wheelPct(f) > 0);
-      setMsg(wheelOn
-        ? `Code ${code} enregistré. Votre remise Roue de la chance s’applique à la place (non cumulable) : décochez-la pour utiliser ce code.`
-        : `Code ${code} appliqué : -${PROMO_CODES[code]} % sur votre commande.`, false);
-      remove.focus();
-    };
-    if (root.tagName === 'FORM') root.addEventListener('submit', (e) => { e.preventDefault(); apply(); });
-    else {
-      root.querySelector('.cart-promo-apply')?.addEventListener('click', apply);
-      // Enter applies the code instead of sending the order form around it
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
-    }
-    input.addEventListener('input', () => { if (msg?.classList.contains('is-error')) setMsg('', false); });
-    remove.addEventListener('click', () => {
-      promo = '';
-      savePromo();
-      render();
-      setMsg('Code promo retiré.', false);
-      input.focus();
-    });
-    promoWidgets.push({ sync: () => { row.hidden = !!promo; on.hidden = !promo; if (codeEl) codeEl.textContent = promo; } });
-  }
-  document.querySelectorAll('.js-promo').forEach(bindPromo);
-  // another tab changed the cart or the code: stay in sync
-  window.addEventListener('storage', (e) => {
-    if (e.key === CART_STORAGE_KEY) cart = loadCart();
-    else if (e.key === PROMO_STORAGE_KEY) promo = PROMO_CODES[normCode(e.newValue)] ? normCode(e.newValue) : '';
-    else return;
-    render();
-  });
 
-  // ---- "copy the promo code" buttons (hero card) ----
-  function copyText(text) {
-    const legacy = () => new Promise((resolve, reject) => {
-      // http:// on a LAN address has no Clipboard API: hidden textarea + execCommand
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;';
-      document.body.appendChild(ta);
-      const prev = document.activeElement;
-      ta.select();
-      ta.setSelectionRange(0, text.length);
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
-      ta.remove();
-      if (prev && prev.focus) prev.focus({ preventScroll: true });
-      ok ? resolve() : reject(new Error('copy failed'));
-    });
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text).catch(legacy);
-    }
-    return legacy();
-  }
-  const copyTimers = new WeakMap();
-  document.querySelectorAll('[data-copy-code]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const code = btn.dataset.copyCode;
-      copyText(code).then(() => {
-        document.querySelectorAll(`[data-copy-code="${code}"]`).forEach((b) => {
-          b.classList.add('is-copied');
-          clearTimeout(copyTimers.get(b));
-          copyTimers.set(b, setTimeout(() => b.classList.remove('is-copied'), 1800));
-        });
-        showToast(`Code ${code} copié !`);
-      }, () => {
-        showToast(`Copie impossible : notez le code ${code}`);
-      });
-    });
-  });
 
   function addToCart(btn) {
     const d = btn.dataset;
@@ -745,7 +643,6 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   window.addEventListener('pageshow', (e) => {
     if (!e.persisted) return;
     cart = loadCart();
-    try { const c = normCode(localStorage.getItem(PROMO_STORAGE_KEY)); promo = PROMO_CODES[c] ? c : ''; } catch (err) { /* ignore */ }
     render();
     acctPaint();
   });
@@ -1079,11 +976,11 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         if (box.hidden) return;
         box.querySelector('.wheel-val').textContent = `-${info.value}\u00a0%`;
         box.querySelector('.wheel-use-txt').textContent = `Utiliser ma remise de -${info.value}\u00a0% sur les articles`;
-        box.querySelector('.wheel-hint').textContent = `${info.until ? `Valable jusqu’au ${info.until}, ` : ''}une seule commande. Non cumulable avec un code promo${check.checked && promo ? ` : le code ${promo} ne sera pas appliqué` : ''}.`;
+        box.querySelector('.wheel-hint').textContent = `${info.until ? `Valable jusqu’au ${info.until}, ` : ''}une seule commande.`;
       },
     };
     check.addEventListener('change', redraw);
-    renderHooks.push(() => ctl.render());   // its « le code … ne sera pas appliqué » line follows the promo code
+    renderHooks.push(() => ctl.render());
     wheelBoxes.set(form, ctl);
     return ctl;
   }
@@ -1231,7 +1128,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       if (val('kobg_hp')) { showAlert(ORDER_ERRORS.hp); return; }       // honeypot: bots fill every field
       const t = calcTotals(order.sub, form);
       const used = pts.apply(t.total);
-      const key = JSON.stringify([order.items, phoneLocal(val('telephone')), used, t.wheel, t.pct && !t.wheel ? promo : '']);
+      const key = JSON.stringify([order.items, phoneLocal(val('telephone')), used, t.wheel, '']);
       if (!pending || pending.key !== key) pending = { key, id: newOrderId() };
       const payload = {
         orderId: pending.id,
@@ -1242,7 +1139,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         items: order.items,
         itemCount: order.items.reduce((n, it) => n + it.qty, 0),
         subtotal: t.sub,
-        promoCode: t.pct && !t.wheel ? promo : '',
+        promoCode: '',
         ...(t.wheel ? { wheel: true } : {}),
         discountPct: t.pct,
         discount: t.discount,
@@ -1850,7 +1747,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
           <a href="${esc(p.url)}" tabindex="-1">
             <img src="${esc(p.img)}" alt="" width="48" height="60" loading="lazy" decoding="async">
             <span class="search-opt-txt"><span class="search-opt-name">${esc(p.short)}</span><span class="search-opt-meta">${esc(p.colour)} · ${esc(p.coll)}</span></span>
-            <span class="search-opt-price">${formatDH(p.price)}</span>
+            <span class="search-opt-price">${formatDH(p.price)}${p.compareAt > p.price ? `<s class="price-was">${formatDH(p.compareAt)}</s>` : ''}</span>
           </a>
         </li>`).join('') + (res.length ? `
         <li class="search-opt search-opt--all" role="option" id="searchOptAll" aria-selected="false">

@@ -4471,3 +4471,10 @@ html.sheet-open { overflow: hidden; }
 .pp-size-btn.is-oos { cursor: not-allowed; }
 .pp-size.is-error .pp-size-btn.is-oos span { box-shadow: inset 0 0 0 1px rgba(208,32,42,.35); }
 .product-size option:disabled { color: #9a9a9a; }
+/* compare-at prices (prix barrés) */
+.price-was { margin-left: .45em; color: #8a8a8a; font-weight: 600; font-size: .82em; text-decoration: line-through; text-decoration-color: var(--accent); white-space: nowrap; }
+.price-off { display: inline-block; margin-left: .45em; padding: .15em .5em; border-radius: 99px; background: var(--accent); color: var(--white); font-size: .72em; font-weight: 800; line-height: 1.3; vertical-align: middle; white-space: nowrap; }
+.product-price, .pp-price { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; }
+.search-opt-price .price-was { display: block; margin: 0; font-size: .8em; }
+.pp-price .price-was, .pp-price .price-off { font-size: 1rem; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

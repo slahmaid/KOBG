@@ -56,15 +56,15 @@ test('valid order is stored with server prices, Gestion line and phone as text',
   assert.equal(g[1][1], 'Nouvelle');
 });
 
-test('single cheap item pays delivery; promo code applies 10 %', () => {
+test('single item, free delivery; promo codes (old KOBG26) are refused', () => {
   const env = env0();
   const a = env.post(order());
   assert.equal(a.total, 1690);
-  const b = env.post(order({ promoCode: 'kobg26', total: 1521 }));
-  assert.equal(b.discountPct, 10);
-  assert.equal(b.discount, 169);
-  assert.equal(b.total, 1690 - 169);
-  assert.equal(b.promoCode, 'KOBG26');
+  const b = env.post(order({ promoCode: 'kobg26', total: 1690 }));
+  assert.equal(b.discountPct, 0);
+  assert.equal(b.discount, 0);
+  assert.equal(b.total, 1690);
+  assert.equal(b.promoCode, '');
 });
 
 test('tampered prices and totals are recomputed and flagged', () => {
@@ -234,7 +234,7 @@ test('admin: tokens are signed, expire, and die with the key', () => {
 
 test('admin: list returns what admin.js renders; update changes status, history and note', () => {
   const env = env0();
-  const a = env.post(order({ items: [{ id: RS11 + '--14-oz', qty: 2 }, { id: BODY, qty: 1 }], promoCode: 'KOBG26' }));
+  const a = env.post(order({ items: [{ id: RS11 + '--14-oz', qty: 2 }, { id: BODY, qty: 1 }] }));
   assert.equal(env.post({ action: 'list', key: 'nope' }).error, 'bad_key');
   const tok = env.post({ action: 'auth', key: KEY }).token;
   const l = env.post({ action: 'list', key: tok });
@@ -248,7 +248,7 @@ test('admin: list returns what admin.js renders; update changes status, history 
   assert.match(o.tel, /^0\d{9}$/);
   assert.equal(o.articles, 'Gants de sparring Rival RS11V Evolution x2 / Protecteur corporel Rival');
   assert.equal(o.taille, '14 oz / ');
-  assert.equal(o.remise, 10);
+  assert.equal(o.remise, 0);
   assert.equal(o.total, a.total);
   assert.equal(o.statut, 'Nouvelle');
   assert.equal(o.hist[0].by, 'site');
@@ -517,7 +517,7 @@ test('accounts: orders placed while signed in are linked; history shows only my 
   assert.ok(!JSON.stringify(mine).includes('SECRET'));
   assert.ok(!JSON.stringify(mine).includes('Client connecté'));
   const m2 = mine.orders.find((o) => o.id === o2.orderId);
-  assert.equal(m2.promo, 'KOBG26');
+  assert.equal(m2.promo, '');                                               // promo codes removed
   assert.equal(env.post({ action: 'my_orders', session: b.session }).orders.map((o) => o.id).join(), ob.orderId);
   assert.equal(env.post({ action: 'list', key: tok }).orders.length, 5);   // admin still sees every order
 });
@@ -729,9 +729,9 @@ test('points: redeeming at checkout — deducted server-side, capped at the orde
   assert.equal(over.error, 'bad_points');
   assert.equal(over.max, 1690);
   assert.equal(over.balance, 2880);
-  const promo = env.post(order({ session: a.session, promoCode: 'KOBG26', points: 1547 }));
-  assert.equal(promo.error, 'bad_points');                                  // 1690 − 169 = 1521
-  assert.equal(promo.max, 1521);
+  const promo = env.post(order({ session: a.session, promoCode: 'KOBG26', points: 1691 }));
+  assert.equal(promo.error, 'bad_points');                                  // the old code gives nothing: max 1690
+  assert.equal(promo.max, 1690);
   const all = env.post(order({ session: a.session, points: 1690 }));
   assert.equal(all.ok, true);
   assert.equal(all.total, 0);
@@ -1156,7 +1156,7 @@ test('wheel: global hourly cap on new spins (a replayed token is not a new spin)
   assert.equal(env.post({ action: 'wheel_spin', token: first.token }).ok, true);
 });
 
-test('wheel: -20 % discount — applied to the items at checkout, once, not with a promo code', () => {
+test('wheel: -20 % discount — applied to the items at checkout, once; old promo codes are refused', () => {
   const env = env0();
   const a = wheelUser(env, '0612000031');
   const c = env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 8) });
@@ -1185,7 +1185,7 @@ test('wheel: -20 % discount — applied to the items at checkout, once, not with
   assert.equal(row[10], 'ROUE');
   assert.equal(row[11], 20);
   assert.equal(row[13], 1352);
-  assert.match(rowsOf(env, 'Gestion')[1][2], /non cumulable/);
+  assert.match(rowsOf(env, 'Gestion')[1][2], /Code promo refusé : KOBG26/);
   assert.match(rowsOf(env, 'Gestion')[1][2], /Roue de la chance » -20 %/);
   const R = rowsOf(env, 'Roue')[1];
   assert.equal(R[11], 'Utilisée');
@@ -1193,8 +1193,8 @@ test('wheel: -20 % discount — applied to the items at checkout, once, not with
   assert.equal(meOf(env, a.session).wheel.state, 'used');
   // single use
   assert.equal(env.post(order({ wheel: true, session: a.session })).error, 'bad_wheel');
-  // without the wheel the promo code works as usual
-  assert.equal(env.post(order({ session: a.session, promoCode: 'KOBG26' })).discountPct, 10);
+  // promo codes were removed: the old one gives nothing
+  assert.equal(env.post(order({ session: a.session, promoCode: 'KOBG26' })).discountPct, 0);
 });
 
 test('wheel: a cancelled order gives the discount back; re-activating takes it again; expiry is enforced', () => {

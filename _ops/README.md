@@ -136,7 +136,7 @@ Also:
 
 - **Prices, sizes, products:** the backend reads them from `assets/search-index.js` on the live site (cached 10 min). Regenerate that file whenever product cards change — nothing to edit in the script.
 - **Prize wheel:** `WHEEL` in `order-apps-script.gs`, `SLICES`/`FILL` in `assets/wheel.js` and the prize list in `reglement-jeu.html` must describe the same 10 slices in the same order.
-- **Promo codes, delivery fee (currently 0 = free delivery), free-delivery threshold:** set in **both** the CONFIG block of `script.js` and the CONFIG block of `order-apps-script.gs` (then redeploy, step 1.6).
+- **Promo codes (none since the 10 % KOBG26 code was removed; `PROMO_CODES = {}` in the `.gs`, nothing in `script.js`), delivery fee (currently 0 = free delivery), free-delivery threshold:** set in **both** the CONFIG block of `script.js` and the CONFIG block of `order-apps-script.gs` (then redeploy, step 1.6).
 - **Moving to a custom domain** (recommended, see below): update `SITE_URL` in the `.gs` (also used in password-reset e-mails), the canonical/OG URLs in every page, `sitemap.xml` and `robots.txt`.
 - **New pages:** copy the header from an existing page; it includes the account icon (`#acctBtn`) next to the cart. `compte.html` is `noindex`, blocked in `robots.txt` and deliberately left out of `sitemap.xml`.
 

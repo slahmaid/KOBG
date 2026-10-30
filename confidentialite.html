@@ -110,7 +110,7 @@
   <p><strong>Lorsque vous passez commande</strong> (formulaire d’une fiche produit ou page de commande)&nbsp;:</p>
   <ul>
       <li>votre nom, votre numéro de téléphone marocain (06 ou 07) et votre ville&nbsp;;</li>
-      <li>le contenu de votre commande&nbsp;: articles, tailles, coloris, quantités, montants, frais de livraison et code promo éventuel&nbsp;;</li>
+      <li>le contenu de votre commande&nbsp;: articles, tailles, coloris, quantités, montants, frais de livraison et remise éventuelle&nbsp;;</li>
       <li>des informations générées automatiquement pour suivre la commande&nbsp;: numéro de commande, date et heure, page à partir de laquelle la commande a été envoyée.</li>
   </ul>
   <p><strong>Lors de la confirmation de votre commande</strong> par téléphone ou par WhatsApp&nbsp;: votre adresse de livraison complète et, le cas échéant, les précisions utiles à la livraison que vous nous donnez.</p>
@@ -144,10 +144,9 @@
   <p>Le site ne dépose aucun cookie. Pour faire fonctionner le panier et la page de remerciement, il utilise le stockage intégré à votre navigateur. Ces informations restent sur votre appareil&nbsp;; elles ne nous sont transmises que lorsque vous confirmez une commande&nbsp;:</p>
   <ul>
       <li><strong>kobg-cart-v1</strong> (stockage local, «&nbsp;localStorage&nbsp;»)&nbsp;: le contenu de votre panier (articles, tailles, coloris, quantités), conservé d’une visite à l’autre jusqu’à ce que vous vidiez le panier ou effaciez les données du site.</li>
-      <li><strong>kobg-promo-v1</strong> (localStorage)&nbsp;: le code promo que vous avez appliqué, jusqu’à ce que vous le retiriez ou effaciez les données du site.</li>
       <li><strong>kobg-last-order</strong> (stockage de session, «&nbsp;sessionStorage&nbsp;»)&nbsp;: le récapitulatif de votre dernière commande (y compris le nom, le téléphone et la ville saisis), uniquement pour l’afficher sur la page de remerciement. Il n’est conservé que pendant votre visite et s’efface à la fermeture de l’onglet.</li>
   </ul>
-  <p>Vous pouvez supprimer ces informations à tout moment en vidant votre panier, en retirant le code promo ou en effaçant les données du site dans les réglages de votre navigateur. Comme le site n’utilise ni cookies, ni mesure d’audience, ni publicité, ni script tiers (les polices de caractères sont hébergées sur le site lui-même), aucun bandeau de consentement aux cookies n’est nécessaire.</p>
+  <p>Vous pouvez supprimer ces informations à tout moment en vidant votre panier, en effaçant les données du site dans les réglages de votre navigateur. Comme le site n’utilise ni cookies, ni mesure d’audience, ni publicité, ni script tiers (les polices de caractères sont hébergées sur le site lui-même), aucun bandeau de consentement aux cookies n’est nécessaire.</p>
   <h2 id="liens-vers-les-reseaux-sociaux">Liens vers les réseaux sociaux</h2>
   <p>Le site contient de simples liens vers nos pages Instagram et Facebook, sans module intégré&nbsp;: aucune donnée n’est transmise à ces réseaux tant que vous ne cliquez pas sur ces liens. Une fois sur ces plateformes, ou si vous nous contactez par WhatsApp, les politiques de confidentialité de ces services s’appliquent.</p>
   <h2 id="vos-droits">Vos droits</h2>
@@ -284,19 +283,7 @@
 
     <div class="cart-foot" id="cartFoot">
       <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
-      <form class="cart-promo js-promo" id="cartPromo" novalidate>
-        <label class="cart-promo-label" for="cartPromoInput">Code promo</label>
-        <div class="cart-promo-row">
-          <input class="cart-promo-input" id="cartPromoInput" type="text" name="promo" placeholder="Ex. KOBG26" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="cartPromoMsg">
-          <button type="submit" class="cart-promo-apply">Appliquer</button>
-        </div>
-        <div class="cart-promo-on" id="cartPromoOn" hidden>
-          <span class="cart-promo-chip"><span class="cart-promo-code" id="cartPromoCode">KOBG26</span> · -10&nbsp;%</span>
-          <button type="button" class="cart-promo-remove" id="cartPromoRemove">Retirer</button>
-        </div>
-        <p class="cart-promo-msg" id="cartPromoMsg" aria-live="polite"></p>
-      </form>
-      <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode">KOBG26</span> (-10&nbsp;%)</span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
+      <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode"></span></span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
       <p class="cart-line"><span>Livraison</span><strong id="cartShipping">Offerte</strong></p>
       <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
       <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>

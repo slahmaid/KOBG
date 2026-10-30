@@ -141,7 +141,7 @@
 <li><strong>Une seule commande&nbsp;:</strong> la remise s’applique une seule fois, à la prochaine commande passée en étant connecté(e) au compte qui l’a reçue.</li>
 <li><strong>Validité&nbsp;:</strong> 30&nbsp;jours à compter de son ajout au compte (date indiquée dans «&nbsp;Mon compte&nbsp;»). Non utilisée dans ce délai, elle est perdue.</li>
 <li><strong>Assiette&nbsp;:</strong> la remise porte sur le prix des articles (sous-total). La livraison est gratuite.</li>
-<li><strong>Non cumulable avec un code promo&nbsp;:</strong> lorsque la remise est utilisée, aucun code promo n’est appliqué à la commande. Le participant peut choisir de ne pas l’utiliser (case à décocher au moment de la commande) pour la garder pour une commande suivante, dans le délai de validité. Elle reste cumulable avec l’utilisation de points fidélité.</li>
+<li><strong>Utilisation facultative&nbsp;:</strong> Le participant peut choisir de ne pas l’utiliser (case à décocher au moment de la commande) pour la garder pour une commande suivante, dans le délai de validité. Elle reste cumulable avec l’utilisation de points fidélité.</li>
 <li><strong>Annulation ou retour&nbsp;:</strong> si la commande qui a utilisé la remise est annulée ou retournée, la remise est rendue au compte jusqu’à sa date de fin de validité initiale.</li>
 </ul>
 <h3>Article 8 – Gants RB10 Intelli-Shock et protecteur corporel</h3>
@@ -273,19 +273,7 @@
 
     <div class="cart-foot" id="cartFoot">
       <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
-      <form class="cart-promo js-promo" id="cartPromo" novalidate>
-        <label class="cart-promo-label" for="cartPromoInput">Code promo</label>
-        <div class="cart-promo-row">
-          <input class="cart-promo-input" id="cartPromoInput" type="text" name="promo" placeholder="Ex. KOBG26" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="cartPromoMsg">
-          <button type="submit" class="cart-promo-apply">Appliquer</button>
-        </div>
-        <div class="cart-promo-on" id="cartPromoOn" hidden>
-          <span class="cart-promo-chip"><span class="cart-promo-code" id="cartPromoCode">KOBG26</span> · -10&nbsp;%</span>
-          <button type="button" class="cart-promo-remove" id="cartPromoRemove">Retirer</button>
-        </div>
-        <p class="cart-promo-msg" id="cartPromoMsg" aria-live="polite"></p>
-      </form>
-      <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode">KOBG26</span> (-10&nbsp;%)</span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
+      <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode"></span></span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
       <p class="cart-line"><span>Livraison</span><strong id="cartShipping">Offerte</strong></p>
       <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
       <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
