@@ -36,8 +36,8 @@ const CART_STORAGE_KEY = 'kobg-cart-v1';
 // Promo codes accepted in the cart and order forms (static site: checked client-side, the team confirms by phone).
 const PROMO_CODES = { KOBG26: 10 };          // code -> % off the subtotal
 const PROMO_STORAGE_KEY = 'kobg-promo-v1';
-// Delivery: 25 DH, free from 2000 DH of products (threshold uses the subtotal BEFORE the discount).
-const SHIPPING_FEE = 25;
+// Delivery: free for every order (no minimum).
+const SHIPPING_FEE = 0;
 const FREE_SHIPPING_FROM = 2000;
 // Loyalty points (customer accounts): 1 point = 1 DH; 50 points per full 1500 DH of delivered purchases.
 // Display only: the Apps Script (LOYALTY there) credits, checks and deducts the points. Keep both equal.
@@ -369,7 +369,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   function savePromo() {
     try { promo ? localStorage.setItem(PROMO_STORAGE_KEY, promo) : localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
   }
-  // one rule everywhere (cart, checkout, product form): % off the subtotal; delivery free from 2000 DH of products
+  // one rule everywhere (cart, checkout, product form): % off the subtotal; delivery always free
   // An order form (checkout, product page) may carry a « Roue de la chance » discount (signed in, ticked):
   // it replaces the promo code (not cumulable) and, like it, comes off the items subtotal only.
   const wheelBoxes = new WeakMap();
@@ -1197,21 +1197,27 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     let busy = false;
     const setBusy = (on) => {
       busy = on;
-      submit.disabled = on;
+      submit.disabled = on || form.classList.contains('is-oos');
       submit.classList.toggle('is-loading', on);
       submit.setAttribute('aria-busy', String(on));
-      submitTxt.textContent = on ? 'Envoi en cours…' : 'Confirmer la commande';
+      submitTxt.textContent = on ? 'Envoi en cours…' : (form.classList.contains('is-oos') ? 'Épuisé' : 'Confirmer la commande');
     };
     window.addEventListener('pageshow', (e) => { if (e.persisted) setBusy(false); });   // back from merci
     const wheel = wheelBox(form);
     const pts = pointsBox(form);
     acctOrderForm(form);
+    if (form.classList.contains('is-oos')) {   // sold out: every control (incl. the ones added by JS) stays disabled
+      const lock = () => form.querySelectorAll('input, select, textarea, button').forEach((el) => { if (!el.disabled) el.disabled = true; });
+      lock();
+      new MutationObserver(lock).observe(form, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+    }
     // One order number per order: a retry after a timeout or a lost reply re-sends the same number, and the server
     // stores it only once (same number + same phone). Anything changed (items, phone, points, discount) = a new number.
     let pending = null;                    // { key, id } of the last attempt that did not succeed
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (busy) return;
+      if (form.classList.contains('is-oos')) { showAlert('Ce produit est épuisé : la commande est impossible pour le moment.'); return; }   // sold out
       showAlert('');
       const order = getOrder();
       if (order.blocked) { showAlert(order.blocked); return; }

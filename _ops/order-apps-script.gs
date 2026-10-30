@@ -29,8 +29,8 @@ const SITE_URL = 'https://knockoutboxinggear.com/';             // where the sho
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
 const PROMO_CODES = { KOBG26: 10 };                              // code -> % off the subtotal
-const SHIPPING_FEE = 25;
-const FREE_SHIPPING_FROM = 2000;                                 // on the subtotal before the discount
+const SHIPPING_FEE = 0;                                         // delivery is free for every order
+const FREE_SHIPPING_FROM = 2000;                                 // unused while SHIPPING_FEE is 0
 // loyalty programme (also in the CONFIG block of script.js): 1 point = 1 DH off a future order;
 // every full LOYALTY.step DH actually paid on delivered orders (cumulative, the remainder carries over) earns LOYALTY.reward points
 const LOYALTY = { step: 1500, reward: 50 };

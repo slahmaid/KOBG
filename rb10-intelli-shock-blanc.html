@@ -62,7 +62,7 @@
           <!-- mobile menu only -->
           <a href="/#faq-livraison" class="nav-promo">
             <span class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Livraison offerte</span>
-            <span class="nav-promo-txt"><strong>Dès 2&nbsp;000&nbsp;DH</strong>partout au Maroc</span>
+            <span class="nav-promo-txt"><strong>Gratuite</strong>partout au Maroc</span>
             <span class="nav-promo-go" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
@@ -161,7 +161,8 @@
         <p><strong>-10&nbsp;%</strong> sur votre commande avec le code</p>
         <button type="button" class="pp-code" data-copy-code="KOBG26" aria-label="Copier le code KOBG26">KOBG26</button>
       </div>
-      <form class="cod" id="codForm" data-cod="product" novalidate aria-labelledby="codTitle" aria-describedby="codIntro">
+      <form class="cod is-oos" id="codForm" aria-disabled="true" data-cod="product" novalidate aria-labelledby="codTitle" aria-describedby="codIntro">
+        <p class="cod-oos-note" role="alert">Produit épuisé&nbsp;: ce coloris est en rupture de stock, la commande est désactivée.</p>
         <div class="cod-head">
           <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Sans paiement en ligne</p>
           <h2 class="cod-h" id="codTitle" tabindex="-1">Commander <span class="cod-h-sub">Paiement à la livraison</span></h2>
@@ -171,20 +172,20 @@
           <legend class="sr-only">Vos coordonnées</legend>
           <div class="cod-field cod-field--full">
             <label for="codNom">Nom complet</label>
-            <input id="codNom" name="nom" type="text" autocomplete="name" autocapitalize="words" required minlength="3" maxlength="80" aria-describedby="codNomErr">
+            <input disabled id="codNom" name="nom" type="text" autocomplete="name" autocapitalize="words" required minlength="3" maxlength="80" aria-describedby="codNomErr">
             <p class="cod-err" id="codNomErr" hidden></p>
           </div>
           <div class="cod-field">
             <label for="codVille">Ville</label>
-            <input id="codVille" name="ville" type="text" autocomplete="address-level2" autocapitalize="words" placeholder="Ex. Casablanca" required maxlength="60" aria-describedby="codVilleErr">
+            <input disabled id="codVille" name="ville" type="text" autocomplete="address-level2" autocapitalize="words" placeholder="Ex. Casablanca" required maxlength="60" aria-describedby="codVilleErr">
             <p class="cod-err" id="codVilleErr" hidden></p>
           </div>
           <div class="cod-field">
             <label for="codTel">Téléphone</label>
-            <input id="codTel" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required maxlength="20" aria-describedby="codTelErr">
+            <input disabled id="codTel" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required maxlength="20" aria-describedby="codTelErr">
             <p class="cod-err" id="codTelErr" hidden></p>
           </div>
-          <div class="cod-hp" aria-hidden="true"><label for="codHp">Laissez ce champ vide</label><input id="codHp" name="kobg_hp" type="text" tabindex="-1" autocomplete="off"></div>
+          <div class="cod-hp" aria-hidden="true"><label for="codHp">Laissez ce champ vide</label><input disabled id="codHp" name="kobg_hp" type="text" tabindex="-1" autocomplete="off"></div>
         </fieldset>
         <div class="cod-sum" aria-label="Récapitulatif">
           <p class="cod-line cod-line--sel"><span>Votre sélection</span><strong id="codSel">—</strong></p>
@@ -194,27 +195,27 @@
           <div class="cart-promo js-promo" role="group" aria-labelledby="codPromoLabel">
             <label class="cart-promo-label" id="codPromoLabel" for="codPromoInput">Code promo</label>
             <div class="cart-promo-row">
-              <input class="cart-promo-input" id="codPromoInput" type="text" placeholder="Ex. KOBG26" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="codPromoMsg" form="">
-              <button type="button" class="cart-promo-apply">Appliquer</button>
+              <input disabled class="cart-promo-input" id="codPromoInput" type="text" placeholder="Ex. KOBG26" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="codPromoMsg" form="">
+              <button disabled type="button" class="cart-promo-apply">Appliquer</button>
             </div>
             <div class="cart-promo-on" hidden>
               <span class="cart-promo-chip"><span class="cart-promo-code">KOBG26</span> · -10&nbsp;%</span>
-              <button type="button" class="cart-promo-remove">Retirer</button>
+              <button disabled type="button" class="cart-promo-remove">Retirer</button>
             </div>
             <p class="cart-promo-msg" id="codPromoMsg" aria-live="polite"></p>
           </div>
           <p class="cod-line cod-line--disc" id="codDiscLine" hidden><span>Réduction <span class="js-disc-code">KOBG26</span> (-<span class="js-disc-pct">10</span>&nbsp;%)</span><strong id="codDisc">-0&nbsp;DH</strong></p>
-          <p class="cod-line"><span>Livraison</span><strong id="codShip">25&nbsp;DH</strong></p>
+          <p class="cod-line"><span>Livraison</span><strong id="codShip">Offerte</strong></p>
           <p class="cart-total cod-total"><span>Total</span><strong id="codTotal">0&nbsp;DH</strong></p>
-          <p class="cod-ship-note">Livraison 25&nbsp;DH, offerte dès 2&nbsp;000&nbsp;DH d’achat (avant réduction).</p>
+          <p class="cod-ship-note">Livraison gratuite partout au Maroc.</p>
         </div>
         <p class="cod-alert" id="codAlert" role="alert" hidden></p>
-        <button type="submit" class="cod-submit" id="codSubmit"><span class="cod-submit-txt">Confirmer la commande</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="cod-spin" aria-hidden="true"></span></button>
+        <button disabled type="submit" class="cod-submit" id="codSubmit"><span class="cod-submit-txt">Épuisé</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="cod-spin" aria-hidden="true"></span></button>
         <p class="cod-legal">En confirmant, vous acceptez nos <a href="cgv">conditions générales de vente</a>. Vos coordonnées servent uniquement à confirmer et livrer votre commande (<a href="confidentialite">confidentialité</a>).</p>
         <p class="cod-refund"><a href="cgv#remboursement" class="cod-refund-link js-refund" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Politique de remboursement</span></a></p>
       </form>
       <ul class="pp-perks">
-        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Livraison offerte dès 2&nbsp;000&nbsp;DH partout au Maroc</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Livraison gratuite partout au Maroc</span></li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Paiement à la livraison</span></li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Expédition sous 24–48&nbsp;h · Retours sous 14&nbsp;jours</span></li>
         <li class="pp-perk--pts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Gagnez des points fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat (<a href="compte">compte client</a>)</span></li>
@@ -228,7 +229,7 @@
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Distributeur officiel Rival</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison offerte dès 2&nbsp;000&nbsp;DH</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Expédition sous 24–48&nbsp;h</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 14&nbsp;jours</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Intelli-Shock™ · V-Strap Wrist Lock</span></li>
@@ -238,7 +239,7 @@
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Distributeur officiel Rival</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Paiement à la livraison</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison partout au Maroc</span></li>
-        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison offerte dès 2&nbsp;000&nbsp;DH</span></li>
+        <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Livraison gratuite</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Expédition sous 24–48&nbsp;h</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Retours sous 14&nbsp;jours</span></li>
         <li class="marquee-item"><svg class="marquee-sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z" fill="currentColor"/></svg><span>Intelli-Shock™ · V-Strap Wrist Lock</span></li>
@@ -310,7 +311,7 @@
           </button>
         </h3>
         <div class="faq-a" id="faqA2" role="region" aria-labelledby="faqQ2">
-          <div class="faq-a-inner"><p>Nous livrons partout au Maroc. La livraison standard coûte 25&nbsp;DH. Livraison offerte dès 2&nbsp;000&nbsp;DH d’achat.</p></div>
+          <div class="faq-a-inner"><p>Nous livrons partout au Maroc. La livraison est gratuite, sans minimum d’achat.</p></div>
         </div>
       </li>
       <li class="faq-item" style="--i:1">
@@ -629,7 +630,7 @@
   <div class="pp-bar" id="ppBar" inert>
     <img src="assets/p/gants-de-sac-rival-rb10-intelli-shock-blanc.jpg" alt="" width="56" height="70" decoding="async" loading="lazy">
     <div class="pp-bar-txt"><p class="pp-bar-name">RB10 Intelli-Shock</p><p class="pp-bar-meta"><span id="ppBarMeta">Blanc</span> · <strong>2&nbsp;390&nbsp;DH</strong></p></div>
-    <button type="button" class="pp-bar-add pp-bar-go" id="ppBarGo" aria-controls="codForm" aria-label="Commander Gants de sac Rival RB10 Intelli-Shock Blanc : aller au formulaire de commande"><span>Commander</span></button>
+    <button type="button" class="pp-bar-add pp-bar-go" id="ppBarGo" disabled data-oos aria-controls="codForm" aria-label="Commander Gants de sac Rival RB10 Intelli-Shock Blanc : aller au formulaire de commande"><span>Épuisé</span></button>
   </div>
   <footer class="site-footer" id="footer">
     <div class="footer-grid">
@@ -686,7 +687,7 @@
       <ul class="footer-tile footer-tile--perks footer-perks" aria-label="Nos engagements">
         <li class="footer-perk">
           <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.2v2.8h-7"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="6.5" cy="17.5" r="1.8"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="17" cy="17.5" r="1.8"/></svg></span>
-          <span><strong>Livraison offerte</strong><small>Dès 2&nbsp;000&nbsp;DH, partout au Maroc</small></span>
+          <span><strong>Livraison offerte</strong><small>Gratuite, partout au Maroc</small></span>
         </li>
         <li class="footer-perk">
           <span class="footer-perk-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" x="2.5" y="6" width="19" height="12" rx="2"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M6 9.5v5M18 9.5v5"/></svg></span>
@@ -756,9 +757,9 @@
         <p class="cart-promo-msg" id="cartPromoMsg" aria-live="polite"></p>
       </form>
       <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode">KOBG26</span> (-10&nbsp;%)</span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
-      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">25&nbsp;DH</strong></p>
+      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">Offerte</strong></p>
       <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
-      <p class="cart-note">Livraison 25&nbsp;DH, offerte dès 2&nbsp;000&nbsp;DH d’achat (avant réduction). Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
+      <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
       <p class="cart-note cart-note--pts">Fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat, avec <a href="compte">votre compte client</a>.</p>
       <a href="commande" class="cart-checkout" id="cartCheckout">
         Acheter maintenant
