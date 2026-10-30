@@ -140,10 +140,10 @@
           <legend class="pp-opt-h">Taille&nbsp;: <strong id="ppSizeVal">à choisir</strong></legend>
           <a class="pp-guide-link" href="#guide-des-tailles">Guide des tailles</a>
           <div class="pp-size-list">
-            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="S" disabled><span>S<small class="pp-size-oos">Épuisé</small></span></label>
-            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="M" disabled><span>M<small class="pp-size-oos">Épuisé</small></span></label>
-            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="L" disabled><span>L<small class="pp-size-oos">Épuisé</small></span></label>
-            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="XL" disabled><span>XL<small class="pp-size-oos">Épuisé</small></span></label>
+            <label class="pp-size-btn is-oos" aria-disabled="true"><input type="radio" class="pp-size-input" name="taille" tabindex="-1" aria-disabled="true" value="S" disabled><span>S<small class="pp-size-oos">Épuisé</small></span></label>
+            <label class="pp-size-btn is-oos" aria-disabled="true"><input type="radio" class="pp-size-input" name="taille" tabindex="-1" aria-disabled="true" value="M" disabled><span>M<small class="pp-size-oos">Épuisé</small></span></label>
+            <label class="pp-size-btn is-oos" aria-disabled="true"><input type="radio" class="pp-size-input" name="taille" tabindex="-1" aria-disabled="true" value="L" disabled><span>L<small class="pp-size-oos">Épuisé</small></span></label>
+            <label class="pp-size-btn is-oos" aria-disabled="true"><input type="radio" class="pp-size-input" name="taille" tabindex="-1" aria-disabled="true" value="XL" disabled><span>XL<small class="pp-size-oos">Épuisé</small></span></label>
           </div>
           <p class="pp-size-err" id="ppSizeErr" role="alert" hidden>Choisissez une taille pour continuer.</p>
         </fieldset>
@@ -391,7 +391,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-or" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Or"><option value="M" disabled>M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Or"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -413,7 +413,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-argent" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #b8bcc2" aria-hidden="true"></span>Argent</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Argent"><option value="M" disabled>M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Argent"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -435,7 +435,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb10-intelli-shock-noir-bleu" class="product-link">RB10 Intelli-Shock</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #1f3f9c 50%)" aria-hidden="true"></span>Noir/Bleu</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Bleu"><option value="S" disabled>S — Épuisé</option><option value="M" disabled>M — Épuisé</option><option value="L" selected>L</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Bleu"><option value="S" disabled aria-disabled="true">S — Épuisé</option><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" selected>L</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -457,7 +457,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb10-intelli-shock-noir-or" class="product-link">RB10 Intelli-Shock</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c9a227 50%)" aria-hidden="true"></span>Noir/Or</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Or"><option value="S" disabled>S — Épuisé</option><option value="M" disabled>M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Or"><option value="S" disabled aria-disabled="true">S — Épuisé</option><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" selected>L</option><option value="XL">XL</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -479,7 +479,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb10-intelli-shock-vert-noir" class="product-link">RB10 Intelli-Shock</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #1e8f4e 50%, #141414 50%)" aria-hidden="true"></span>Vert/Noir</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Vert/Noir"><option value="M" disabled>M — Épuisé</option><option value="L" selected>L</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Vert/Noir"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" selected>L</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -501,7 +501,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-noir" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Noir"><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Noir"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -523,7 +523,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-blanc" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Blanc"><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Blanc"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -545,7 +545,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-rouge" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Rouge"><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Rouge"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -567,7 +567,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb11-evolution-bleu" class="product-link">RB11 Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Bleu"><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB11 Evolution Bleu"><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>1&nbsp;690&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -589,7 +589,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb10-intelli-shock-noir-rouge" class="product-link">RB10 Intelli-Shock</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: linear-gradient(135deg, #141414 50%, #c8102e 50%)" aria-hidden="true"></span>Noir/Rouge</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Rouge"><option value="S" disabled>S — Épuisé</option><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir/Rouge"><option value="S" disabled aria-disabled="true">S — Épuisé</option><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -611,7 +611,7 @@
           <p class="product-cat">Gants de sac · Rival</p>
           <h3 class="product-name"><a href="rb10-intelli-shock-noir" class="product-link">RB10 Intelli-Shock</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir"><option value="S" disabled>S — Épuisé</option><option value="M" disabled>M — Épuisé</option><option value="L" disabled>L — Épuisé</option><option value="XL" disabled>XL — Épuisé</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RB10 Intelli-Shock Noir"><option value="S" disabled aria-disabled="true">S — Épuisé</option><option value="M" disabled aria-disabled="true">M — Épuisé</option><option value="L" disabled aria-disabled="true">L — Épuisé</option><option value="XL" disabled aria-disabled="true">XL — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">

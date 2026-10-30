@@ -2097,9 +2097,12 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       void ppSizeBox?.offsetWidth; // replay the shake
       ppSizeBox?.classList.add('is-error');
       if (ppSizeBox) smoothTo(ppSizeBox, { block: 'center' });
-      document.querySelector('.pp-size-input')?.focus({ preventScroll: true });
+      document.querySelector('.pp-size-input:not(:disabled)')?.focus({ preventScroll: true });
     };
     ppBuy?.addEventListener('pp:needsize', ppNeedSize);
+    document.querySelectorAll('.pp-size-input').forEach((r) => r.addEventListener('change', () => {   // sold-out size: never selectable
+      if (r.disabled || r.closest('.is-oos')) { r.checked = false; ppSync(); }
+    }, true));
     document.querySelectorAll('.pp-size-input').forEach((r) => r.addEventListener('change', ppSync));
     document.querySelectorAll('.pp-qty-btn').forEach((b) => b.addEventListener('click', () => {
       ppQty.value = Math.max(1, Math.min(MAX_QTY, ppQtyVal() + +b.dataset.step));
@@ -2168,4 +2171,37 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       ppBarSet();
     }
   }
+})();
+
+// Sold-out sizes (Épuisé) are never clickable, focusable or selected: card <select>s fall back to the first in-stock size.
+(() => {
+  const isOosOpt = (o) => o && (o.disabled || /Épuisé/.test(o.textContent));
+  const fixSelect = (sel) => {
+    [...sel.options].forEach((o) => { if (isOosOpt(o)) { o.disabled = true; o.setAttribute('aria-disabled', 'true'); } });
+    if (isOosOpt(sel.selectedOptions[0])) {
+      const ok = [...sel.options].find((o) => !o.disabled);
+      if (ok) sel.value = ok.value; else { sel.disabled = true; sel.setAttribute('aria-disabled', 'true'); }
+    }
+  };
+  const fixRadio = (r) => {
+    if (r.disabled || r.closest('.is-oos')) {
+      r.disabled = true; r.tabIndex = -1; r.setAttribute('aria-disabled', 'true');
+      r.closest('label')?.setAttribute('aria-disabled', 'true');
+      if (r.checked) r.checked = false;
+    }
+  };
+  const run = () => {
+    document.querySelectorAll('select.product-size').forEach(fixSelect);
+    document.querySelectorAll('.pp-size-input').forEach(fixRadio);
+  };
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.matches?.('select.product-size') && isOosOpt(t.selectedOptions[0])) { e.stopImmediatePropagation(); fixSelect(t); }
+    if (t.matches?.('.pp-size-input') && (t.disabled || t.closest('.is-oos'))) { e.stopImmediatePropagation(); t.checked = false; }
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (e.target.closest?.('.pp-size-btn.is-oos')) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+  window.addEventListener('pageshow', run);   // back/forward cache can restore a stale selection
 })();
