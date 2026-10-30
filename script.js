@@ -340,6 +340,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     if (!p) return null;
     const size = (p.sizes || []).find((s) => sizeSlug(s) === slug) || '';
     if ((p.sizes || []).length ? !size : slug) return null;
+    if (p.inStock === false || (size && (p.soldOut || []).includes(size))) return null; // out of stock: drop
     return { ...it, name: p.name, variant: [p.colour, size].filter(Boolean).join(' · '), price: p.price, img: p.img || it.img };
   }
   function loadCart() {
@@ -605,12 +606,13 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
   function addToCart(btn) {
     const d = btn.dataset;
-    if (!d.id) return;
+    if (!d.id || btn.disabled || 'oos' in d) return;   // out of stock (colour)
     // the size picker (card <select> or product-page radios) turns into part of the line: its own id + "Couleur · Taille".
     // Product pages: data-scope points at the buy box (also used by the sticky mobile bar), which holds the size + quantity.
     const scope = d.scope ? document.getElementById(d.scope) : btn.closest('.product');
     const sizeSel = scope?.querySelector('.product-size, .pp-size-input:checked');
     const size = sizeSel ? sizeSel.value : '';
+    if (sizeSel && (sizeSel.disabled || sizeSel.selectedOptions?.[0]?.disabled)) return; // out of stock (size)
     if (!size && scope?.hasAttribute('data-need-size')) {   // product page: no size chosen yet
       scope.dispatchEvent(new CustomEvent('pp:needsize'));
       return;
@@ -1686,6 +1688,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   // from the homepage cards. Matching ignores accents/case and tolerates small typos.
   // ---------------------------------------------------------
   const PRODUCTS = Array.isArray(window.KOBG_SEARCH) ? window.KOBG_SEARCH : [];
+  const oosRank = (p) => (p.inStock === false ? 1 : 0); // in-stock products first, sold-out last (stable)
   const fold = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[^a-z0-9]+/g, ' ').trim();
   const words = (s) => fold(s).split(' ').filter(Boolean);
@@ -1758,7 +1761,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       if (p.best) score += 0.2;
       res.push({ p, score });
     });
-    return res.sort((a, b) => b.score - a.score || a.p.order - b.p.order).map((r) => r.p);
+    return res.sort((a, b) => oosRank(a.p) - oosRank(b.p) || b.score - a.score || a.p.order - b.p.order).map((r) => r.p);
   }
   const resultsWord = (n) => `${n} résultat${n > 1 ? 's' : ''}`;
   const searchUrl = (q) => `recherche?q=${encodeURIComponent(q.trim())}`;
@@ -1915,7 +1918,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const cardsById = new Map([...grid.children].map((li) => [li.dataset.pid, li]));
     function showResults(raw) {
       const q = raw.trim();
-      const res = q ? searchProducts(q) : PRODUCTS.slice();
+      const res = q ? searchProducts(q) : PRODUCTS.slice().sort((a, b) => oosRank(a) - oosRank(b));
       cardsById.forEach((li) => { li.hidden = true; });
       let n = 0;
       res.forEach((p) => {
@@ -2105,6 +2108,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         getOrder: () => {
           const d = ppAddBtn.dataset;
           const size = ppSize();
+          if (ppAddBtn.disabled || 'oos' in ppAddBtn.dataset) return { blocked: 'Ce coloris est en rupture de stock pour le moment.' };
           if (ppBuy?.hasAttribute('data-need-size') && !size) { ppNeedSize(); return { blocked: 'Choisissez une taille (en haut du formulaire) pour continuer.' }; }
           const qty = ppQtyVal();
           const id = size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id;

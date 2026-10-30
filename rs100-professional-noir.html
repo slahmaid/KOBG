@@ -142,7 +142,9 @@
           <a class="pp-guide-link" href="#guide-des-tailles">Guide des tailles</a>
           <div class="pp-size-list">
             <label class="pp-size-btn"><input type="radio" class="pp-size-input" name="taille" value="14 oz"><span>14&nbsp;oz</span></label>
+            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="16 oz-s" disabled><span>16&nbsp;oz-s<small class="pp-size-oos">Épuisé</small></span></label>
             <label class="pp-size-btn"><input type="radio" class="pp-size-input" name="taille" value="16 oz"><span>16&nbsp;oz</span></label>
+            <label class="pp-size-btn is-oos"><input type="radio" class="pp-size-input" name="taille" value="18 oz" disabled><span>18&nbsp;oz<small class="pp-size-oos">Épuisé</small></span></label>
           </div>
           <p class="pp-size-err" id="ppSizeErr" role="alert" hidden>Choisissez une taille pour continuer.</p>
         </fieldset>
@@ -282,9 +284,9 @@
                 <tr class="is-off"><td>S</td><td>12&nbsp;oz</td><td>jusqu’à 60&nbsp;kg</td><td>19&nbsp;cm</td></tr>
                 <tr class="is-on"><td>M</td><td>14&nbsp;oz</td><td>60–74&nbsp;kg</td><td>21&nbsp;cm</td></tr>
                 <tr class="is-on"><td>L</td><td>16&nbsp;oz-s / 16&nbsp;oz</td><td>75–90&nbsp;kg</td><td>24&nbsp;cm</td></tr>
-                <tr class="is-off"><td>XL</td><td>18&nbsp;oz</td><td>91&nbsp;kg et +</td><td>26&nbsp;cm</td></tr>
+                <tr class="is-on"><td>XL</td><td>18&nbsp;oz</td><td>91&nbsp;kg et +</td><td>26&nbsp;cm</td></tr>
               </tbody>
-            </table></div><p class="pp-size-legend">En gras&nbsp;: les tailles disponibles pour ce modèle (14&nbsp;oz, 16&nbsp;oz).</p><p>Un doute entre deux tailles&nbsp;? Écrivez-nous, nous vous conseillons.</p></div>
+            </table></div><p class="pp-size-legend">En gras&nbsp;: les tailles disponibles pour ce modèle (14&nbsp;oz, 16&nbsp;oz-s, 16&nbsp;oz, 18&nbsp;oz).</p><p>Un doute entre deux tailles&nbsp;? Écrivez-nous, nous vous conseillons.</p></div>
       </article>
 
   <section class="faq pp-faq" aria-labelledby="ppFaqTitle">
@@ -390,7 +392,7 @@
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs1-pro-20e-anniversaire-noir" class="product-link">RS1 Pro 20e anniversaire</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Noir"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Noir"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -412,7 +414,7 @@
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs1-pro-20e-anniversaire-rouge" class="product-link">RS1 Pro 20e anniversaire</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS1 Pro 20e anniversaire Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;390&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -434,7 +436,7 @@
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs11v-evolution-noir" class="product-link">RS11V Evolution</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #141414" aria-hidden="true"></span>Noir</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Noir"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Noir"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" selected>14 oz</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -448,125 +450,15 @@
       </li>
       <li class="product" style="--i: 3">
         <div class="product-media">
-          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" alt="Gants de sparring Rival RS11V Evolution - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
-          <span class="product-idx" aria-hidden="true">04/12</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants de sparring · Rival</p>
-          <h3 class="product-name"><a href="rs11v-evolution-blanc" class="product-link">RS11V Evolution</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Blanc"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
-          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-blanc" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Blanc" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" aria-label="Ajouter RS11V Evolution Blanc au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-      <li class="product" style="--i: 4">
-        <div class="product-media">
-          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" alt="Gants de sparring Rival RS11V Evolution - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
-          <span class="product-idx" aria-hidden="true">05/12</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants de sparring · Rival</p>
-          <h3 class="product-name"><a href="rs11v-evolution-rouge" class="product-link">RS11V Evolution</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Rouge"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
-          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-rouge" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Rouge" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" aria-label="Ajouter RS11V Evolution Rouge au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-      <li class="product" style="--i: 5">
-        <div class="product-media">
-          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" alt="Gants de sparring Rival RS11V Evolution - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
-          <span class="product-idx" aria-hidden="true">06/12</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants de sparring · Rival</p>
-          <h3 class="product-name"><a href="rs11v-evolution-bleu" class="product-link">RS11V Evolution</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Bleu"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
-          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-bleu" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Bleu" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" aria-label="Ajouter RS11V Evolution Bleu au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-      <li class="product" style="--i: 6">
-        <div class="product-media">
-          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" alt="Gants de sparring Rival RS11V Evolution - Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
-          <span class="product-idx" aria-hidden="true">07/12</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants de sparring · Rival</p>
-          <h3 class="product-name"><a href="rs11v-evolution-or" class="product-link">RS11V Evolution</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Or"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
-          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-or" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Or" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" aria-label="Ajouter RS11V Evolution Or au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-      <li class="product" style="--i: 7">
-        <div class="product-media">
-          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" alt="Gants de sparring Rival RS11V Evolution - Argent" width="720" height="900" loading="lazy" decoding="async" draggable="false">
-          <div class="product-tags"><span class="tag">Best-seller Rival</span></div>
-          <span class="product-idx" aria-hidden="true">08/12</span>
-        </div>
-        <div class="product-info">
-          <p class="product-cat">Gants de sparring · Rival</p>
-          <h3 class="product-name"><a href="rs11v-evolution-argent" class="product-link">RS11V Evolution</a></h3>
-          <p class="product-meta"><span class="swatch" style="--sw: #b8bcc2" aria-hidden="true"></span>Argent</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Argent"><option value="12 oz" selected>12 oz</option><option value="14 oz">14 oz</option><option value="16 oz-s">16 oz-s</option><option value="16 oz">16 oz</option><option value="18 oz">18 oz</option></select></label>
-          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
-        </div>
-        <div class="notch notch--card">
-          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-argent" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Argent" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" aria-label="Ajouter RS11V Evolution Argent au panier">
-            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
-        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
-      </li>
-      <li class="product" style="--i: 8">
-        <div class="product-media">
           <img src="assets/p/gants-de-sparring-rival-rs100-professional-blanc.jpg" alt="Gants de sparring Rival RS100 Professional - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag">À lacets</span></div>
-          <span class="product-idx" aria-hidden="true">09/12</span>
+          <span class="product-idx" aria-hidden="true">04/12</span>
         </div>
         <div class="product-info">
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs100-professional-blanc" class="product-link">RS100 Professional</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Blanc"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Blanc"><option value="14 oz" selected>14 oz</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -578,17 +470,17 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-      <li class="product" style="--i: 9">
+      <li class="product" style="--i: 4">
         <div class="product-media">
           <img src="assets/p/gants-de-sparring-rival-rs100-professional-rouge.jpg" alt="Gants de sparring Rival RS100 Professional - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag">À lacets</span></div>
-          <span class="product-idx" aria-hidden="true">10/12</span>
+          <span class="product-idx" aria-hidden="true">05/12</span>
         </div>
         <div class="product-info">
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs100-professional-rouge" class="product-link">RS100 Professional</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Rouge"><option value="14 oz" selected>14 oz</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -600,17 +492,17 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-      <li class="product" style="--i: 10">
+      <li class="product" style="--i: 5">
         <div class="product-media">
           <img src="assets/p/gants-de-sparring-rival-rs100-professional-bleu.jpg" alt="Gants de sparring Rival RS100 Professional - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag">À lacets</span></div>
-          <span class="product-idx" aria-hidden="true">11/12</span>
+          <span class="product-idx" aria-hidden="true">06/12</span>
         </div>
         <div class="product-info">
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs100-professional-bleu" class="product-link">RS100 Professional</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Bleu"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Bleu"><option value="14 oz" selected>14 oz</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
@@ -622,21 +514,131 @@
         <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
         <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
       </li>
-      <li class="product" style="--i: 11">
+      <li class="product" style="--i: 6">
         <div class="product-media">
           <img src="assets/p/gants-de-sparring-rival-rs100-professional-vert.jpg" alt="Gants de sparring Rival RS100 Professional - Vert" width="720" height="900" loading="lazy" decoding="async" draggable="false">
           <div class="product-tags"><span class="tag">À lacets</span></div>
-          <span class="product-idx" aria-hidden="true">12/12</span>
+          <span class="product-idx" aria-hidden="true">07/12</span>
         </div>
         <div class="product-info">
           <p class="product-cat">Gants de sparring · Rival</p>
           <h3 class="product-name"><a href="rs100-professional-vert" class="product-link">RS100 Professional</a></h3>
           <p class="product-meta"><span class="swatch" style="--sw: #1e8f4e" aria-hidden="true"></span>Vert</p>
-          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Vert"><option value="14 oz" selected>14 oz</option><option value="16 oz">16 oz</option></select></label>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS100 Professional Vert"><option value="14 oz" selected>14 oz</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz">16 oz</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
           <p class="product-price"><strong>2&nbsp;229&nbsp;DH</strong></p>
         </div>
         <div class="notch notch--card">
           <button class="product-add" data-id="gants-de-sparring-rival-rs100-professional-vert" data-name="Gants de sparring Rival RS100 Professional" data-variant="Vert" data-price="2229" data-img="assets/p/gants-de-sparring-rival-rs100-professional-vert.jpg" aria-label="Ajouter RS100 Professional Vert au panier">
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product is-oos" style="--i: 7">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" alt="Gants de sparring Rival RS11V Evolution - Blanc" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--oos">Épuisé</span><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">08/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="rs11v-evolution-blanc" class="product-link">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #f2f2f2" aria-hidden="true"></span>Blanc</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Blanc"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" disabled>14 oz — Épuisé</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz" disabled>16 oz — Épuisé</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
+          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-blanc" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Blanc" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-blanc.jpg" aria-label="RS11V Evolution Blanc : épuisé" disabled data-oos>
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product is-oos" style="--i: 8">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" alt="Gants de sparring Rival RS11V Evolution - Rouge" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--oos">Épuisé</span><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">09/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="rs11v-evolution-rouge" class="product-link">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c8102e" aria-hidden="true"></span>Rouge</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Rouge"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" disabled>14 oz — Épuisé</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz" disabled>16 oz — Épuisé</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
+          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-rouge" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Rouge" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-rouge.jpg" aria-label="RS11V Evolution Rouge : épuisé" disabled data-oos>
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product is-oos" style="--i: 9">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" alt="Gants de sparring Rival RS11V Evolution - Bleu" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--oos">Épuisé</span><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">10/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="rs11v-evolution-bleu" class="product-link">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #1f3f9c" aria-hidden="true"></span>Bleu</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Bleu"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" disabled>14 oz — Épuisé</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz" disabled>16 oz — Épuisé</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
+          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-bleu" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Bleu" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-bleu.jpg" aria-label="RS11V Evolution Bleu : épuisé" disabled data-oos>
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product is-oos" style="--i: 10">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" alt="Gants de sparring Rival RS11V Evolution - Or" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--oos">Épuisé</span><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">11/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="rs11v-evolution-or" class="product-link">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #c9a227" aria-hidden="true"></span>Or</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Or"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" disabled>14 oz — Épuisé</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz" disabled>16 oz — Épuisé</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
+          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-or" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Or" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-or.jpg" aria-label="RS11V Evolution Or : épuisé" disabled data-oos>
+            <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="fillet fillet--tl fillet--card-a" aria-hidden="true"></span>
+        <span class="fillet fillet--tl fillet--card-b" aria-hidden="true"></span>
+      </li>
+      <li class="product is-oos" style="--i: 11">
+        <div class="product-media">
+          <img src="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" alt="Gants de sparring Rival RS11V Evolution - Argent" width="720" height="900" loading="lazy" decoding="async" draggable="false">
+          <div class="product-tags"><span class="tag tag--oos">Épuisé</span><span class="tag">Best-seller Rival</span></div>
+          <span class="product-idx" aria-hidden="true">12/12</span>
+        </div>
+        <div class="product-info">
+          <p class="product-cat">Gants de sparring · Rival</p>
+          <h3 class="product-name"><a href="rs11v-evolution-argent" class="product-link">RS11V Evolution</a></h3>
+          <p class="product-meta"><span class="swatch" style="--sw: #b8bcc2" aria-hidden="true"></span>Argent</p>
+          <label class="product-opt"><span class="product-opt-lbl">Taille</span><select class="product-size" aria-label="Taille, RS11V Evolution Argent"><option value="12 oz" disabled>12 oz — Épuisé</option><option value="14 oz" disabled>14 oz — Épuisé</option><option value="16 oz-s" disabled>16 oz-s — Épuisé</option><option value="16 oz" disabled>16 oz — Épuisé</option><option value="18 oz" disabled>18 oz — Épuisé</option></select></label>
+          <p class="product-price"><strong>1&nbsp;990&nbsp;DH</strong></p>
+        </div>
+        <div class="notch notch--card">
+          <button class="product-add" data-id="gants-de-sparring-rival-rs11v-evolution-argent" data-name="Gants de sparring Rival RS11V Evolution" data-variant="Argent" data-price="1990" data-img="assets/p/gants-de-sparring-rival-rs11v-evolution-argent.jpg" aria-label="RS11V Evolution Argent : épuisé" disabled data-oos>
             <svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
