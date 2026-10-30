@@ -2102,3 +2102,22 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   window.addEventListener('pageshow', run);   // back/forward cache can restore a stale selection
 })();
+
+/* "Vous économisez X DH" under the product-page price */
+(function () {
+  function run() {
+    document.querySelectorAll('.pp-price').forEach(function (el) {
+      if (el.querySelector('.pp-save')) return;
+      var now = el.querySelector('strong'), was = el.querySelector('.price-was');
+      if (!now || !was) return;
+      var n = function (t) { return parseInt(String(t).replace(/[^0-9]/g, ''), 10) || 0; };
+      var diff = n(was.lastChild ? was.lastChild.textContent : was.textContent) - n(now.textContent);
+      if (diff <= 0) return;
+      var p = document.createElement('span');
+      p.className = 'pp-save';
+      p.textContent = 'Vous économisez ' + diff.toLocaleString('fr-FR').replace(/\s/g, '\u00a0') + '\u00a0DH';
+      el.appendChild(p);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
