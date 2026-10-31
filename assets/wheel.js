@@ -146,7 +146,7 @@
     remise: (p) => [`-${p.value} % de réduction`, 'Sur les articles de votre prochaine commande · valable 30 jours · non cumulable avec un code promo.'],
     cadeau: (p) => p.key === 'gant'
       ? ['Gants de sac Rival RB10 Intelli-Shock Noir/Rouge', 'Offerts (valeur 2 390 DH) : notre équipe vous contacte pour la taille et la livraison gratuite.', 'rb10-intelli-shock-noir-rouge']
-      : ['Protecteur corporel Rival (Body Shield)', 'Offert (valeur 4 559 DH) : notre équipe vous contacte pour le coloris, la taille et la livraison.', 'protecteur-corporel'],
+      : ['Protecteur corporel Rival (Body Shield)', 'Offert (valeur 4 190 DH) : notre équipe vous contacte pour le coloris, la taille et la livraison.', 'protecteur-corporel'],
   };
   function paintResult(w, claimMsg) {
     const p = w.prize;

@@ -9,7 +9,7 @@ const KEY = 'kobg-test-admin-key-0123456789';
 const RB11 = 'gants-de-sac-rival-rb11-evolution-noir';          // 1690 DH, sizes M L XL
 const RB10 = 'gants-de-sac-rival-rb10-intelli-shock-blanc';     // 2390 DH, sizes S M L XL
 const RS11 = 'gants-de-sparring-rival-rs11v-evolution-or';      // 1990 DH, sizes incl. "16 oz-s"
-const BODY = 'protecteur-corporel-rival-neon';                  // 4559 DH, no size
+const BODY = 'protecteur-corporel-rival-neon';                  // 4190 DH, no size
 
 let seq = 0;
 function order(extra = {}) {
@@ -32,11 +32,11 @@ test('health check answers with the version', () => {
 
 test('valid order is stored with server prices, Gestion line and phone as text', () => {
   const env = env0();
-  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 2, unitPrice: 1690 }, { id: BODY, qty: 1, unitPrice: 4559 }], total: 7939 }));
+  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 2, unitPrice: 1690 }, { id: BODY, qty: 1, unitPrice: 4190 }], total: 7570 }));
   assert.equal(r.ok, true, JSON.stringify(r));
-  assert.equal(r.subtotal, 7939);
+  assert.equal(r.subtotal, 7570);
   assert.equal(r.delivery, 0);                                   // >= 2000 DH: free
-  assert.equal(r.total, 7939);
+  assert.equal(r.total, 7570);
   assert.equal(r.adjusted, false);
   assert.equal(r.items[0].name, 'Gants de sac Rival RB11 Evolution');
   assert.equal(r.items[0].size, 'M');
@@ -611,7 +611,7 @@ test('setup() also creates the Clients tab and the account column', () => {
 });
 
 // ---------- loyalty points ----------
-// RB11 alone = 1690 DH paid (free delivery); BODY alone = 4559 DH (free delivery)
+// RB11 alone = 1690 DH paid (free delivery); BODY alone = 4190 DH (free delivery)
 const ptsOf = (env) => (env.sheets.Points ? env.sheets.Points.rows.slice(1) : []);
 const bal = (env, s) => env.post({ action: 'me', session: s }).points.balance;
 const setStatus = (env, id, status) => env.post({ action: 'update', key: KEY, id: id, status: status });
@@ -645,10 +645,10 @@ test('points: 50 DH per full 1 500 DH delivered, the remainder carries over; gue
   me = env.post({ action: 'me', session: a.session }).points;
   assert.equal(me.balance, 250);
   assert.equal(me.earned, 250);
-  assert.equal(me.next, 1500 - (7939 % 1500));
+  assert.equal(me.next, 1500 - (7570 % 1500));
   const L = ptsOf(env);
   assert.deepEqual(L.map((v) => [v[3], v[4], v[5], v[6], v[7]]), [
-    [o1.orderId, 'gain', 50, 1690, 50], [o2.orderId, 'gain', 50, 1690, 100], [o3.orderId, 'gain', 150, 4559, 250]]);
+    [o1.orderId, 'gain', 50, 1690, 50], [o2.orderId, 'gain', 50, 1690, 100], [o3.orderId, 'gain', 150, 4190, 250]]);
   assert.equal(L[0][1], a.profile.id);
   assert.equal(L[0][2], a.profile.email);
   assert.deepEqual(rowsOf(env, 'Points')[0], ['Date', 'ID client', 'E-mail', 'N° commande', 'Type', 'Points (DH)', 'Achats comptés (DH)', 'Solde après', 'Motif']);
@@ -925,7 +925,7 @@ test('clients: one line per account with the right balance, counted spend, progr
   const by = Object.fromEntries(r.clients.map((x) => [x.id, x]));
   const meA = env.post({ action: 'me', session: a.session }).points, meB = env.post({ action: 'me', session: b.session }).points;
   assert.equal(by[a.profile.id].balance, meA.balance);
-  assert.equal(by[a.profile.id].balance, 200);                               // 1 775 + 4 584 = 6 359 DH → 4 × 50
+  assert.equal(by[a.profile.id].balance, 150);                               // 1 775 + 4 190 = 5 965 DH → 3 × 50
   assert.equal(by[a.profile.id].spend, meA.spend);
   assert.equal(by[a.profile.id].progress, meA.progress);
   assert.equal(by[a.profile.id].next, meA.next);
@@ -949,7 +949,7 @@ test('clients: one line per account with the right balance, counted spend, progr
   const da = env.post({ action: 'client', key: KEY, client: a.profile.id });
   assert.deepEqual(da.orders.map((o) => o.id).sort(), [a1.orderId, a2.orderId, a3.orderId].sort());
   assert.deepEqual(Object.fromEntries(da.orders.map((o) => [o.id, o.statut])), { [a1.orderId]: 'Livrée', [a2.orderId]: 'Livrée', [a3.orderId]: 'Annulée' });
-  assert.equal(da.orders.find((o) => o.id === a2.orderId).pointsEarned, 150);
+  assert.equal(da.orders.find((o) => o.id === a2.orderId).pointsEarned, 100);
   assert.equal(da.profile.nom, 'Amine Alaoui');
   // reading the list writes nothing
   const before = JSON.stringify(env.sheets);
@@ -1201,10 +1201,10 @@ test('wheel: a cancelled order gives the discount back; re-activating takes it a
   const env = env0();
   const a = wheelUser(env, '0612000041');
   env.post({ action: 'wheel_claim', session: a.session, token: mint(env, 4) });     // -50 %
-  const o = env.post(order({ wheel: true, session: a.session, items: [{ id: BODY, qty: 1, unitPrice: 4559 }] }));
-  assert.equal(o.discount, 2280);                                                    // round(4559 / 2)
+  const o = env.post(order({ wheel: true, session: a.session, items: [{ id: BODY, qty: 1, unitPrice: 4190 }] }));
+  assert.equal(o.discount, 2095);                                                    // round(4190 / 2)
   assert.equal(o.delivery, 0);
-  assert.equal(o.total, 2279);
+  assert.equal(o.total, 2095);
   const tok = env.post({ action: 'auth', key: KEY }).token;
   const u = env.post({ action: 'update', key: tok, id: o.orderId, status: 'Annulée' });
   assert.equal(u.ok, true);
