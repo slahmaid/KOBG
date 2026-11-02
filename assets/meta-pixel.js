@@ -9,5 +9,8 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('set', 'autoConfig', false, '1127670993138595');
 fbq('init', '1127670993138595');
-// The thank-you page (merci) sends only Purchase, from script.js
-if (!/^\/merci(\.html)?\/?$/.test(location.pathname)) fbq('track', 'PageView');
+// PageView only on the homepage and product pages (merci sends only Purchase, from script.js)
+var kobgPath = location.pathname.replace(/\.html$/, '').replace(/\/$/, '');
+var kobgIsHome = kobgPath === '' || kobgPath === '/index';
+var kobgIsProduct = Array.prototype.some.call(document.querySelectorAll('script[type="application/ld+json"]'), function (el) { return /"@type":"Product(Group)?"/.test(el.textContent); });
+if (kobgIsHome || kobgIsProduct) fbq('track', 'PageView');

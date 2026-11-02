@@ -525,6 +525,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     saveCart();
     render();
     bumpBadge();
+    try { if (typeof fbq === 'function') fbq('track', 'AddToCart', { content_ids: [id], content_name: d.name, content_type: 'product', value: (+d.price || 0) * add, currency: 'MAD' }); } catch (err) { /* pixel blocked */ }
 
     btn.classList.add('is-added');
     clearTimeout(addedTimers.get(btn));
@@ -1069,6 +1070,10 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   // getOrder() returns { items, sub, source } or { blocked: 'message' } (it shows its own hint, e.g. the size).
   function codForm(form, { getOrder, onSuccess }) {
     const submit = form.querySelector('.cod-submit');
+    // Meta Pixel: InitiateCheckout once per page, when the visitor starts filling an order form
+    const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; try { if (typeof fbq === 'function') fbq('track', 'InitiateCheckout'); } catch (err) { /* pixel blocked */ } };
+    form.addEventListener('focusin', pxCheckout);
+    form.addEventListener('submit', pxCheckout);
     const submitTxt = submit.querySelector('.cod-submit-txt');
     const alertEl = form.querySelector('.cod-alert');
     const fields = Object.keys(COD_RULES).map((n) => form.elements[n]).filter(Boolean);
