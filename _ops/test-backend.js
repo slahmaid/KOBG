@@ -48,7 +48,7 @@ test('valid order is stored with server prices, Gestion line and phone as text',
   assert.match(v[3], /^06\d{8}$/);                               // leading 0 kept
   assert.equal(v[5], 'Gants de sac Rival RB11 Evolution x2 / Protecteur corporel Rival');
   assert.equal(v[6], 'M / ');
-  assert.equal(v[7], 'Noir / Neon');
+  assert.equal(v[7], 'Noir / Néon');
   assert.equal(v[8], 3);
   const g = rowsOf(env, 'Gestion');
   assert.deepEqual(g[0].slice(0, 5), ['N° commande', 'Statut', 'Note interne', 'Mis à jour le', 'Historique']);

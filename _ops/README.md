@@ -5,7 +5,8 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | File | What it is |
 |---|---|
 | `order-apps-script.gs` | The order + admin backend (Google Apps Script web app). **Must be deployed — see step 1.** |
-| `test-backend.js` | 50 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view). Run `node _ops/test-backend.js`. |
+| `test-backend.js` | 63 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view, prize wheel). Run `node _ops/test-backend.js`. |
+| `KOBG-new-products.bundle` | Git bundle of the commit that added the RB1 Ultra, RS11V Vert/Noir, Body Shield Rouge/Blanc/Bleu, pads and coquilles. Moved here from the site root, where it was publicly downloadable. Not needed by the site. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
 | `dev-server.js` | Local preview at `http://localhost:8080/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
 
@@ -92,7 +93,7 @@ A promotional game: one free spin per visitor, the prize goes to a customer acco
 3. **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL).
 4. Publish the site files (section 2): `assets/wheel.js`, `reglement-jeu.html`, `styles.css`, `script.js`, `assets/account.js`, `compte.html`, `admin.html`, `assets/admin.js`, `assets/admin.css`, the pages that load the wheel, the legal pages and `sitemap.xml`. If the site goes out before step 3, the old Apps Script answers `bad_action` to `wheel_spin`: the wheel shows « La Roue de la chance ouvre très bientôt… » (and the browser console says the deployment is outdated); nothing else is affected. The wheel never opens by itself: only the floating button or a link to `#roue` opens it.
 
-**What visitors see:** the wheel never opens by itself. A floating **« Tentez votre chance »** button (bottom left) on the **homepage only** (`index.html` is the only page that loads `assets/wheel.js`) opens it (it becomes « Mon lot à réclamer » / « Mon lot » after the spin). `/#roue` (or `/?roue`) opens it directly. A prize won and not yet claimed stays in the browser and is still added at sign-in / sign-up on `compte`. To show it on another page again, add `<script src="assets/wheel.js"></script>` after `script.js` there. Only the **START** button in the centre spins. The server draws the prize and the wheel stops on that slice. The result asks to create an account (the prize is added automatically) or sign in. A signed-in customer gets it at once. The prize then shows in **Mon compte › Mon lot**.
+**What visitors see:** the wheel never opens by itself. A floating **« Tentez votre chance »** button (bottom right, bottom left on phones; hidden near the footer and, on phones, while scrolling down) on the **homepage only** (`index.html` is the only page that loads `assets/wheel.js`) opens it (it becomes « Mon lot à réclamer » / « Mon lot » after the spin). `/#roue` (or `/?roue`) opens it directly. A prize won and not yet claimed stays in the browser and is still added at sign-in / sign-up on `compte`. To show it on another page again, add `<script src="assets/wheel.js"></script>` after `script.js` there. Only the **START** button in the centre spins. The server draws the prize and the wheel stops on that slice. The result asks to create an account (the prize is added automatically) or sign in. A signed-in customer gets it at once. The prize then shows in **Mon compte › Mon lot**.
 
 **The prizes:**
 
@@ -126,7 +127,7 @@ Search the HTML for `data-todo` — **16 placeholders** show "[À compléter : �
 
 Also:
 
-- **WhatsApp:** `WHATSAPP_NUMBER` in `script.js` is empty, so every WhatsApp button is hidden. Put the number there (one line) and they appear site-wide.
+- **WhatsApp:** `WHATSAPP_NUMBER` in `script.js` is `14383891565`, so the WhatsApp buttons appear site-wide. Change it there (one line) to update them all; leave it empty to hide them.
 - **Phone:** the only seller phone on the site is `+1 438 389 1565` (a Canadian number). Law 31-08 expects a number Moroccan customers can reach — add a Moroccan line.
 - **CNDP:** declare the order-data processing (stored in Google Sheets, outside Morocco) to the CNDP — www.cndp.ma.
 - **Written order confirmation:** law 31-08 expects the order's essentials to be confirmed to the customer in writing (otherwise the withdrawal period can extend). A WhatsApp/SMS recap when you call, or a printed recap in the parcel, covers it.
@@ -134,7 +135,9 @@ Also:
 
 ## 4. Keep in sync when you change things
 
-- **Prices, sizes, products:** the backend reads them from `assets/search-index.js` on the live site (cached 10 min). Regenerate that file whenever product cards change — nothing to edit in the script.
+- **Prices, sizes, products:** the backend reads them from `assets/search-index.js` on the live site (cached 10 min). Update that file whenever product cards change — nothing to edit in the script.
+- **A product without a price:** `price: 0` in the index means "not on sale". The server refuses it, the cart drops it, and its cards and page show « Prix bientôt disponible » (`.price-soon`), with no `offers` in its JSON-LD. The three RB1 Ultra colours are in this state: to put one on sale, set its price in the index, on its cards (`data-price`, `.product-price`) and on its page (`.pp-price`, `#ppAdd`, JSON-LD).
+- **A new product:** add its card to `recherche.html` too (with `data-pid="<id>"`), otherwise the header search finds it but the results page does not. Every product in the index needs a card there.
 - **Prize wheel:** `WHEEL` in `order-apps-script.gs`, `SLICES`/`FILL` in `assets/wheel.js` and the prize list in `reglement-jeu.html` must describe the same 10 slices in the same order.
 - **Promo codes (none since the 10 % KOBG26 code was removed; `PROMO_CODES = {}` in the `.gs`, nothing in `script.js`), delivery fee (currently 0 = free delivery), free-delivery threshold:** set in **both** the CONFIG block of `script.js` and the CONFIG block of `order-apps-script.gs` (then redeploy, step 1.6).
 - **Moving to a custom domain** (recommended, see below): update `SITE_URL` in the `.gs` (also used in password-reset e-mails), the canonical/OG URLs in every page, `sitemap.xml` and `robots.txt`.
@@ -147,7 +150,8 @@ Covered:
 - Every field is validated and length-capped; text that starts with `= + - @` is stored as plain text, so no one can plant a formula (e.g. `=IMPORTDATA(...)` that would leak customer data) in the sheet. The admin CSV export is protected the same way.
 - Rate limits: 5 orders/hour per phone number, 40 orders/10 min overall; a double tap or network retry is stored once.
 - Admin: key compared in constant time; 5 wrong keys → 15 min lock; while locked, an already signed-in session keeps working (so nobody can lock you out). The browser stores a **signed, expiring session token** (12 h, or 30 days with "Rester connecté"), never the key. Running `generateAdminKey` again signs every device out.
-- Content-Security-Policy on every page (scripts only from the site itself; orders only to Google Apps Script), no inline scripts except one hashed pre-paint snippet, strict referrer policy. The admin page refuses to run inside a frame (clickjacking).
+- Content-Security-Policy on every page (scripts only from the site itself and Meta's `connect.facebook.net` for the Meta Pixel; orders only to Google Apps Script), no inline scripts except one hashed pre-paint snippet, strict referrer policy. The admin page refuses to run inside a frame (clickjacking).
+- Meta Pixel (`assets/meta-pixel.js`): stays off on `localhost`, so local previews never report to the shop's pixel. It is described in `confidentialite.html`; if you change what it sends, update that page too.
 
 - Customer accounts: passwords hashed with PBKDF2-SHA256 + a random salt per account; the browser keeps only a random session token whose SHA-256 is stored server-side with an expiry; changing or resetting the password signs out the other devices; "Se déconnecter de tous les appareils" is available; sign-in errors never say whether an e-mail exists; profile fields get the same formula-injection protection as orders. Reset tokens travel in the link's `#fragment` (never sent to a server or logged) and are removed from the address bar immediately.
 

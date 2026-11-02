@@ -752,7 +752,7 @@
     let txt = 'Gagné à la Roue de la chance, ajouté au compte le ' + esc(w.claimed) + '. ';
     if (w.kind === 'points') txt += 'Points crédités dans l\'onglet « Points » (motif « Roue de la chance »).';
     else if (w.kind === 'remise') txt += w.state === 'used' ? 'Utilisée sur la commande ' + esc(w.order) + (orderId && w.order === orderId ? ' (celle-ci)' : '') + '.'
-      : w.state === 'active' ? 'Une seule commande, valable jusqu\'au ' + esc(w.until) + ', appliquée automatiquement au paiement (articles uniquement, non cumulable avec un code promo).' : 'Non utilisée avant le ' + esc(w.until) + '.';
+      : w.state === 'active' ? 'Une seule commande, valable jusqu\'au ' + esc(w.until) + ', appliquée automatiquement au paiement (articles uniquement).' : 'Non utilisée avant le ' + esc(w.until) + '.';
     else txt += w.state === 'given' ? 'Cadeau remis au client.' : 'À remettre : contactez le client pour le modèle et la taille, puis marquez-le remis.';
     const btn = w.kind === 'cadeau' ? '<button type="button" class="btn ' + (w.state === 'given' ? 'btn-ghost-d' : 'btn-red') + '" data-gift="' + esc(w.spin) + '" data-given="' + (w.state === 'given' ? '0' : '1') + '">' + (w.state === 'given' ? 'Annuler « remis »' : 'Marquer remis') + '</button>' : '';
     return '<div class="d-card wcard' + (w.state === 'pending' ? ' is-pending' : '') + '"><div class="d-row"><span class="d-h">Roue de la chance</span><span class="wst" data-w="' + esc(w.state) + '">' + esc(st) + '</span></div>' +

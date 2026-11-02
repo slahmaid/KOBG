@@ -1,4 +1,6 @@
 /* Meta Pixel (external file so the site's Content-Security-Policy allows it) */
+// local previews never report to the shop's pixel (script.js only calls fbq if it exists)
+if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) {
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -14,3 +16,4 @@ var kobgPath = location.pathname.replace(/\.html$/, '').replace(/\/$/, '');
 var kobgIsHome = kobgPath === '' || kobgPath === '/index';
 var kobgIsProduct = Array.prototype.some.call(document.querySelectorAll('script[type="application/ld+json"]'), function (el) { return /"@type":"Product(Group)?"/.test(el.textContent); });
 if (kobgIsHome || kobgIsProduct) fbq('track', 'PageView');
+}

@@ -2,7 +2,7 @@
 // The DRAW happens on the server (_ops/order-apps-script.gs, WHEEL: the odds live there only). The server answers a
 // signed token + the slice index; this file only animates the wheel so it stops on that slice, keeps the token in
 // localStorage (same result on every later visit) and sends the visitor to compte to claim the prize.
-// Load after script.js. Never opens by itself: only the floating « Tentez votre chance » button (bottom left) or a link to
+// Load after script.js. Never opens by itself: only the floating « Tentez votre chance » button (bottom right, bottom left on phones) or a link to
 // …#roue / ?roue opens it. Guests who already spun see their saved result and the « Créer mon compte » button again (still one spin).
 (() => {
   'use strict';
@@ -143,7 +143,7 @@
   // ---------- result panel ----------
   const PRIZE = {
     points: (p) => [`${p.value} points fidélité`, 'Crédités sur votre compte (1 point = 1 DH), pour une prochaine commande.'],
-    remise: (p) => [`-${p.value} % de réduction`, 'Sur les articles de votre prochaine commande · valable 30 jours · non cumulable avec un code promo.'],
+    remise: (p) => [`-${p.value} % de réduction`, 'Sur les articles de votre prochaine commande · valable 30 jours.'],
     cadeau: (p) => p.key === 'gant'
       ? ['Gants de sac Rival RB10 Intelli-Shock Noir/Rouge', 'Offerts (valeur 2 390 DH) : notre équipe vous contacte pour la taille et la livraison gratuite.', 'rb10-intelli-shock-noir-rouge']
       : ['Protecteur corporel Rival (Body Shield)', 'Offert (valeur 4 190 DH) : notre équipe vous contacte pour le coloris, la taille et la livraison.', 'protecteur-corporel'],
@@ -285,7 +285,7 @@
   const hideToast = () => { clearTimeout(toastT); toastEl.classList.remove('is-in'); toastEl.hidden = true; toastEl.textContent = ''; };
   function toast(h, kind) {
     clearTimeout(toastT);
-    const what = kind === 'remise' ? `une remise de ${h.replace(/^-/, '').replace(/ de réduction$/, '')} sur les articles` : kind === 'cadeau' ? h.replace(/^Gants/, 'des gants').replace(/^Protecteur/, 'un protecteur') : h;
+    const what = kind === 'remise' ? `une remise de ${h.replace(/^-/, '').replace(/ de réduction$/, '').replace(' %', ' %')} sur les articles` : kind === 'cadeau' ? h.replace(/^Gants/, 'des gants').replace(/^Protecteur/, 'un protecteur') : h;
     toastEl.innerHTML = `<span class="wheel-toast-burst" aria-hidden="true"></span><span class="wheel-toast-body"><strong class="wheel-toast-h">Félicitations&nbsp;!</strong><span class="wheel-toast-txt">Vous avez gagné ${esc(what)}.</span></span>
       <button type="button" class="wheel-toast-x" aria-label="Fermer le message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>`;
     toastEl.hidden = false;
@@ -352,20 +352,33 @@
   // label would sit on a promo code, a price or the add-to-cart button. Starts as the icon: nothing shrinks on load.
   const narrow = window.matchMedia('(max-width: 760px)');
   const productPage = document.body.classList.contains('pp-page');
-  const AVOID = '.promo-code, .copy-btn, .pp-price, .pp-add, .product-price';
+  const AVOID = '.promo-big, .promo-sub, .shop-btn, .coll-txt, .discover-btn, .products-all, .pp-price, .pp-add, .product-price';
   const fabTxtW = () => fab.getBoundingClientRect().width + (fab.classList.contains('is-compact') ? 18 + fabTxt.scrollWidth : 0);
   function covers() {
     const r = fab.getBoundingClientRect();
-    const right = r.left + fabTxtW();
+    // the label grows towards the middle of the screen: to the left when the button sits on the right
+    const left = narrow.matches ? r.left : r.right - fabTxtW();
+    const right = narrow.matches ? r.left + fabTxtW() : r.right;
     return [...document.querySelectorAll(AVOID)].some((el) => {
       const e = el.getBoundingClientRect();
-      return e.width > 0 && e.right > r.left && e.left < right && e.bottom > r.top && e.top < r.bottom;
+      return e.width > 0 && e.right > left && e.left < right && e.bottom > r.top && e.top < r.bottom;
     });
   }
   let compactRaf = 0;
+  // Out of the way near the footer (its links, the back-to-top arrow) and, on phones, while the page scrolls down;
+  // back as soon as the visitor stops at the top or scrolls up.
+  const footer = document.querySelector('.site-footer');
+  let lastY = window.scrollY;
   const compact = () => {
     compactRaf = 0;
-    fab.classList.toggle('is-compact', window.scrollY > 160 || (productPage && narrow.matches) || covers());
+    const y = window.scrollY;
+    const down = y > lastY + 2, up = y < lastY - 2;
+    if (down || up) lastY = y;
+    fab.classList.toggle('is-compact', y > 160 || (productPage && narrow.matches) || covers());
+    const atFooter = !!footer && footer.getBoundingClientRect().top < window.innerHeight - 60;
+    if (atFooter || y < 160) fab.classList.toggle('is-tucked', atFooter);
+    else if (narrow.matches && down) fab.classList.add('is-tucked');
+    else if (up || !narrow.matches) fab.classList.remove('is-tucked');
   };
   const later = () => { if (!compactRaf) compactRaf = requestAnimationFrame(compact); };
   fab.classList.add('is-compact');

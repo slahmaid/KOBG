@@ -364,7 +364,7 @@
   // ---------- « Roue de la chance » ----------
   const WHEEL_STATE = {
     credited: (w) => [`${w.label} crédités`, `Ajoutés à votre solde de points${w.claimed ? ` le ${w.claimed}` : ''} : à utiliser sur une prochaine commande.`],
-    active: (w) => [`-${w.value} % sur votre prochaine commande`, `Valable jusqu’au ${w.until}, pour une seule commande, sur le prix des articles (hors livraison). Non cumulable avec un code promo. La remise vous est proposée automatiquement au moment de commander, une fois connecté.`],
+    active: (w) => [`-${w.value} % sur votre prochaine commande`, `Valable jusqu’au ${w.until}, pour une seule commande, sur le prix des articles (hors livraison). La remise vous est proposée automatiquement au moment de commander, une fois connecté.`],
     used: (w) => [`Remise -${w.value} % utilisée`, w.order ? `Appliquée à la commande ${w.order}.` : 'Déjà appliquée à une commande.'],
     expired: (w) => [`Remise -${w.value} % expirée`, `Elle était valable jusqu’au ${w.until}.`],
     pending: (w) => [`Cadeau : ${w.label}`, 'Notre équipe vous contacte pour convenir du modèle, de la taille et de la remise de votre cadeau (avec votre prochaine commande ou par livraison). Offert, sans frais.'],
