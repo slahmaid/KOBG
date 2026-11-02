@@ -1266,6 +1266,18 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     }
     if (o) {
       $('merciTest').hidden = !o.test;
+      // Meta Pixel: Purchase, once per order (not on reload, not in test mode)
+      try {
+        const pk = 'kobg_px_purchase_' + o.orderId;
+        if (!o.test && typeof fbq === 'function' && !localStorage.getItem(pk)) {
+          fbq('track', 'Purchase', {
+            value: +o.total || 0, currency: 'MAD',
+            content_type: 'product', num_items: (o.items || []).reduce((a, it) => a + (+it.qty || 0), 0),
+            contents: (o.items || []).map((it) => ({ id: it.name, quantity: +it.qty || 1, item_price: +it.unitPrice || 0 }))
+          }, { eventID: o.orderId });
+          localStorage.setItem(pk, '1');
+        }
+      } catch (err) { /* pixel blocked */ }
       $('merciItems').innerHTML = (o.items || []).map((it) => `
         <li class="merci-item"><span class="merci-item-name"><strong>${esc(it.name)}</strong>${[it.colour, it.size].filter(Boolean).length ? `<small>${esc([it.colour, it.size].filter(Boolean).join(' · '))}</small>` : ''}</span>
           <span class="merci-item-qty">${esc(it.qty)} × ${formatDH(+it.unitPrice || 0)}</span><strong class="merci-item-total">${formatDH(+it.lineTotal || 0)}</strong></li>`).join('');
