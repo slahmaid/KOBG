@@ -9,4 +9,5 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('set', 'autoConfig', false, '1127670993138595');
 fbq('init', '1127670993138595');
-fbq('track', 'PageView');
+// The thank-you page (merci) sends only Purchase, from script.js
+if (!/^\/merci(\.html)?\/?$/.test(location.pathname)) fbq('track', 'PageView');
