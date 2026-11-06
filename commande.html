@@ -108,9 +108,9 @@
           <div class="co-sum-foot">
             <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="coSub">0&nbsp;DH</strong></p>
             <p class="cart-line cod-line--disc" id="coDiscLine" hidden><span>Réduction <span class="js-disc-code">Roue de la chance</span> (-<span class="js-disc-pct">20</span>&nbsp;%)</span><strong id="coDisc">-0&nbsp;DH</strong></p>
-            <p class="cart-line"><span>Livraison</span><strong id="coShip">Offerte</strong></p>
-            <p class="cart-total"><span>Total</span><strong id="coTotal">0&nbsp;DH</strong></p>
-            <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison. Points fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat livrés (compte client).</p>
+            <p class="cart-line"><span>Livraison</span><strong id="coShip">0&nbsp;DH</strong></p>
+            <p class="cart-total"><span>Total à payer à la livraison</span><strong id="coTotal">0&nbsp;DH</strong></p>
+            <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison. Commande sans compte possible. Pour les points fidélité, <a href="compte">connectez-vous</a> avant de commander&nbsp;: 50&nbsp;DH tous les 1&nbsp;500&nbsp;DH d’achats livrés, crédités après livraison. Les commandes invitées ne sont pas rattachées rétroactivement. <a href="cgv#fidelite">Conditions</a>.</p>
           </div>
         </div>
       </aside>
@@ -120,23 +120,26 @@
               <nav class="crumbs" aria-label="Fil d’Ariane"><ol><li><a href="/">Accueil</a></li><li><span aria-current="page">Commande</span></li></ol></nav>
               <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Paiement à la livraison</p>
               <h1 class="cod-h cod-h--page" id="codTitle" tabindex="-1">Finaliser <span class="cod-h-sub">ma commande</span></h1>
-              <p class="cod-intro" id="codIntro">Compte facultatif, aucun paiement en ligne. Nom, ville et téléphone suffisent&nbsp;: nous vous appelons pour confirmer la commande et l’adresse de livraison, puis vous payez le livreur à la réception.</p>
+              <p class="cod-intro" id="codIntro">Compte facultatif. Aucun paiement en ligne. Indiquez nom, ville et téléphone : nous confirmons par appel, puis vous payez à la livraison.</p>
             </div>
             <fieldset class="cod-fields">
               <legend class="sr-only">Vos coordonnées</legend>
               <div class="cod-field cod-field--full">
                 <label for="codNom">Nom complet</label>
-                <input id="codNom" name="nom" type="text" autocomplete="name" autocapitalize="words" required minlength="3" maxlength="80" aria-describedby="codNomErr">
+                <input id="codNom" name="nom" type="text" autocomplete="name" autocapitalize="words" required minlength="3" maxlength="80" aria-describedby="codNomHint codNomErr">
+                <p class="cod-hint" id="codNomHint">Pour l’appel de confirmation de commande.</p>
                 <p class="cod-err" id="codNomErr" hidden></p>
               </div>
               <div class="cod-field">
-                <label for="codVille">Ville</label>
-                <input id="codVille" name="ville" type="text" autocomplete="address-level2" autocapitalize="words" placeholder="Ex. Casablanca" required maxlength="60" aria-describedby="codVilleErr">
+                <label for="codVille">Ville de livraison</label>
+                <input id="codVille" name="ville" type="text" autocomplete="address-level2" autocapitalize="words" placeholder="Ex. Casablanca" required maxlength="60" aria-describedby="codVilleHint codVilleErr">
+                <p class="cod-hint" id="codVilleHint">Ville au Maroc où le colis doit être remis.</p>
                 <p class="cod-err" id="codVilleErr" hidden></p>
               </div>
               <div class="cod-field">
-                <label for="codTel">Téléphone</label>
-                <input id="codTel" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required maxlength="20" aria-describedby="codTelErr">
+                <label for="codTel">Téléphone mobile</label>
+                <input id="codTel" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required maxlength="20" aria-describedby="codTelHint codTelErr">
+                <p class="cod-hint" id="codTelHint">06 ou 07 — nous vous appelons avant l’envoi.</p>
                 <p class="cod-err" id="codTelErr" hidden></p>
               </div>
               <div class="cod-hp" aria-hidden="true"><label for="codHp">Laissez ce champ vide</label><input id="codHp" name="kobg_hp" type="text" tabindex="-1" autocomplete="off"></div>
@@ -292,10 +295,10 @@
     <div class="cart-foot" id="cartFoot">
       <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
       <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode"></span></span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
-      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">Offerte</strong></p>
-      <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
+      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">0&nbsp;DH</strong></p>
+      <p class="cart-total"><span>Total à payer à la livraison</span><strong id="cartTotal">0&nbsp;DH</strong></p>
       <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
-      <p class="cart-note cart-note--pts">Fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat, avec <a href="compte">votre compte client</a>.</p>
+      <p class="cart-note cart-note--pts">Commande sans compte possible. Pour les points fidélité, <a href="compte">connectez-vous</a> avant de commander&nbsp;: 50&nbsp;DH tous les 1&nbsp;500&nbsp;DH d’achats livrés, crédités après livraison. Les commandes invitées ne sont pas rattachées rétroactivement. <a href="cgv#fidelite">Conditions</a>.</p>
       <a href="commande" class="cart-checkout" id="cartCheckout">
         Acheter maintenant
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
