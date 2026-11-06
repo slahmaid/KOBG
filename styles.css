@@ -446,15 +446,6 @@ img[src*="kobg-mark"] { object-fit: contain; }
   background: var(--frame);
 }
 
-/* bottom-left arrow notch on the feature panel */
-.hero { --tab: min(11.5vh, 7vw); }
-.panel--feature { --btn: var(--tab); --notch: calc(var(--btn) + var(--g)); }
-.notch--bl {
-  left: 0; bottom: 0;
-  width: var(--notch);
-  height: var(--notch);
-  border-top-right-radius: calc(var(--btn) / 2 + var(--g));
-}
 .circle-btn {
   position: absolute;
   left: 0; bottom: 0;
@@ -511,8 +502,6 @@ img[src*="kobg-mark"] { object-fit: contain; }
 }
 .fillet--tr { background: radial-gradient(circle at 100% 0, transparent calc(var(--r) - .5px), var(--frame) var(--r)); }
 .fillet--tl { background: radial-gradient(circle at 0 0,    transparent calc(var(--r) - .5px), var(--frame) var(--r)); }
-.fillet--bl-a { left: 0;              bottom: var(--notch); }
-.fillet--bl-b { left: var(--notch);   bottom: 0; }
 .fillet--br-a { right: 0;             bottom: var(--nh); }
 .fillet--br-b { right: var(--nw);     bottom: 0; }
 
@@ -4353,14 +4342,14 @@ html.sheet-open { overflow: hidden; }
 .panel--feature > .headline--lead {
   position: absolute;
   z-index: 4;
-  left: calc(var(--notch) + var(--g));
+  left: calc(var(--r) * .9);
   right: calc(var(--r) * .9);
   bottom: calc(var(--r) * .9);
   top: auto;
   text-align: left;
   font-size: clamp(15px, 2.4vh, 28px);
   line-height: 1.15;
-  max-width: min(34rem, calc(100% - var(--notch) - var(--r) * 1.8));
+  max-width: min(34rem, calc(100% - var(--r) * 1.8));
   margin: 0;
   padding: .55em .75em;
   border-radius: calc(var(--r) * .55);
@@ -4379,13 +4368,13 @@ html.sheet-open { overflow: hidden; }
 .hero-paths {
   position: absolute;
   z-index: 4;
-  left: calc(var(--notch) + var(--g));
+  left: calc(var(--r) * .9);
   right: calc(var(--r) * .9);
   bottom: calc(var(--r) * .85);
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  max-width: min(36rem, calc(100% - var(--notch) - var(--r) * 1.8));
+  max-width: min(36rem, calc(100% - var(--r) * 1.8));
 }
 .hero-path {
   display: inline-flex;
@@ -4414,14 +4403,14 @@ html.sheet-open { overflow: hidden; }
 @media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
   .panel--feature > .headline--lead {
     font-size: clamp(14px, 3.6vw, 20px);
-    left: calc(var(--notch) + var(--g));
+    left: calc(var(--r) * .9);
     right: calc(var(--r) * .8);
     bottom: calc(var(--r) * .85);
     max-width: none;
     padding: .5em .7em;
   }
   .hero-paths {
-    left: calc(var(--notch) + var(--g));
+    left: calc(var(--r) * .9);
     right: calc(var(--r) * .8);
     bottom: calc(var(--r) * .75);
     max-width: none;
