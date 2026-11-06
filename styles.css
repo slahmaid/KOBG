@@ -4774,3 +4774,60 @@ html.sheet-open { overflow: hidden; }
 .pp-avail[data-state="oos"] { color: #7a1f1f; }
 .pp-avail[data-state="ok"] { color: #1f4d2e; }
 .pp-perk--pts a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* === KOBG mobile layout fix (2026-11-06) === */
+/* Product-page COD button at ~320px: "Confirmer la commande" was clipped
+   to "CONFIRMER LA COMM…" because .cod-submit is nowrap + ellipsis, and
+   the PDP panel is narrower than checkout. Keep the same label; wrap and
+   slightly tighten tracking so the full phrase stays readable. */
+@media (max-width: 360px) {
+  .cod-submit {
+    height: auto;
+    min-height: 54px;
+    padding: 10px .8em;
+    gap: .35em;
+    font-size: 13px;
+    letter-spacing: .02em;
+    white-space: normal;
+    line-height: 1.15;
+    text-align: center;
+  }
+  .cod-submit-txt {
+    overflow: visible;
+    text-overflow: unset;
+    min-width: 0;
+  }
+}
+
+/* === KOBG mobile hero stack (2026-11-06) === */
+/* On short phones the lead used bottom: calc(var(--notch) + 52px). The
+   path buttons already sit beside the white notch, not above it, so that
+   extra notch offset lifted the headline into the distributor badge.
+   Sit the lead just above the path row, and keep the badge in a row so
+   it stays short enough to clear the headline. */
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 740px),
+       (max-width: 560px) and (max-height: 740px),
+       (max-aspect-ratio: 4/5) and (max-height: 740px) {
+  .panel--feature > .headline--lead {
+    bottom: calc(var(--r) * .75 + 56px);
+    font-size: clamp(13px, 3.4vw, 18px);
+    padding: .45em .65em;
+    z-index: 4;
+  }
+  .panel--feature > .headline--badge {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    z-index: 5;
+  }
+  .hero-badge {
+    width: min(14vw, 7vh);
+    min-width: 40px;
+    max-width: 48px;
+  }
+  .hero-badge-text {
+    font-size: 9px;
+    letter-spacing: .1em;
+    white-space: normal;
+  }
+}
