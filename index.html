@@ -98,9 +98,23 @@
     <main class="hero">
       <!-- Big feature panel -->
       <section class="panel panel--feature" style="--i: 0">
-        <h1 class="headline headline--badge"><img class="hero-badge" src="assets/knockout-rival-badge.svg?v=4" alt="Knockout Rival" width="900" height="900"><span class="hero-badge-text">Distributeur officiel<br>Rival Boxing au Maroc</span><span class="sr-only"> : gants de boxe Rival au Maroc</span></h1>
+        <p class="headline headline--badge"><img class="hero-badge" src="assets/knockout-rival-badge.svg?v=4" alt="Knockout Rival" width="900" height="900"><span class="hero-badge-text">Distributeur officiel<br>Rival Boxing au Maroc</span></p>
         <video class="feature-video" poster="assets/hero-loop-poster.jpg" autoplay muted loop playsinline preload="metadata" disablepictureinpicture aria-hidden="true"><source src="assets/hero-loop.webm" type="video/webm"><source src="assets/hero-loop.mp4" type="video/mp4"><img src="assets/hero-loop-poster.jpg" alt="" width="1600" height="670"></video>
-        <h2 class="headline headline--side"><span class="line">Conçu pour</span> <span class="line">le ring</span></h2>
+        <h1 class="headline headline--lead">
+
+          <span class="hero-lead-text">Vos gants Rival pour le sac ou le sparring. Choisissez selon votre entraînement.</span>
+
+          <span class="sr-only"> — gants de boxe Rival au Maroc</span>
+
+        </h1>
+
+        <nav class="hero-paths" aria-label="Choisir un type de gants">
+
+          <a class="hero-path" href="gants#gants-de-sac">Gants de sac</a>
+
+          <a class="hero-path" href="gants#gants-de-sparring">Gants de sparring</a>
+
+        </nav>
 
         <div class="notch notch--bl" aria-hidden="true"></div>
         <span class="fillet fillet--tr fillet--bl-a" aria-hidden="true"></span>
@@ -181,7 +195,7 @@
       <div class="products-title">
         <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Distributeur officiel Rival</p>
         <h2 class="products-h" id="productsTitle">Best-sellers</h2>
-        <p class="products-sub">Gants de sac · Gants de sparring · Protecteur corporel · 6 modèles</p>
+        <p class="products-sub">Repères rapides pour choisir : sac, sparring ou protecteur — prix en DH.</p>
       </div>
       <div class="products-ctrl">
         <a href="gants" class="products-all">
@@ -345,11 +359,12 @@
       <img class="glove-banner-mark" src="assets/kobg-mark.svg?v=2" alt="" aria-hidden="true" width="1798" height="890" loading="lazy" decoding="async">
       <p class="promo-tag glove-banner-tag"><span class="promo-dot" aria-hidden="true"></span>Distributeur officiel Rival</p>
       <h2 class="glove-banner-h" id="gloveBannerTitle"><span class="line">Gants</span> <span class="line">de boxe</span></h2>
-      <p class="glove-banner-tagline">Maintien du poignet. Absorption des chocs. Zéro compromis.</p>
+      <p class="glove-banner-tagline">Sac ou sparring : le bon Rival pour chaque type d’entraînement.</p>
       <p class="glove-banner-sub">RB10 Intelli-Shock · RB11 · RS11V · RS100 · RS1 Pro · S à XL · 12 à 18&nbsp;oz</p>
       <div class="glove-banner-actions">
         <a href="gants" class="glove-banner-cta">Voir les gants <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         <p class="glove-banner-price"><span>Dès</span> <strong>1&nbsp;690&nbsp;DH</strong></p>
+        <p class="glove-banner-trust">Livraison gratuite · Paiement à la livraison</p>
       </div>
     </div>
   </section>
@@ -360,7 +375,7 @@
       <div class="products-title">
         <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Technologie de pointe</p>
         <h2 class="products-h" id="bagTitle">Gants de sac</h2>
-        <p class="products-sub">RB10 Intelli-Shock &amp; RB11 Evolution · 12 modèles · S à XL · pour le sac et les pattes d’ours</p>
+        <p class="products-sub">Travail au sac et aux pattes d’ours — RB10 &amp; RB11, tailles S à XL.</p>
       </div>
       <div class="products-ctrl">
         <a href="gants#gants-de-sac" class="products-all">
@@ -654,7 +669,7 @@
       <div class="products-title">
         <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>L’art du sparring</p>
         <h2 class="products-h" id="sparringTitle">Gants de sparring</h2>
-        <p class="products-sub">RS1 Pro, RS100 &amp; RS11V · 14 modèles · 12 à 18&nbsp;oz</p>
+        <p class="products-sub">Mises de gants — RS1 Pro, RS100 &amp; RS11V, de 12 à 18&nbsp;oz.</p>
       </div>
       <div class="products-ctrl">
         <a href="gants#gants-de-sparring" class="products-all">
@@ -1826,10 +1841,10 @@
     <div class="cart-foot" id="cartFoot">
       <p class="cart-line cart-line--sub"><span>Sous-total</span><strong id="cartSubtotal">0&nbsp;DH</strong></p>
       <p class="cart-line" id="cartDiscountLine" hidden><span>Réduction <span id="cartDiscountCode"></span></span><strong id="cartDiscount">-0&nbsp;DH</strong></p>
-      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">Offerte</strong></p>
-      <p class="cart-total"><span>Total</span><strong id="cartTotal">0&nbsp;DH</strong></p>
+      <p class="cart-line"><span>Livraison</span><strong id="cartShipping">0&nbsp;DH</strong></p>
+      <p class="cart-total"><span>Total à payer à la livraison</span><strong id="cartTotal">0&nbsp;DH</strong></p>
       <p class="cart-note">Livraison gratuite partout au Maroc. Paiement à la livraison&nbsp;: nous vous appelons pour confirmer la commande.</p>
-      <p class="cart-note cart-note--pts">Fidélité&nbsp;: 50&nbsp;DH offerts tous les 1&nbsp;500&nbsp;DH d’achat, avec <a href="compte">votre compte client</a>.</p>
+      <p class="cart-note cart-note--pts">Commande sans compte possible. Pour les points fidélité, <a href="compte">connectez-vous</a> avant de commander&nbsp;: 50&nbsp;DH tous les 1&nbsp;500&nbsp;DH d’achats livrés, crédités après livraison. Les commandes invitées ne sont pas rattachées rétroactivement. <a href="cgv#fidelite">Conditions</a>.</p>
       <a href="commande" class="cart-checkout" id="cartCheckout">
         Acheter maintenant
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
