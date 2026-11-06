@@ -39,6 +39,29 @@ const FREE_SHIPPING_FROM = 2000;
 // Loyalty points (customer accounts): 1 point = 1 DH; 50 points per full 1500 DH of delivered purchases.
 // Display only: the Apps Script (LOYALTY there) credits, checks and deducts the points. Keep both equal.
 const LOYALTY = { step: 1500, reward: 50 };
+
+/* KOBG Pass6: catalog availability copy from existing soldOut/inStock only (not live inventory). */
+function kobgCatalogAvailMessage(product, selectedSize, needSize) {
+  if (!product) return 'Disponibilité selon le catalogue.';
+  if (product.inStock === false) return 'Épuisé selon le catalogue.';
+  const sizes = Array.isArray(product.sizes) ? product.sizes : [];
+  const soldOut = Array.isArray(product.soldOut) ? product.soldOut : [];
+  const hasIn = Object.prototype.hasOwnProperty.call(product, 'inStock');
+  const hasSold = Object.prototype.hasOwnProperty.call(product, 'soldOut');
+  const sized = !!(needSize || sizes.length);
+  if (sized) {
+    if (!selectedSize) return 'Choisissez une taille. Disponibilité selon le catalogue.';
+    if (soldOut.includes(selectedSize)) return 'Taille ' + selectedSize + ' : épuisée selon le catalogue.';
+    if (product.inStock === true || (hasSold && product.inStock !== false)) {
+      return 'Taille ' + selectedSize + ' : disponible selon le catalogue.';
+    }
+    return 'Disponibilité selon le catalogue.';
+  }
+  if (!hasIn && !hasSold) return 'Disponibilité selon le catalogue.';
+  if (product.inStock === true) return 'Disponible selon le catalogue.';
+  return 'Disponibilité selon le catalogue.';
+}
+
 // =========================================================
 
 // WhatsApp buttons are hidden by CSS until a valid number is set above (html.has-wa shows them).
@@ -389,7 +412,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       discountEl.textContent = `-${formatDH(t.discount)}`;
       discountCode.textContent = t.code;
     }
-    shippingEl.textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+    shippingEl.textContent = t.shipping ? formatDH(t.shipping) : '0\u00a0DH';
     totalEl.textContent = formatDH(t.total);
     cartEmpty.hidden = qty > 0;
     cartFoot.hidden = qty === 0;
@@ -1219,7 +1242,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         coSum.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = t.code; });
         coSum.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
       }
-      $('coShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+      $('coShip').textContent = t.shipping ? formatDH(t.shipping) : '0\u00a0DH';
       const used = ptsUse($('codForm'), t.total);
       showPts($('coTotal'), 'cart-line', used);
       $('coTotal').textContent = formatDH(t.total - used);
@@ -1290,7 +1313,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
       $('merciTotals').innerHTML = `
         <p class="cart-line cart-line--sub"><span>Sous-total</span><strong>${formatDH(o.subtotal || 0)}</strong></p>
         ${o.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${o.promoCode === 'ROUE' ? 'Roue de la chance' : esc(o.promoCode)} (-${esc(o.discountPct)}&nbsp;%)</span><strong>-${formatDH(o.discount)}</strong></p>` : ''}
-        <p class="cart-line"><span>Livraison</span><strong>${o.delivery ? formatDH(o.delivery) : 'Offerte'}</strong></p>
+        <p class="cart-line"><span>Livraison</span><strong>${o.delivery ? formatDH(o.delivery) : '0\u00a0DH'}</strong></p>
         ${o.points ? `<p class="cart-line cod-line--pts"><span>Points fidélité</span><strong>-${formatDH(+o.points)}</strong></p>` : ''}
         <p class="cart-total"><span>À payer à la livraison</span><strong>${formatDH(o.total || 0)}</strong></p>`;
       $('merciCust').innerHTML = [['Nom', o.nom], ['Téléphone', o.telephone ? phonePretty(o.telephone) : ''], ['Ville', o.ville]]
@@ -1968,6 +1991,32 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const ppSize = () => document.querySelector('.pp-size-input:checked')?.value || '';
     const ppQtyVal = () => Math.max(1, Math.min(MAX_QTY, parseInt(ppQty?.value, 10) || 1));
     const ppAddBtn = document.getElementById('ppAdd');
+    // Pass6: live catalog availability near size/CTA (textContent only; updates on size change)
+    let ppAvail = document.getElementById('ppAvail');
+    if (!ppAvail && ppBuy) {
+      ppAvail = document.createElement('p');
+      ppAvail.id = 'ppAvail';
+      ppAvail.className = 'pp-avail';
+      ppAvail.setAttribute('role', 'status');
+      ppAvail.setAttribute('aria-live', 'polite');
+      const actions = ppBuy.querySelector('.pp-actions');
+      const sizeBox = document.getElementById('ppSize');
+      if (actions && actions.parentNode) actions.parentNode.insertBefore(ppAvail, actions);
+      else if (sizeBox && sizeBox.parentNode) sizeBox.parentNode.insertBefore(ppAvail, sizeBox.nextSibling);
+      else ppBuy.appendChild(ppAvail);
+    }
+    const ppCatalogProduct = () => {
+      const id = ppAddBtn?.dataset?.id;
+      if (!id || !Array.isArray(window.KOBG_SEARCH)) return null;
+      return window.KOBG_SEARCH.find((p) => p.id === id) || null;
+    };
+    const ppAvailSync = () => {
+      if (!ppAvail) return;
+      const msg = kobgCatalogAvailMessage(ppCatalogProduct(), ppSize(), !!ppBuy?.hasAttribute('data-need-size'));
+      if (ppAvail.textContent !== msg) ppAvail.textContent = msg;
+      ppAvail.dataset.state = /épuis/i.test(msg) ? 'oos' : (/disponible/i.test(msg) ? 'ok' : 'neutral');
+    };
+
     const ppCod = document.getElementById('codForm');
     const $c = (id) => document.getElementById(id);
     // the order form's live summary: selection, unit price, qty, promo, delivery, total
@@ -1989,7 +2038,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         ppCod.querySelectorAll('.js-disc-code').forEach((el) => { el.textContent = t.code; });
         ppCod.querySelectorAll('.js-disc-pct').forEach((el) => { el.textContent = t.pct; });
       }
-      $c('codShip').textContent = t.shipping ? formatDH(t.shipping) : 'Offerte';
+      $c('codShip').textContent = t.shipping ? formatDH(t.shipping) : '0\u00a0DH';
       const used = ptsUse(ppCod, t.total);
       showPts($c('codTotal'), 'cod-line', used);
       $c('codTotal').textContent = formatDH(t.total - used);
@@ -2007,6 +2056,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         });
       }
       if (ppBarMeta) ppBarMeta.textContent = [ppAddBtn.dataset.variant, size].filter(Boolean).join(' · ');
+      ppAvailSync();
       codSync();
     };
     const ppNeedSize = () => {
