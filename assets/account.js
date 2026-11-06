@@ -174,11 +174,9 @@
     A.store.save(res, remember);
     // #inscription / #oubli belong to the signed-out forms: a later reload or sign-out shows the sign-in form
     if (/^#(inscription|creer|oubli)/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
-    // a prize won on the wheel in this browser is attached to the account now (the server checks it can be)
-    const claim = await A.wheel.claim(res.session);
-    if (retour && !(claim && claim.ok && !claim.already)) { location.href = retour; return; }
-    openDash(true, claim);
-    say(claim && claim.ok && !claim.already ? `${msg} Votre lot de la Roue de la chance a été ajouté à votre compte.` : msg);
+    if (retour) { location.href = retour; return; }
+    openDash(true);
+    say(msg);
   }
 
   // ---------- signed out ----------
@@ -234,7 +232,6 @@
     $('ordersMsg').hidden = false; $('ordersMsg').textContent = 'Chargement de vos commandes…';
     $('pointsList').innerHTML = ''; $('pointsBal').textContent = '';
     $('pointsMsg').hidden = true; $('pointsMsg').textContent = '';
-    $('wheelCard').hidden = true; $('wheelBody').innerHTML = '';
     [pf, pw].forEach((f) => { f.querySelector('.acct-ok').hidden = true; f.querySelector('.cod-alert').hidden = true; });
   }
   const lost = () => { wipeDash(); show('login', true); forms.login.querySelector('.cod-alert').hidden = false; forms.login.querySelector('.cod-alert').textContent = A.errors.auth; };
@@ -361,40 +358,8 @@
     msg.innerHTML = 'Aucune commande pour l’instant. <a href="gants">Découvrir les gants</a>';
   }
 
-  // ---------- « Roue de la chance » ----------
-  const WHEEL_STATE = {
-    credited: (w) => [`${w.label} crédités`, `Ajoutés à votre solde de points${w.claimed ? ` le ${w.claimed}` : ''} : à utiliser sur une prochaine commande.`],
-    active: (w) => [`-${w.value} % sur votre prochaine commande`, `Valable jusqu’au ${w.until}, pour une seule commande, sur le prix des articles (hors livraison). La remise vous est proposée automatiquement au moment de commander, une fois connecté.`],
-    used: (w) => [`Remise -${w.value} % utilisée`, w.order ? `Appliquée à la commande ${w.order}.` : 'Déjà appliquée à une commande.'],
-    expired: (w) => [`Remise -${w.value} % expirée`, `Elle était valable jusqu’au ${w.until}.`],
-    pending: (w) => [`Cadeau : ${w.label}`, 'Notre équipe vous contacte pour convenir du modèle, de la taille et de la remise de votre cadeau (avec votre prochaine commande ou par livraison). Offert, sans frais.'],
-    given: (w) => [`Cadeau : ${w.label}`, 'Votre cadeau vous a été remis. Merci et bon entraînement !'],
-  };
-  function paintWheel(w, claim) {
-    const card = $('wheelCard'), body = $('wheelBody');
-    const err = claim && !claim.ok && claim.message ? claim.message : '';
-    card.hidden = !w && !err;
-    if (card.hidden) return;
-    let html = '';
-    if (w) {
-      const [h, p] = (WHEEL_STATE[w.state] || WHEEL_STATE.credited)(w);
-      html = `<p class="acct-wheel-prize acct-wheel-prize--${A.esc(w.state)}"><strong>${A.esc(h)}</strong></p><p class="acct-wheel-txt">${A.esc(p)}</p>${w.state === 'active' ? '<p class="acct-wheel-cta"><a class="acct-wheel-go" href="gants">Choisir mes gants</a></p>' : ''}`;
-    }
-    if (err) html += `<p class="acct-wheel-err">${w ? 'Dernier tirage non ajouté : ' : ''}${A.esc(err)}</p>`;
-    body.innerHTML = html;
-  }
-  // signed-out forms: the stored prize will be attached at sign-in / sign-up
-  function paintWheelNote() {
-    const w = A.wheel.store.pending();
-    root.querySelectorAll('.js-wheel-note').forEach((el) => {
-      el.hidden = !w;
-      if (w) el.textContent = `🎁 Votre lot de la Roue de la chance « ${w.prize.label} » sera ajouté automatiquement à votre compte (nouveau compte, ou compte qui n’a encore reçu aucun lot).`;
-    });
-  }
-  paintWheelNote();
-
   let dashToken = '';                      // the session the panels were filled for
-  async function openDash(focus, claimed) {
+  async function openDash(focus) {
     const s = A.store.read();
     if (!s) { show('login', focus); return; }
     if (dashToken !== s.token) wipeDash();
@@ -402,12 +367,10 @@
     fillProfile(s.profile);
     show('dash', focus);
     loadOrders();
-    // a prize still waiting in this browser (already signed in when it was won): attach it first
-    const claim = claimed !== undefined ? claimed : await A.wheel.claim(s.token);
     loadPoints();
     // fresh profile (the team may have corrected it in the sheet); a dead session falls back to the sign-in form
     A.api('me', { session: s.token }).then((r) => {
-      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); paintPoints(r.points); paintWheel(r.wheel || null, claim); }
+      if (r.ok && r.profile) { A.store.save({ profile: r.profile }); fillProfile(r.profile); show('dash', false); paintPoints(r.points); }
       else if (r.error === 'auth') lost();
     });
   }
