@@ -4832,3 +4832,34 @@ html.sheet-open { overflow: hidden; }
     white-space: normal;
   }
 }
+
+
+/* === Hero glove panel titles (2026-11-06) === */
+.panel--tall .panel-label {
+  position: absolute;
+  z-index: 4;
+  top: calc(var(--r) * .75);
+  left: calc(var(--r) * .55);
+  right: calc(var(--r) * .55);
+  margin: 0;
+  text-align: center;
+  font-weight: 800;
+  font-variation-settings: "wdth" 84;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: 1.05;
+  font-size: clamp(15px, 2.2vh, 24px);
+  color: var(--black);
+  pointer-events: none;
+}
+.panel--tall-white.panel--tall-sac img,
+.panel--tall-white.panel--tall-spar img {
+  object-position: 50% 52%;
+}
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .panel--tall .panel-label {
+    font-size: clamp(11px, 3.1vw, 16px);
+    letter-spacing: .015em;
+    top: calc(var(--r) * .5);
+  }
+}
