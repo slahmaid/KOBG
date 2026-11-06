@@ -4257,6 +4257,7 @@ html.sheet-open { overflow: hidden; }
 }
 @media (max-width: 420px) {
   .panel--feature > .headline--badge { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .hero-lead-stack .headline--badge { flex-direction: row; align-items: center; gap: 10px; }
   .hero-badge-text { font-size: 10px; }
 }
 
@@ -4339,21 +4340,55 @@ html.sheet-open { overflow: hidden; }
 /* === KOBG Pass1 hero lead + path CTAs (2026-11-06) === */
 /* Contrast fix: white lead was crossing the white .notch--bl cutout at ~1280x800.
    Keep copy/links; place lead+paths clear of the notch and give the lead a dark scrim. */
-.panel--feature > .headline--lead {
+.hero-lead-stack {
   position: absolute;
   z-index: 4;
   left: calc(var(--r) * .9);
   right: calc(var(--r) * .9);
   bottom: calc(var(--r) * .9);
   top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .5em;
+  max-width: min(36rem, calc(100% - var(--r) * 1.8));
+  margin: 0;
+  padding: .65em .85em .7em;
+  border-radius: calc(var(--r) * .55);
+  background: rgba(0, 0, 0, .72);
+  text-shadow: none;
+  box-sizing: border-box;
+}
+.hero-lead-stack .headline--badge {
+  position: static;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.hero-lead-stack .hero-badge {
+  width: clamp(44px, 6.2vh, 56px);
+  min-width: 44px;
+  filter: none;
+}
+.hero-lead-stack .hero-badge-text {
+  text-shadow: none;
+}
+.hero-lead-stack .headline--lead {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
   text-align: left;
   font-size: clamp(15px, 2.4vh, 28px);
   line-height: 1.15;
-  max-width: min(34rem, calc(100% - var(--r) * 1.8));
-  margin: 0;
-  padding: .55em .75em;
-  border-radius: calc(var(--r) * .55);
-  background: rgba(0, 0, 0, .72);
   text-shadow: none;
   box-sizing: border-box;
 }
@@ -4401,13 +4436,16 @@ html.sheet-open { overflow: hidden; }
   outline-offset: 3px;
 }
 @media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
-  .panel--feature > .headline--lead {
-    font-size: clamp(14px, 3.6vw, 20px);
+  .hero-lead-stack {
     left: calc(var(--r) * .9);
     right: calc(var(--r) * .8);
     bottom: calc(var(--r) * .85);
     max-width: none;
-    padding: .5em .7em;
+    padding: .55em .7em .6em;
+    gap: .4em;
+  }
+  .hero-lead-stack .headline--lead {
+    font-size: clamp(14px, 3.6vw, 20px);
   }
   .hero-paths {
     left: calc(var(--r) * .9);
@@ -4634,17 +4672,18 @@ html.sheet-open { overflow: hidden; }
 @media (max-width: 860px) and (orientation: portrait) and (max-height: 740px),
        (max-width: 560px) and (max-height: 740px),
        (max-aspect-ratio: 4/5) and (max-height: 740px) {
-  .panel--feature > .headline--lead {
+  .hero-lead-stack {
     bottom: calc(var(--r) * .75);
-    font-size: clamp(13px, 3.4vw, 18px);
-    padding: .45em .65em;
-    z-index: 4;
+    padding: .5em .65em .55em;
+    gap: .35em;
   }
-  .panel--feature > .headline--badge {
+  .hero-lead-stack .headline--lead {
+    font-size: clamp(13px, 3.4vw, 18px);
+  }
+  .hero-lead-stack .headline--badge {
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    z-index: 5;
   }
   .hero-badge {
     width: min(14vw, 7vh);
