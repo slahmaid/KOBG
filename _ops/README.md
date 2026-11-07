@@ -9,6 +9,10 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | `KOBG-new-products.bundle` | Git bundle of the commit that added the RB1 Ultra, RS11V Vert/Noir, Body Shield Rouge/Blanc/Bleu, pads and coquilles. Moved here from the site root, where it was publicly downloadable. Not needed by the site. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
 | `dev-server.js` | Local preview at `http://localhost:8080/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
+| `optimize-images.js` | Image pipeline: makes the `.avif` copies of the photos the pages show and wraps those `<img>` in `<picture>`. **Run it after adding or replacing a photo** — see "Performance" in section 4. |
+| `build-min.js` | Builds `styles.min.css` / `script.min.js` (what the pages load) from `styles.css` / `script.js`. **Run it after every change to `styles.css` or `script.js`** — see "Performance" in section 4. |
+
+> **Editing `styles.css` or `script.js`** (this guide often says "change it in `script.js`"): the pages load the minified copies, so run `node _ops/build-min.js` afterwards, or the live site keeps the old version. The local preview shows a red banner until you do.
 
 ---
 
@@ -142,6 +146,23 @@ Also:
 - **Promo codes (none since the 10 % KOBG26 code was removed; `PROMO_CODES = {}` in the `.gs`, nothing in `script.js`), delivery fee (currently 0 = free delivery), free-delivery threshold:** set in **both** the CONFIG block of `script.js` and the CONFIG block of `order-apps-script.gs` (then redeploy, step 1.6).
 - **Moving to a custom domain** (recommended, see below): update `SITE_URL` in the `.gs` (also used in password-reset e-mails), the canonical/OG URLs in every page, `sitemap.xml` and `robots.txt`.
 - **New pages:** copy the header from an existing page; it includes the account icon (`#acctBtn`) next to the cart. `compte.html` is `noindex`, blocked in `robots.txt` and deliberately left out of `sitemap.xml`.
+
+### Performance (what keeps the pages fast — keep it when editing)
+
+- **Tools** for the two scripts below, installed once **outside** the site folder so `node_modules` is never published:
+  ```
+  npm install --prefix ../kobg-tools sharp clean-css terser
+  ```
+  Then run them with `NODE_PATH=../kobg-tools/node_modules node _ops/<script>.js` (PowerShell: `$env:NODE_PATH="..\kobg-tools\node_modules"; node _ops/<script>.js`).
+- **Minified CSS and JS:** every page loads `styles.min.css` and `script.min.js` (~26 KB less to download on a first visit, after gzip). **Always edit `styles.css` / `script.js`**, never the `.min` files, then run `_ops/build-min.js`. It rebuilds both (plus `.map` files so the browser's dev tools show the readable source) and updates `?v=<hash>` in every page, so there is no version to bump by hand. Each `.min` file starts with the hash of the source it came from: `node _ops/build-min.js --check` (no packages needed) fails, and the local preview shows a red banner, while a `.min` file is out of date. Publish the `.min` and `.map` files with the rest. The CSS is minified conservatively on purpose (whitespace and comments only — see the comment in the script): more aggressive minifiers dropped the `-webkit-backdrop-filter` Safari < 18 needs and the reduced-motion durations, for ~0.1 KB.
+- **Photos are served as AVIF** (~37 % smaller than the JPEGs, same detail) through `<picture><source type="image/avif" …><img src="….jpg" …></picture>`; browsers without AVIF get the JPEG. The JPEG stays the reference file (cart, search, e-mails, og:image, JSON-LD all use it), so **never delete a JPEG** that has an `.avif` twin. After adding or replacing a photo, or adding a page or card with photos, run `_ops/optimize-images.js` once. It only encodes what is new or changed and only touches pages that still have bare `<img>`. A photo **replaced under the same name** gets a fresh `.avif` automatically (it compares file dates). If you skip the script, the new photo still shows (as JPEG); it is just heavier. The class-less `<picture>` wrappers have `display: contents` (top of `styles.css`) so they never change the layout; give a `<picture>` a class only when it is meant to be a styled box itself (like `.glove-banner-media`).
+- **Product page first photo** is preloaded as AVIF (`<link rel="preload" as="image" href="…-1.avif" type="image/avif" fetchpriority="high">`). If you change a page's first photo, change the preload too (the script does it for a new `.jpg` preload).
+- **Menu tiles** (`assets/cat/`) have a 104 px `-s` copy for the 34 px desktop dropdown (`srcset`/`sizes`), made by the same script.
+- **Logos and badge SVGs** were optimised with SVGO at integer precision (`svgo --precision 0`): visually identical, 6× smaller. Run it again on a replaced SVG.
+- **Homepage video** (`hero-loop.webm/.mp4`) is in `<source data-src>`: `script.js` sets the real `src` only after the page's `load` event (not at all with reduced motion or data saver; the poster stays). Keep `data-src` if you change the video, or it downloads during the first paint again.
+- **Meta Pixel:** `assets/meta-pixel.js` is loaded at the end of `<body>`, just before `search-index.js`/`script.js` (it must stay **before** `script.js`, which calls `fbq` for Purchase on `merci`). It fetches Facebook's `fbevents.js` after the page's `load` event; events fired earlier are queued and sent then.
+- **Long pages** skip rendering the `.products`, `.glove-banner`, `.features` and `.faq` sections, and each card of a `.product-grid`, until they near the screen (`content-visibility: auto`, top of `styles.css`). Such a section or card clips anything drawn outside its box and is its own layout container: don't make a child stick out of it (negative margins, badges hanging over the edge) or use `position: fixed` inside it — put those outside the section.
+- **Cache-busting:** automatic for `styles.min.css` / `script.min.js` (`build-min.js` sets `?v=` to a hash of the file). Other files keep their manual `?v=` (logos `?v=2`, badge `?v=4`): bump those by hand if you replace the file.
 
 ## 5. Security — what is covered and what is not
 

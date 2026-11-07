@@ -49,6 +49,12 @@ body {
 }
 
 img { display: block; max-width: 100%; }
+/* AVIF wrappers added by _ops/optimize-images.js make no box: the <img> lays out exactly as without them */
+picture:not([class]) { display: contents; }
+/* Sections further down long pages skip rendering until they near the viewport (faster first paint and scrolling
+   on phones); "auto" remembers each one's real height once it has been shown. */
+.products:not(.pp-related), .glove-banner, .features, .faq { content-visibility: auto; contain-intrinsic-size: auto 850px; }   /* not .pp-related: its carousel bleeds to the screen edges */
+.product-grid > li { content-visibility: auto; contain-intrinsic-size: auto 460px; }   /* category pages, search */
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 a, button { touch-action: manipulation; }

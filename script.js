@@ -309,6 +309,18 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
   }
   reduceMotion.addEventListener?.('change', syncVideo);
   syncVideo();
+  // its files (<source data-src>, ~0.9 MB) are fetched only once the page has loaded, so first paint and the product
+  // photos get the bandwidth first; never for reduced motion or data saver (the poster stays)
+  function loadVideo() {
+    if (!video || video.dataset.loaded || reduceMotion.matches || navigator.connection?.saveData) return;
+    video.dataset.loaded = '1';
+    video.querySelectorAll('source[data-src]').forEach((s) => { s.src = s.dataset.src; });
+    video.load();
+    syncVideo();
+  }
+  if (document.readyState === 'complete') loadVideo();
+  else window.addEventListener('load', loadVideo, { once: true });
+  reduceMotion.addEventListener?.('change', loadVideo);
 
   // ---------------------------------------------------------
   // Cart: client-side only. Items live in localStorage;
