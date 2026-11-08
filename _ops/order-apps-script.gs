@@ -182,6 +182,8 @@ function order_(b) {
     const put = (col, v) => { while (row.length < col) row.push(''); row[col - 1] = v; };
     if (acct) put(acctCol_(sh, true), "'" + acct.user.id);
     if (used) put(extraCol_(sh, ORDER_PTS_COL, true), used);
+    const src = adSource_(b.adSource);
+    if (src) put(extraCol_(sh, ORDER_SRC_COL, true), src);
     sh.appendRow(row);
     if (wheelRow) wheelWrite_(W, wheelRow, { status: WS.used, order: id, note: 'Utilisée sur la commande ' + id });
     let balance = null;
@@ -424,6 +426,7 @@ function toOrder_(v, row, gest, ex, L) {
   const mine = L && client ? orderPoints_(L, id) : null;
   return {
     client: client, points: ex && ex.pts ? num_(v[ex.pts - 1]) : 0, pointsEarned: mine ? mine.earned : 0,
+    source: ex && ex.src ? str_(v[ex.src - 1]) : '',
     row: row, id: id, ts: d ? d.getTime() : 0,
     recu: d ? fmt_(d, 'dd/MM/yyyy HH:mm') : str_(v[0]), day: d ? fmt_(d, 'yyyy-MM-dd') : '',
     nom: str_(v[2]), tel: tel_(v[3]), ville: str_(v[4]), articles: list_(v[5]), taille: list_(v[6]), couleur: list_(v[7]),
@@ -476,6 +479,7 @@ const ACCT = {
 };
 const ORDER_ACCT_COL = 'Compte client';      // extra column of "Commandes": the account that placed the order
 const ORDER_PTS_COL = 'Points utilisés (DH)'; // extra column of "Commandes": loyalty points taken off the total
+const ORDER_SRC_COL = 'Source (pub)';        // extra column of "Commandes": the ad (utm_*) or site that brought the customer
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"']{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
 const TOKEN_RE = /^k1\.[A-Za-z0-9_-]{43}$/;
 
@@ -840,8 +844,30 @@ function extraCol_(sh, name, create) {
 }
 // where the extra columns are, and how wide a row must be read to see them
 function extras_(sh) {
-  const acct = extraCol_(sh, ORDER_ACCT_COL, false), pts = extraCol_(sh, ORDER_PTS_COL, false);
-  return { acct: acct, pts: pts, width: Math.max(ORDER_HEAD.length, acct, pts) };
+  const width = Math.max(ORDER_HEAD.length, sh.getLastColumn());
+  const head = sh.getRange(1, 1, 1, width).getValues()[0].map((h) => fold_(h));   // one read for every extra column
+  const at = (name) => head.indexOf(fold_(name)) + 1;
+  const acct = at(ORDER_ACCT_COL), pts = at(ORDER_PTS_COL), src = at(ORDER_SRC_COL);
+  return { acct: acct, pts: pts, src: src, width: Math.max(ORDER_HEAD.length, acct, pts, src) };
+}
+// the ad source sent by script.js ({ s, m, c, a, t: utm source / medium / campaign / content / term, fb: the link
+// carried a Meta click id, ref: referring host, at: time of that visit }) -> one readable cell, or '' when there is none
+function adSource_(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return '';
+  const p = (k) => (typeof v[k] === 'string' ? clean_(v[k], 100) : '');
+  const s = p('s'), m = p('m'), c = p('c'), a = p('a'), t = p('t');
+  const ref = /^[a-z0-9.-]{1,80}$/.test(String(v.ref || '').toLowerCase()) ? String(v.ref).toLowerCase() : '';
+  const parts = [];
+  if (s || m) parts.push([s, m].filter(Boolean).join(' / '));
+  if (c) parts.push('campagne : ' + c);
+  if (t) parts.push('ensemble : ' + t);
+  if (a) parts.push('pub : ' + a);
+  if (!parts.length && v.fb === true) parts.push('Facebook / Instagram (lien sans utm)');
+  if (ref) parts.push('depuis ' + ref);
+  if (!parts.length) return '';
+  const when = Number(v.at), now = Date.now();
+  if (when > now - 8 * 86400000 && when < now + 86400000) parts.push('visite du ' + fmt_(new Date(when), 'dd/MM/yyyy HH:mm'));
+  return cell_(parts.join(' · ').slice(0, 400));
 }
 
 // ---- crypto + validation ----
@@ -1551,6 +1577,7 @@ function setup() {
   const sh = ordersSheet_(ss);
   acctCol_(sh, true);
   extraCol_(sh, ORDER_PTS_COL, true);
+  extraCol_(sh, ORDER_SRC_COL, true);
   gestion_(ss);
   clientsSheet_(ss);
   pointsSheet_(ss);

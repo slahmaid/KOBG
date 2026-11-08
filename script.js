@@ -69,6 +69,39 @@ const WA_DIGITS = ((d) => (/^(212[5-7]\d{8}|1[2-9]\d{9})$/.test(d) ? d : ''))(
   String(WHATSAPP_NUMBER).replace(/\D/g, '').replace(/^00/, '').replace(/^0(?=[5-7]\d{8}$)/, '212'));
 if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 
+// Ad source: remembers for 7 days (Meta's click window) which ad (utm_* parameters of the ad link) or which other
+// site brought the visitor, and sends it with the order, so the "Commandes" sheet shows the campaign behind each order.
+// Nothing personal is kept: campaign / ad set / ad names, whether the link carried a Meta click id (never the id itself),
+// and the referring site's host name. Last click wins, but a plain referral never replaces an ad click still in its window.
+const AD_SRC_KEY = 'kobg-adsrc-v1';
+const AD_SRC_DAYS = 7;
+function kobgAdSource() {
+  try {
+    const o = JSON.parse(localStorage.getItem(AD_SRC_KEY) || 'null');
+    if (!o || typeof o !== 'object' || !(o.at > 0) || Date.now() - o.at > AD_SRC_DAYS * 864e5) return null;
+    const s = (v) => (typeof v === 'string' ? v.slice(0, 100) : '');
+    return { s: s(o.s), m: s(o.m), c: s(o.c), a: s(o.a), t: s(o.t), fb: o.fb === true, ref: s(o.ref), at: o.at };
+  } catch (err) { return null; }
+}
+(() => {
+  try {
+    const q = new URLSearchParams(location.search);
+    const v = (k) => (q.get(k) || '').replace(/\s+/g, ' ').trim().slice(0, 100);
+    const utm = { s: v('utm_source'), m: v('utm_medium'), c: v('utm_campaign'), a: v('utm_content'), t: v('utm_term') };
+    const fb = q.has('fbclid');
+    let ref = '';
+    try {
+      const r = document.referrer ? new URL(document.referrer) : null;
+      if (r && /^https?:$/.test(r.protocol) && r.hostname !== location.hostname) ref = r.hostname.toLowerCase().slice(0, 80);
+    } catch (err) { /* unreadable referrer */ }
+    const tagged = !!(utm.s || utm.m || utm.c || utm.a || utm.t || fb);
+    if (!tagged && !ref) return;                    // page to page inside the shop, or a direct visit: keep what is stored
+    const prev = kobgAdSource();
+    if (!tagged && prev && (prev.s || prev.m || prev.c || prev.a || prev.t || prev.fb)) return;
+    localStorage.setItem(AD_SRC_KEY, JSON.stringify({ ...(tagged ? utm : {}), fb, ref, at: Date.now() }));
+  } catch (err) { /* storage blocked */ }
+})();
+
 // Knockout Boxing Gear — header, hero and product carousel interactions
 (function () {
   const burger = document.getElementById('burger');
@@ -1095,6 +1128,7 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
         currency: 'MAD',
         source: order.source,
         page: location.origin + location.pathname,
+        adSource: kobgAdSource() || undefined,   // the ad or site that brought the visitor (last 7 days), or nothing
       };
       setBusy(true);
       const acct = acctStore.read();                   // signed in: the order goes to the account (token never stored)
@@ -1907,6 +1941,14 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
     const ppSize = () => document.querySelector('.pp-size-input:checked')?.value || '';
     const ppQtyVal = () => Math.max(1, Math.min(MAX_QTY, parseInt(ppQty?.value, 10) || 1));
     const ppAddBtn = document.getElementById('ppAdd');
+    // Meta Pixel: ViewContent once per product page view (colour variant id, as in the catalog; AddToCart adds the size)
+    try {
+      const d = ppAddBtn?.dataset;
+      if (d?.id && typeof fbq === 'function') {
+        fbq('track', 'ViewContent', { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '),
+          content_type: 'product', value: +d.price || 0, currency: 'MAD' });
+      }
+    } catch (err) { /* pixel blocked */ }
     // Pass6: live catalog availability near size/CTA (textContent only; updates on size change)
     let ppAvail = document.getElementById('ppAvail');
     if (!ppAvail && ppBuy) {

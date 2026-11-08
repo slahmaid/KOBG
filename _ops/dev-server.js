@@ -21,7 +21,10 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascr
   '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml', '.map': 'application/json' };
 // points script.js / admin.js at the fake backend (an external file: the pages' CSP blocks inline scripts)
 // and records Content-Security-Policy violations in window.__csp (also printed in the console)
+// It also stands in for the Meta Pixel (which never loads on localhost): the events script.js sends (ViewContent,
+// AddToCart, InitiateCheckout, Purchase) are kept in window.__fbq and printed in the console, and nothing reaches Meta.
 const DEV_JS = "window.KOBG_ORDER_ENDPOINT = '/__api'; window.KOBG_ADMIN_ENDPOINT = '/__api'; window.__csp = [];\n" +
+  "window.__fbq = []; window.fbq = function () { var a = Array.prototype.slice.call(arguments); window.__fbq.push(a); console.info('fbq (dev, not sent)', a[0], a[1], a[2] || ''); };\n" +
   "document.addEventListener('securitypolicyviolation', (e) => { window.__csp.push(e.effectiveDirective + ' ' + e.blockedURI); console.warn('CSP', e.effectiveDirective, e.blockedURI); });";
 // pages load styles.min.css / script.min.js (built by _ops/build-min.js): while one is older than its source, every
 // page shows a red banner, because the live site would still get the old version

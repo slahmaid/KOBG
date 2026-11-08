@@ -14,9 +14,13 @@ if(b.readyState==='complete')go();else f.addEventListener('load',go,{once:true})
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('set', 'autoConfig', false, '1127670993138595');
 fbq('init', '1127670993138595');
-// PageView only on the homepage and product pages (merci sends only Purchase, from script.js)
-var kobgPath = location.pathname.replace(/\.html$/, '').replace(/\/$/, '');
-var kobgIsHome = kobgPath === '' || kobgPath === '/index';
-var kobgIsProduct = Array.prototype.some.call(document.querySelectorAll('script[type="application/ld+json"]'), function (el) { return /"@type":"Product(Group)?"/.test(el.textContent); });
-if (kobgIsHome || kobgIsProduct) fbq('track', 'PageView');
+// PageView on every shop page (home, categories, product pages, order page, info pages), so ads can land anywhere
+// and "all website visitors" audiences are complete. No PageView where the <script> tag says data-pageview="off"
+// (admin, compte, merci — which sends only Purchase, from script.js — and 404), nor on the old-address redirect
+// stubs (they load assets/go.js and leave at once; the page they lead to sends its own PageView).
+// Product pages also send ViewContent, from script.js.
+var kobgMe = document.currentScript;
+var kobgOff = kobgMe && kobgMe.getAttribute('data-pageview') === 'off';
+var kobgStub = !!document.querySelector('script[src$="/assets/go.js"], script[src$="assets/go.js"]');
+if (!kobgOff && !kobgStub) fbq('track', 'PageView');
 }

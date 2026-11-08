@@ -410,7 +410,7 @@
       '<div class="d-card"><span class="d-h">Ligne de la feuille « Commandes »</span><dl class="fields">' +
         [['Reçue le', o.recu], ['N° commande', o.id], ['Nom', o.nom], ['Téléphone', o.tel], ['Ville', o.ville], ['Articles', o.articles, 1], ['Taille', o.taille], ['Couleur', o.couleur],
          ['Nb articles', o.nb], ['Sous-total (DH)', o.sousTotal], ['Code promo', o.promo || '—'], ['Remise (%)', o.remise], ['Livraison (DH)', o.livraison], ['Total (DH)', o.total],
-         ['Compte client', o.client || '—'], ['Points utilisés (DH)', o.points || 0]]
+         ['Compte client', o.client || '—'], ['Points utilisés (DH)', o.points || 0], ['Source (pub)', o.source || '—', 1]]
           .map((f) => '<div' + (f[2] ? ' class="wide"' : '') + '><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>').join('') +
       '</dl></div>';
     if (draft != null) { const nt = el.drawer.querySelector('textarea'); nt.value = draft; }
@@ -534,8 +534,8 @@
   function exportCsv() {
     const list = filtered().list;
     if (!list.length) { toast('Rien à exporter', true); return; }
-    const head = ['Reçue le', 'N° commande', 'Nom', 'Téléphone', 'Ville', 'Articles', 'Taille', 'Couleur', 'Nb articles', 'Sous-total (DH)', 'Code promo', 'Remise (%)', 'Livraison (DH)', 'Total (DH)', 'Statut', 'Note interne', 'Mis à jour le', 'Compte client', 'Points utilisés (DH)', 'Points gagnés (DH)'];
-    const lines = [head].concat(list.map((o) => [o.recu, o.id, o.nom, o.tel, o.ville, o.articles, o.taille, o.couleur, o.nb, o.sousTotal, o.promo, o.remise, o.livraison, o.total, o.statut, o.note, o.maj, o.client || '', o.points || 0, o.pointsEarned || 0]));
+    const head = ['Reçue le', 'N° commande', 'Nom', 'Téléphone', 'Ville', 'Articles', 'Taille', 'Couleur', 'Nb articles', 'Sous-total (DH)', 'Code promo', 'Remise (%)', 'Livraison (DH)', 'Total (DH)', 'Statut', 'Note interne', 'Mis à jour le', 'Compte client', 'Points utilisés (DH)', 'Points gagnés (DH)', 'Source (pub)'];
+    const lines = [head].concat(list.map((o) => [o.recu, o.id, o.nom, o.tel, o.ville, o.articles, o.taille, o.couleur, o.nb, o.sousTotal, o.promo, o.remise, o.livraison, o.total, o.statut, o.note, o.maj, o.client || '', o.points || 0, o.pointsEarned || 0, o.source || '']));
     const csv = '\ufeff' + lines.map((r) => r.map(csvCell).join(';')).join('\r\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));

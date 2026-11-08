@@ -5,7 +5,7 @@ This folder is **not published** by GitHub Pages (Jekyll skips folders starting 
 | File | What it is |
 |---|---|
 | `order-apps-script.gs` | The order + admin backend (Google Apps Script web app). **Must be deployed — see step 1.** |
-| `test-backend.js` | 63 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view, prize wheel). Run `node _ops/test-backend.js`. |
+| `test-backend.js` | 68 automated tests for the backend (orders, admin, customer accounts, loyalty points, admin Clients view, prize wheel, ad source). Run `node _ops/test-backend.js`. |
 | `KOBG-new-products.bundle` | Git bundle of the commit that added the RB1 Ultra, RS11V Vert/Noir, Body Shield Rouge/Blanc/Bleu, pads and coquilles. Moved here from the site root, where it was publicly downloadable. Not needed by the site. |
 | `gas-mock.js` | In-memory stand-in for Google's services, used by the tests and the dev server. |
 | `dev-server.js` | Local preview at `http://localhost:8080/` with a **fake** backend (nothing reaches Google). Run `node _ops/dev-server.js`; admin key `dev-admin-key-0123456789`. E-mails the backend would send (password-reset links) are printed in the console instead, and listed at `/__mails`. |
@@ -22,7 +22,7 @@ The site already posts orders to the Apps Script URL in `script.js` (`ORDER_ENDP
 
 1. Open the Google Sheet that receives the orders → **Extensions › Apps Script**.
 2. Select all the code in `Code.gs` (or whatever the file is called), delete it, paste the full content of `order-apps-script.gs`, **Save**.
-3. In the function dropdown pick **`setup`** → **Run**. Approve the permissions Google asks for (Sheets, external requests to read the site's catalog, sending e-mail). The execution log should say the tabs are ready and the catalog was read. `setup` also creates the **Clients** tab (customer accounts), the **Points** tab (loyalty ledger) and the **Compte client** / **Points utilisés (DH)** columns at the end of **Commandes**; it is safe to run again.
+3. In the function dropdown pick **`setup`** → **Run**. Approve the permissions Google asks for (Sheets, external requests to read the site's catalog, sending e-mail). The execution log should say the tabs are ready and the catalog was read. `setup` also creates the **Clients** tab (customer accounts), the **Points** tab (loyalty ledger) and the **Compte client** / **Points utilisés (DH)** / **Source (pub)** columns at the end of **Commandes**; it is safe to run again.
 4. Pick **`generateAdminKey`** → **Run**. Copy the key printed in the execution log into a password manager. This is the key for `admin.html`. (Or set your own in **Project Settings › Script Properties › `ADMIN_KEY`**, 12+ characters, random.)
 5. Optional: in **Script Properties** add `NOTIFY_EMAIL` = the address that should get an e-mail for every new order.
 6. **Deploy › Manage deployments ›** pencil icon on the existing deployment **› Version: New version › Deploy**.
@@ -116,6 +116,13 @@ A promotional game: one free spin per visitor, the prize goes to a customer acco
 - A spin must be claimed within 30 days.
 
 **Local test:** `node _ops/dev-server.js` serves the site with the fake backend. Dev-only: `http://localhost:8080/__wheel?slice=8` makes the *next* spin land on slice 8 (0–9, same order as `WHEEL`), to try a discount or a gift. It only exists in the local preview, not in the Apps Script.
+
+### Ad tracking (Meta Pixel + « Source (pub) » column)
+
+- **Meta Pixel** (`assets/meta-pixel.js`): PageView on every page except those whose pixel `<script>` tag has `data-pageview="off"` (`admin`, `compte`, `merci`, `404`) and the old-address redirect stubs (they load `assets/go.js`). Product pages also send **ViewContent** (colour variant id, price, MAD) from `script.js`; AddToCart, InitiateCheckout and Purchase are unchanged. A new page gets PageView automatically; add `data-pageview="off"` to its pixel tag to opt out.
+- **Ad source:** `script.js` keeps the `utm_*` parameters of the link that brought the visitor (or the referring site's host name, or "the link had a Meta click id") for 7 days in `localStorage` (`kobg-adsrc-v1`), and sends it with the order as `adSource`. The Apps Script writes it, as one readable line, in a **Source (pub)** column at the end of **Commandes** (e.g. `meta / paid · campagne : KOBG | C1 Ventes | Prospection · pub : C1-A1_RS100-reel_FR · visite du 12/11/2026 14:03`). `admin.html` shows it in the order drawer and in the CSV export. Customers never see it. Ad links should carry `utm_source=meta&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}` (Meta fills in the names).
+- **Go-live:** Apps Script → paste the new `order-apps-script.gs` → **Save** → run **`setup`** (adds the **Source (pub)** column; nothing else changes) → **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL). Then publish the site files. If the site goes first, orders still work; the old script just ignores `adSource`.
+- The privacy policy (`confidentialite.html`, « Origine de votre visite » and the storage list) describes both. Update it if you change what is kept.
 
 ## 2. Publish the site
 

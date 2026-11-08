@@ -1284,3 +1284,75 @@ test('setup() creates the Roue tab and the wheel secret', () => {
   assert.equal(env.props.get('WHEEL_SECRET'), sec);                                // kept: old tokens stay valid
   assert.ok(env.logs.some((l) => /probabilités OK/.test(l)));
 });
+
+// ---------- ad source (utm_* of the ad link, kept 7 days by script.js) ----------
+const headOf = (env) => rowsOf(env, 'Commandes')[0];
+const srcCell = (env, orderId) => {
+  const rows = rowsOf(env, 'Commandes');
+  const col = headOf(env).indexOf('Source (pub)');
+  const row = rows.find((r) => r[1] === orderId);
+  return col < 0 || !row ? undefined : row[col];
+};
+
+test('ad source: an order from an ad stores campaign, ad set, ad and visit time in « Source (pub) »', () => {
+  const env = env0();
+  const at = Date.now() - 2 * 86400000;
+  const r = env.post(order({ adSource: { s: 'meta', m: 'paid', c: 'KOBG | C1 Ventes | Prospection', t: 'Maroc 18-44',
+    a: 'C1-A1_RS100-reel_FR', fb: true, ref: 'l.instagram.com', at } }));
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const cell = srcCell(env, r.orderId);
+  assert.match(cell, /^meta \/ paid · campagne : KOBG \| C1 Ventes \| Prospection · ensemble : Maroc 18-44 · pub : C1-A1_RS100-reel_FR · depuis l\.instagram\.com · visite du \d\d\/\d\d\/\d{4} \d\d:\d\d$/);
+  const l = env.post({ action: 'list', key: KEY });
+  assert.equal(l.orders.find((o) => o.id === r.orderId).source, cell);           // admin sees it
+});
+
+test('ad source: Meta click id without utm, plain referral, and nothing at all', () => {
+  const env = env0();
+  const a = env.post(order({ adSource: { fb: true, at: Date.now() } }));
+  assert.match(srcCell(env, a.orderId), /^Facebook \/ Instagram \(lien sans utm\) · visite du /);
+  const b = env.post(order({ adSource: { ref: 'www.google.com', fb: false, at: Date.now() } }));
+  assert.match(srcCell(env, b.orderId), /^depuis www\.google\.com · visite du /);
+  const c = env.post(order());
+  assert.equal(c.ok, true);
+  assert.ok(!srcCell(env, c.orderId));                                             // no source: empty cell
+  const d = env.post(order({ adSource: { s: '', fb: false, ref: '' } }));
+  assert.ok(!srcCell(env, d.orderId));
+});
+
+test('ad source: hostile values are cleaned, never a formula, never block the order', () => {
+  const env = env0();
+  const r = env.post(order({ adSource: { s: '=HYPERLINK("http://x")', m: { x: 1 }, c: 'a'.repeat(500) + '\u0000\u202E',
+    ref: 'evil.com/<script>', fb: 'yes', at: 'tomorrow' } }));
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const cell = srcCell(env, r.orderId);
+  assert.ok(cell.startsWith('=HYPERLINK'), cell);                                 // kept as text (the mock drops the ' prefix)
+  assert.deepEqual(formulas(env), []);                                             // and never a live formula
+  assert.ok(!/[\u0000\u202E]/.test(cell));
+  assert.ok(!/evil|visite du/.test(cell));                                        // bad host and bad date dropped
+  assert.ok(cell.length <= 400);
+  for (const bad of ['meta', 42, ['meta'], null]) assert.equal(env.post(order({ adSource: bad })).ok, true);
+});
+
+test('ad source: never shown to the customer in « Mes commandes »', () => {
+  const env = env0();
+  const a = signup(env);
+  const o = env.post(order({ session: a.session, adSource: { s: 'meta', m: 'paid', c: 'C1', at: Date.now() } }));
+  assert.equal(o.ok, true, JSON.stringify(o));
+  assert.ok(srcCell(env, o.orderId));
+  const mine = env.post({ action: 'my_orders', session: a.session });
+  assert.equal(JSON.stringify(mine).includes('campagne'), false);
+  assert.equal(mine.orders[0].source, undefined);
+});
+
+test('ad source: setup creates the column; accounts and points columns keep working beside it', () => {
+  const env = env0();
+  env.run('setup');
+  assert.ok(headOf(env).includes('Source (pub)'));
+  assert.ok(headOf(env).includes('Compte client'));
+  assert.ok(headOf(env).includes('Points utilisés (DH)'));
+  const a = signup(env);
+  const o = env.post(order({ session: a.session, adSource: { s: 'meta', at: Date.now() } }));
+  const l = env.post({ action: 'list', key: KEY }).orders.find((x) => x.id === o.orderId);
+  assert.ok(l.client);
+  assert.equal(l.source.startsWith('meta'), true);
+});
