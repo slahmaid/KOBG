@@ -5,6 +5,10 @@
      ADMIN_KEY       clé du panneau admin, 12 caractères minimum (ou lancez generateAdminKey() une fois)
      NOTIFY_EMAIL    facultatif : adresse qui reçoit un e-mail à chaque nouvelle commande
      SPREADSHEET_ID  facultatif : seulement si le script n'est PAS ouvert depuis le Google Sheet
+     META_CAPI_TOKEN facultatif : jeton « API Conversions » du Meta Pixel (Gestionnaire d'évènements › Paramètres ›
+                     API Conversions › Générer un jeton). Présent : chaque commande est aussi signalée à Meta par le
+                     serveur (évènement Purchase, même identifiant que celui du navigateur : compté une seule fois).
+     META_TEST_CODE  facultatif : code « Tester les évènements » (TEST12345), le temps de vérifier ; à retirer ensuite
 
    Security model (the site is static, so everything that matters is enforced here):
    - prices, discount and delivery are RE-COMPUTED from the catalog the site publishes
@@ -24,7 +28,7 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-10-28.5';
+const VERSION = '2026-11-11.1';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -34,6 +38,9 @@ const FREE_SHIPPING_FROM = 2000;                                 // unused while
 // loyalty programme (also in the CONFIG block of script.js): 1 point = 1 DH off a future order;
 // every full LOYALTY.step DH actually paid on delivered orders (cumulative, the remainder carries over) earns LOYALTY.reward points
 const LOYALTY = { step: 1500, reward: 50 };
+// Meta Conversions API (server-side Purchase). Same pixel as assets/meta-pixel.js; off until META_CAPI_TOKEN is set.
+const META_PIXEL_ID = '1127670993138595';
+const META_GRAPH_VERSION = 'v23.0';
 // ==================================================
 
 const TZ = 'Africa/Casablanca';
@@ -203,7 +210,55 @@ function order_(b) {
     lock.releaseLock();
   }
   notify_(reply.orderId, f, lines, Object.assign({}, t, { points: reply.points, total: reply.total }), warn.concat(acctNote));
+  capi_(reply, f, b);
   return ok_(reply);
+}
+
+// Meta Conversions API: the stored order is reported to Meta as a Purchase with the order number as event id, the
+// one the browser pixel uses on the thank-you page, so Meta counts it once even when both arrive. It still arrives
+// when the browser pixel was blocked. Customer details are SHA-256 hashed, as Meta requires; nothing is sent, and
+// the order is never affected, when META_CAPI_TOKEN is missing or Meta does not answer.
+function capi_(reply, f, b) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty('META_CAPI_TOKEN');
+    if (!token) return;
+    const px = b.px && typeof b.px === 'object' ? b.px : {};
+    const id = (v, re) => { const s = typeof v === 'string' ? v.trim() : ''; return s.length <= 300 && re.test(s) ? s : ''; };
+    const names = fold_(f.nom).split(' ').filter(String);
+    const user = {
+      ph: [sha_('212' + f.tel.slice(1))],
+      ct: [sha_(fold_(f.ville).replace(/ /g, ''))],
+      country: [sha_('ma')],
+    };
+    if (names.length) user.fn = [sha_(names[0])];
+    if (names.length > 1) user.ln = [sha_(names[names.length - 1])];
+    const fbp = id(px.fbp, /^fb\.\d\.\d+\.\d+$/), fbc = id(px.fbc, /^fb\.\d\.\d+\.[\w-]+$/);
+    if (fbp) user.fbp = fbp;
+    if (fbc) user.fbc = fbc;
+    const ua = clean_(px.ua, 400);
+    if (ua) user.client_user_agent = ua;
+    const page = typeof b.page === 'string' && b.page.indexOf(SITE_URL) === 0 ? b.page.slice(0, 300) : SITE_URL;
+    const ev = {
+      event_name: 'Purchase', event_time: Math.floor(Date.now() / 1000), event_id: reply.orderId,
+      action_source: 'website', event_source_url: page, user_data: user,
+      custom_data: {
+        value: reply.total, currency: 'MAD', content_type: 'product', order_id: reply.orderId,
+        num_items: reply.items.reduce((n, l) => n + l.qty, 0),
+        contents: reply.items.map((l) => ({ id: l.id, quantity: l.qty, item_price: l.unitPrice })),
+      },
+    };
+    const body = { data: [ev] };
+    const test = props.getProperty('META_TEST_CODE');
+    if (test) body.test_event_code = test;
+    const res = UrlFetchApp.fetch('https://graph.facebook.com/' + META_GRAPH_VERSION + '/' + META_PIXEL_ID + '/events', {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + token }, payload: JSON.stringify(body),
+    });
+    if (res.getResponseCode() >= 300) console.warn('Meta CAPI ' + res.getResponseCode() + ' : ' + String(res.getContentText()).slice(0, 300));
+  } catch (err) {
+    console.warn('Meta CAPI : ' + (err && err.message || err));
+  }
 }
 
 // items from the browser -> priced lines. Only id + qty are trusted; name, colour, size and price

@@ -30,7 +30,7 @@ const ORDER_ENDPOINT_FORMAT = 'json';   // 'json' = JSON text body (Apps Script)
 // WhatsApp number used by the CONTACT links only (footer, FAQ, contact page). Orders never go through WhatsApp.
 // International format, digits only: country code + number, e.g. '2126XXXXXXXX' (Morocco) or '1XXXXXXXXXX' (Canada/US).
 // Change it here (this one line) and the buttons update everywhere. Empty: every WhatsApp button stays HIDDEN on the whole site.
-const WHATSAPP_NUMBER = '14383891565';
+const WHATSAPP_NUMBER = '212691940422';
 const CART_STORAGE_KEY = 'kobg-cart-v1';
 const PROMO_STORAGE_KEY = 'kobg-promo-v1';   // the promo-code feature was removed: this old key is only cleared
 // Delivery: free for every order (no minimum).
@@ -73,6 +73,17 @@ if (WA_DIGITS) document.documentElement.classList.add('has-wa');
 // site brought the visitor, and sends it with the order, so the "Commandes" sheet shows the campaign behind each order.
 // Nothing personal is kept: campaign / ad set / ad names, whether the link carried a Meta click id (never the id itself),
 // and the referring site's host name. Last click wins, but a plain referral never replaces an ad click still in its window.
+// Meta Conversions API: the order carries the Meta Pixel's own browser ids (cookies _fbp / _fbc, set by the pixel) and the
+// browser name, so the Apps Script can report the same Purchase server-side (same event id: counted once by Meta).
+// Nothing is sent when the pixel is blocked or absent.
+function kobgPxIds() {
+  try {
+    if (typeof fbq !== 'function') return undefined;
+    const c = (n) => { const m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)')); return m ? decodeURIComponent(m[1]).slice(0, 300) : ''; };
+    const o = { fbp: c('_fbp'), fbc: c('_fbc'), ua: String(navigator.userAgent || '').slice(0, 400) };
+    return o.fbp || o.fbc ? o : undefined;
+  } catch (err) { return undefined; }
+}
 const AD_SRC_KEY = 'kobg-adsrc-v1';
 const AD_SRC_DAYS = 7;
 function kobgAdSource() {
@@ -1044,10 +1055,10 @@ function kobgAdSource() {
   };
   // wires one order form: inline French errors, honeypot, busy state (no double submit), send, then merci.
   // getOrder() returns { items, sub, source } or { blocked: 'message' } (it shows its own hint, e.g. the size).
-  function codForm(form, { getOrder, onSuccess }) {
+  function codForm(form, { getOrder, onSuccess, pxInfo }) {
     const submit = form.querySelector('.cod-submit');
     // Meta Pixel: InitiateCheckout once per page, when the visitor starts filling an order form
-    const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; try { if (typeof fbq === 'function') fbq('track', 'InitiateCheckout'); } catch (err) { /* pixel blocked */ } };
+    const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; try { if (typeof fbq === 'function') { let p = null; try { p = pxInfo ? pxInfo() : null; } catch (err) { p = null; } fbq('track', 'InitiateCheckout', p || {}); } } catch (err) { /* pixel blocked */ } };
     form.addEventListener('focusin', pxCheckout);
     form.addEventListener('submit', pxCheckout);
     const submitTxt = submit.querySelector('.cod-submit-txt');
@@ -1129,6 +1140,7 @@ function kobgAdSource() {
         source: order.source,
         page: location.origin + location.pathname,
         adSource: kobgAdSource() || undefined,   // the ad or site that brought the visitor (last 7 days), or nothing
+        px: kobgPxIds(),                         // Meta Pixel browser ids for the server-side Purchase, or nothing
       };
       setBusy(true);
       const acct = acctStore.read();                   // signed in: the order goes to the account (token never stored)
@@ -1211,6 +1223,9 @@ function kobgAdSource() {
       coSum.classList.toggle('is-open', open);
     });
     codForm($('codForm'), {
+      // Meta Pixel: what the InitiateCheckout event describes (same ids as AddToCart)
+      pxInfo: () => (cart.length ? { content_ids: cart.map((it) => it.id), content_type: 'product',
+        num_items: cart.reduce((n, it) => n + it.qty, 0), value: totalPrice(), currency: 'MAD' } : null),
       getOrder: () => {
         if (!cart.length) return { blocked: 'Votre panier est vide : ajoutez un article avant de commander.' };
         return {
@@ -2041,6 +2056,12 @@ function kobgAdSource() {
     if (ppCod && ppAddBtn) {
       ppCod.addEventListener('click', (e) => { if (e.target.closest('#codPick')) ppNeedSize(); });
       codForm(ppCod, {
+        // Meta Pixel: what the InitiateCheckout event describes (same id as ViewContent)
+        pxInfo: () => {
+          const d = ppAddBtn.dataset, q = ppQtyVal();
+          return { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '), content_type: 'product',
+            num_items: q, value: q * (+d.price || 0), currency: 'MAD' };
+        },
         getOrder: () => {
           const d = ppAddBtn.dataset;
           const size = ppSize();
@@ -2150,4 +2171,62 @@ function kobgAdSource() {
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
+
+// ============ customer reviews (home + product pages) ============
+// Real customer messages only, listed in assets/reviews.js (see the rule at the top of that file). The list is fetched
+// once the page has loaded; while it is empty nothing is added to the page. No star rating and no rating markup:
+// social comments carry none, so none is claimed.
+(() => {
+  const home = document.getElementById('faq');
+  const pp = document.querySelector('[data-product]');
+  const anchor = pp ? document.querySelector('.pp-faq') : (document.getElementById('best-sellers') && home);
+  if (!anchor) return;
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const SOURCES = { instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', tiktok: 'TikTok' };
+  const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  const IMG_RE = /^assets\/reviews\/[\w.-]+\.(?:jpe?g|png|webp|avif)$/i;
+  const when = (d) => { const m = /^(\d{4})-(\d{2})$/.exec(d || ''); return m && MONTHS[+m[2] - 1] ? `${MONTHS[+m[2] - 1]} ${m[1]}` : ''; };
+  const show = () => {
+    const all = (Array.isArray(window.KOBG_REVIEWS) ? window.KOBG_REVIEWS : []).filter((r) => r && typeof r === 'object'
+      && typeof r.name === 'string' && r.name.trim() && Object.prototype.hasOwnProperty.call(SOURCES, r.source)
+      && ((typeof r.text === 'string' && r.text.trim()) || IMG_RE.test(r.img || '')));
+    if (!all.length) return;
+    const slug = location.pathname.split('/').pop().replace(/\.html$/, '');
+    const mine = (r) => (pp && typeof r.product === 'string' && r.product && slug.indexOf(r.product) === 0 ? 0 : 1);
+    const list = all.map((r, i) => [mine(r), i, r]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).slice(0, pp ? 6 : 9).map((x) => x[2]);
+    const sec = document.createElement('section');
+    sec.className = 'reviews';
+    sec.id = 'avis';
+    sec.setAttribute('aria-labelledby', 'reviewsTitle');
+    sec.innerHTML = `
+    <div class="reviews-head">
+      <p class="promo-tag"><span class="promo-dot" aria-hidden="true"></span>Avis clients</p>
+      <h2 class="reviews-h" id="reviewsTitle">Ils l’ont reçu, ils en parlent</h2>
+      <p class="reviews-sub">Des messages de nos clients au Maroc, reçus sur Instagram, Facebook et WhatsApp, repris tels quels.</p>
+    </div>
+    <ul class="reviews-list">${list.map((r) => {
+      const img = IMG_RE.test(r.img || '') ? r.img : '';
+      const txt = typeof r.text === 'string' ? r.text.trim().slice(0, 600) : '';
+      const meta = [r.city, when(r.date)].filter((v) => typeof v === 'string' && v.trim()).map(esc).join(' · ');
+      return `
+      <li class="review">
+        <figure class="review-fig">
+          ${img ? `<a class="review-shot" href="${esc(img)}" target="_blank" rel="noopener"><img src="${esc(img)}" alt="Capture du message de ${esc(r.name.trim())} sur ${SOURCES[r.source]}" loading="lazy" decoding="async"></a>` : ''}
+          ${txt ? `<blockquote class="review-txt">${esc(txt)}</blockquote>` : ''}
+          <figcaption class="review-by"><strong>${esc(r.name.trim().slice(0, 60))}</strong>${meta ? `<span>${meta}</span>` : ''}<span class="review-src">${SOURCES[r.source]}</span></figcaption>
+        </figure>
+      </li>`;
+    }).join('')}
+    </ul>`;
+    anchor.parentNode.insertBefore(sec, anchor);
+  };
+  const load = () => {
+    const s = document.createElement('script');
+    s.src = 'assets/reviews.js';
+    s.async = true;
+    s.onload = show;
+    document.head.appendChild(s);
+  };
+  if (document.readyState === 'complete') load(); else window.addEventListener('load', load, { once: true });
 })();

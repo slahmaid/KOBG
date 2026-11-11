@@ -122,7 +122,15 @@ A promotional game: one free spin per visitor, the prize goes to a customer acco
 - **Meta Pixel** (`assets/meta-pixel.js`): PageView on every page except those whose pixel `<script>` tag has `data-pageview="off"` (`admin`, `compte`, `merci`, `404`) and the old-address redirect stubs (they load `assets/go.js`). Product pages also send **ViewContent** (colour variant id, price, MAD) from `script.js`; AddToCart, InitiateCheckout and Purchase are unchanged. A new page gets PageView automatically; add `data-pageview="off"` to its pixel tag to opt out.
 - **Ad source:** `script.js` keeps the `utm_*` parameters of the link that brought the visitor (or the referring site's host name, or "the link had a Meta click id") for 7 days in `localStorage` (`kobg-adsrc-v1`), and sends it with the order as `adSource`. The Apps Script writes it, as one readable line, in a **Source (pub)** column at the end of **Commandes** (e.g. `meta / paid · campagne : KOBG | C1 Ventes | Prospection · pub : C1-A1_RS100-reel_FR · visite du 12/11/2026 14:03`). `admin.html` shows it in the order drawer and in the CSV export. Customers never see it. Ad links should carry `utm_source=meta&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}` (Meta fills in the names).
 - **Go-live:** Apps Script → paste the new `order-apps-script.gs` → **Save** → run **`setup`** (adds the **Source (pub)** column; nothing else changes) → **Deploy › Manage deployments ›** pencil **› Version: New version › Deploy** (same `/exec` URL). Then publish the site files. If the site goes first, orders still work; the old script just ignores `adSource`.
-- The privacy policy (`confidentialite.html`, « Origine de votre visite » and the storage list) describes both. Update it if you change what is kept.
+- **InitiateCheckout** carries the products, quantity and value (MAD) of the order being started (cart: same ids as AddToCart; product page: same id as ViewContent).
+- **Conversions API (server-side Purchase):** `order-apps-script.gs` reports every stored order to Meta as a `Purchase` whose event id is the order number, the same one the browser pixel sends from `merci`, so Meta counts it once and still gets it when the browser pixel is blocked. Name, city and phone leave only as SHA-256 hashes; the browser adds the pixel's own `_fbp` / `_fbc` ids to the order (`px`). **Off until you add the token:** Events Manager › your pixel › Settings › Conversions API › *Generate access token*, then Apps Script › Project settings › Script properties › `META_CAPI_TOKEN` = that token (never put it in a site file). To check: add `META_TEST_CODE` = the code shown in Events Manager › Test events, place a test order, see the server event arrive, then delete `META_TEST_CODE`. A Meta outage never blocks an order (see Executions for `Meta CAPI` warnings). `META_GRAPH_VERSION` in the CONFIG block is the Graph API version; raise it when Meta retires it.
+- The privacy policy (`confidentialite.html`, « Origine de votre visite », the Meta Pixel paragraph and the storage list) describes all of this. Update it if you change what is kept.
+
+### Customer reviews (`assets/reviews.js`)
+
+- The home page and every product page show an « Avis clients » section (above the FAQ) built by `script.js` from the list in `assets/reviews.js`. **While the list is empty the section does not exist**; nothing to edit in any page.
+- **Real customer messages only**, copied word for word (shorten, never rewrite), first name + initial, with the customer's agreement for a private message (DM, WhatsApp). Invented or rewritten reviews are misleading advertising (law 31-08) and against Meta's ad rules. No star ratings and no rating markup are shown, because social comments carry none.
+- One line per review: `name`, `text`, `source` (`instagram`, `facebook`, `whatsapp`, `tiktok`), optional `city`, `date` (`YYYY-MM`), `product` (start of the product page address, e.g. `rs100-professional`: shown first on those pages) and `img` (a screenshot saved in `assets/reviews/`, phone number and profile photo hidden). Up to 9 show on the home page, 6 on a product page. `assets/reviews.js` is not minified: no build needed after editing it.
 
 ## 2. Publish the site
 
@@ -138,8 +146,8 @@ Search the HTML for `data-todo` — **16 placeholders** show "[À compléter : �
 
 Also:
 
-- **WhatsApp:** `WHATSAPP_NUMBER` in `script.js` is `14383891565`, so the WhatsApp buttons appear site-wide. Change it there (one line) to update them all; leave it empty to hide them.
-- **Phone:** the only seller phone on the site is `+1 438 389 1565` (a Canadian number). Law 31-08 expects a number Moroccan customers can reach — add a Moroccan line.
+- **WhatsApp:** `WHATSAPP_NUMBER` in `script.js` is `212691940422` (Moroccan WhatsApp Business line), so the WhatsApp buttons appear site-wide. Change it there (one line) to update them all; leave it empty to hide them.
+- **Phone:** the seller phone shown on the site is `+212 691-940422` (legal notice, terms, privacy policy, WhatsApp buttons).
 - **CNDP:** declare the order-data processing (stored in Google Sheets, outside Morocco) to the CNDP — www.cndp.ma.
 - **Written order confirmation:** law 31-08 expects the order's essentials to be confirmed to the customer in writing (otherwise the withdrawal period can extend). A WhatsApp/SMS recap when you call, or a printed recap in the parcel, covers it.
 - The legal pages were rewritten from the facts of how the shop works; have them **reviewed by a Moroccan lawyer/accountant**. This is not legal advice.

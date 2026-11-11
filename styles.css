@@ -4872,3 +4872,91 @@ html.sheet-open { overflow: hidden; }
   }
 }
 
+
+/* ============ customer reviews (home + product pages; markup built by script.js from assets/reviews.js) ============ */
+.reviews {
+  display: grid;
+  gap: var(--g);
+  padding: 0 var(--g) calc(var(--g) * 2);
+}
+.reviews-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(18px, 2.4vw, 34px);
+  background: var(--black);
+  color: var(--white);
+  border-radius: var(--r);
+}
+.reviews-head .promo-tag { margin-top: 0; background: var(--white); color: var(--black); }
+.reviews-h {
+  margin-top: .35em;
+  font-size: clamp(30px, 4.4vw, 64px);
+  font-weight: 800;
+  font-variation-settings: "wdth" 80;
+  line-height: .95;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.reviews-sub {
+  max-width: 38em;
+  margin-top: .8em;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  font-variation-settings: "wdth" 88;
+  color: rgba(255,255,255,.66);
+}
+.reviews-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--g);
+  list-style: none;
+}
+.review { display: flex; min-width: 0; }
+.review-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  padding: clamp(16px, 1.8vw, 24px);
+  background: var(--panel);
+  border-radius: var(--r);
+}
+.review-shot { display: block; overflow: hidden; border-radius: calc(var(--r) * .5); background: var(--white); }
+.review-shot img { width: 100%; max-height: 320px; object-fit: contain; }
+.review-txt {
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-weight: 600;
+  font-variation-settings: "wdth" 92;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.review-txt::before { content: "«\00a0"; }
+.review-txt::after { content: "\00a0»"; }
+.review-by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 700;
+  font-variation-settings: "wdth" 88;
+  color: #4a4a4a;
+}
+.review-by strong { color: var(--black); font-weight: 800; }
+.review-src {
+  margin-left: auto;
+  padding: .3em .7em .25em;
+  border-radius: 99px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+@media (max-width: 640px) {
+  .reviews-list { grid-auto-flow: column; grid-auto-columns: 84%; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  .review { scroll-snap-align: start; }
+}

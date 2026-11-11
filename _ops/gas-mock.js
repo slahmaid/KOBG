@@ -134,7 +134,13 @@ function makeEnv(opts = {}) {
       }),
     },
     UrlFetchApp: {
-      fetch: () => {
+      fetch: (url, opts) => {
+        // Meta Conversions API calls are recorded in env.capi (env.capiFail = true: Meta unreachable)
+        if (String(url).indexOf('graph.facebook.com') >= 0) {
+          if (env.capiFail) throw new Error('Meta unreachable');
+          (env.capi = env.capi || []).push({ url: String(url), opts: opts, body: JSON.parse(opts.payload) });
+          return { getResponseCode: () => 200, getContentText: () => '{"events_received":1}' };
+        }
         if (env.fetchFail) throw new Error('DNS error');
         const text = env.catalogText != null ? env.catalogText : fs.readFileSync(path.join(ROOT, 'assets/search-index.js'), 'utf8');
         return { getResponseCode: () => 200, getContentText: () => text };

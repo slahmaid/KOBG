@@ -1356,3 +1356,38 @@ test('ad source: setup creates the column; accounts and points columns keep work
   assert.ok(l.client);
   assert.equal(l.source.startsWith('meta'), true);
 });
+
+test('Meta CAPI: nothing is sent without META_CAPI_TOKEN', () => {
+  const env = env0();
+  assert.equal(env.post(order()).ok, true);
+  assert.equal((env.capi || []).length, 0);
+});
+
+test('Meta CAPI: a stored order is reported once as a Purchase, hashed, with the order number as event id', () => {
+  const env = makeEnv({ props: { ADMIN_KEY: KEY, META_CAPI_TOKEN: 'tok-123' } });
+  const o = order({ px: { fbp: 'fb.1.1700000000000.123456789', fbc: '=HYPERLINK("x")', ua: 'Mozilla/5.0 test' }, page: 'https://knockoutboxinggear.com/rb11-evolution-noir' });
+  const r = env.post(o);
+  assert.equal(r.ok, true);
+  assert.equal(env.capi.length, 1);
+  const call = env.capi[0], ev = call.body.data[0];
+  assert.ok(!call.url.includes('tok-123'));                         // the token travels in a header, never in the address
+  assert.equal(call.opts.headers.Authorization, 'Bearer tok-123');
+  assert.equal(ev.event_name, 'Purchase');
+  assert.equal(ev.event_id, r.orderId);
+  assert.equal(ev.custom_data.value, 1690);
+  assert.equal(ev.custom_data.currency, 'MAD');
+  assert.deepEqual(ev.custom_data.contents, [{ id: RB11 + '--m', quantity: 1, item_price: 1690 }]);
+  assert.equal(ev.user_data.fbp, 'fb.1.1700000000000.123456789');
+  assert.equal(ev.user_data.fbc, undefined);                        // a malformed id is dropped
+  assert.match(ev.user_data.ph[0], /^[0-9a-f]{64}$/);
+  assert.ok(!JSON.stringify(call.body).includes('Yassine'));         // name, phone and city leave only as hashes
+  assert.ok(!JSON.stringify(call.body).includes('612345'));
+  assert.equal(env.post(o).duplicate, true);                        // the same order sent again is not reported again
+  assert.equal(env.capi.length, 1);
+});
+
+test('Meta CAPI: Meta being unreachable never blocks the order', () => {
+  const env = makeEnv({ props: { ADMIN_KEY: KEY, META_CAPI_TOKEN: 'tok-123' } });
+  env.capiFail = true;
+  assert.equal(env.post(order()).ok, true);
+});
