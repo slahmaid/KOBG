@@ -1497,3 +1497,18 @@ test('catalog: the site refusing Google falls back to the copy in the GitHub rep
   assert.match(log, /knockoutboxinggear\.com\/assets\/search-index\.js → Address unavailable/);
   assert.match(log, /Catalogue lu : https:\/\/raw\.githubusercontent\.com\/.*\(\d+ produits\)/);
 });
+
+test('notify: a product listed without a price yet (RB1 Ultra) is accepted with the browser name, no amount', () => {
+  const env = env0();
+  const RB1 = 'gants-de-sac-rival-rb1-ultra-20e-anniversaire-noir';
+  const r = env.post({ action: 'notify', telephone: '0637921431',
+    items: [{ id: RB1 + '--m', qty: 1, name: 'Gants de sac Rival RB1 Ultra 20e Anniversaire', colour: 'Noir', size: 'M', unitPrice: 0 }] });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const v = rowsOf(env, 'Relances')[1];
+  assert.equal(v[5], 'Gants de sac Rival RB1 Ultra 20e Anniversaire');
+  assert.equal(v[6], 'M');
+  assert.equal(v[8], 0);
+  // a priced product still needs a real size, and an order for the unpriced one is still refused
+  assert.equal(env.post({ action: 'notify', telephone: '0637921431', items: [{ id: RB11 + '--xxl', qty: 1, name: 'x' }] }).error, 'bad_item');
+  assert.equal(env.post(order({ items: [{ id: RB1 + '--m', qty: 1, unitPrice: 1 }] })).ok, false);
+});

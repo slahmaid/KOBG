@@ -29,7 +29,7 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-11-13.2';
+const VERSION = '2026-11-13.3';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // same file read from the GitHub repo when the site can't be reached from Google's servers ('' = no backup)
@@ -248,6 +248,15 @@ function lead_(b) {
     if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && has(cat, id) && Number.isInteger(qty) && qty >= 1 && qty <= LIMITS.qty) {
       const p = cat[id];
       priced = { lines: [{ id: id, name: p[2], colour: p[3], size: '', qty: qty, unitPrice: p[0], lineTotal: qty * p[0] }] };
+    }
+  }
+  // « Prévenez-moi » on a product the catalog lists without a price yet (« Prix bientôt disponible »): the price
+  // check can't know it, so the line keeps the browser's product name / colour / size (cleaned), with no amount
+  if (priced.error === 'bad_item' && kind === 'notify' && cat && Array.isArray(b.items) && b.items.length === 1) {
+    const it = b.items[0] && typeof b.items[0] === 'object' ? b.items[0] : {};
+    const id = String(it.id || '');
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?$/.test(id) && id.length <= 160 && !has(cat, id.split('--')[0]) && listItem_(it.name, 120)) {
+      priced = { lines: [{ id: id, name: listItem_(it.name, 120), colour: listItem_(it.colour, 40), size: listItem_(it.size, 20), qty: 1, unitPrice: 0, lineTotal: 0 }] };
     }
   }
   if (priced.error) return fail_(priced.error, priced.data);
