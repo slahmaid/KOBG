@@ -1470,3 +1470,16 @@ test('lead: a product-page form with no size picked yet is kept (size empty); no
   assert.equal(env.post({ action: 'notify', telephone: '0655443322', items: [{ id: RB11, qty: 1 }] }).error, 'bad_item');
   assert.equal(env.post({ action: 'lead', telephone: '0655443322', items: [{ id: 'nope', qty: 1 }] }).error, 'bad_item');
 });
+
+test('lead / notify: catalog unreachable — the browser details are kept (cleaned), as for orders', () => {
+  const env = makeEnv({ props: { ADMIN_KEY: KEY }, fetchFail: true });
+  const r = env.post({ action: 'notify', telephone: '0637000000',
+    items: [{ id: RB10 + '--m', qty: 1, name: 'Gants de sac Rival RB10 Intelli-Shock', colour: 'Blanc', size: 'M', unitPrice: 2390 }] });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const v = rowsOf(env, 'Relances')[1];
+  assert.equal(v[5], 'Gants de sac Rival RB10 Intelli-Shock');
+  assert.equal(v[6], 'M');
+  assert.equal(v[7], 'Blanc');
+  assert.equal(env.post({ action: 'lead', telephone: '0637000000', items: [{ id: RB10, qty: 1, name: '=HYPERLINK("x")', unitPrice: 2390 }] }).ok, true);
+  assert.equal(formulas(env).length, 0);
+});

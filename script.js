@@ -1214,7 +1214,7 @@ function kobgAdSource() {
         try { items = peekItems() || []; } catch (err) { items = []; }
         if (!items.length) return;
         const payload = { action: 'lead', telephone: phoneLocal(val('telephone')), nom: val('nom'), ville: val('ville'),
-          items: items.map((it) => ({ id: it.id, qty: it.qty })), page: location.pathname.replace(/^\//, '') || 'accueil' };
+          items: items.map((it) => ({ id: it.id, qty: it.qty, name: it.name || '', colour: it.colour || '', size: it.size || '', unitPrice: +it.unitPrice || 0 })), page: location.pathname.replace(/^\//, '') || 'accueil' };
         const key = JSON.stringify(payload);
         if (key === leadKey) return;
         leadKey = key;
@@ -1351,7 +1351,7 @@ function kobgAdSource() {
       // Meta Pixel: what the InitiateCheckout event describes (same ids as AddToCart)
       pxInfo: () => (cart.length ? { content_ids: cart.map((it) => it.id), content_type: 'product',
         num_items: cart.reduce((n, it) => n + it.qty, 0), value: totalPrice(), currency: 'MAD' } : null),
-      peekItems: () => cart.map((it) => ({ id: it.id, qty: it.qty })),
+      peekItems: () => cart.map((it) => ({ id: it.id, qty: it.qty, name: it.name, ...splitVariant(it.variant), unitPrice: it.price })),
       getOrder: () => {
         if (!cart.length) return { blocked: 'Votre panier est vide : ajoutez un article avant de commander.' };
         return {
@@ -2236,7 +2236,8 @@ function kobgAdSource() {
         // unfinished-order capture: the product, with its size once one is picked (no side effects, unlike getOrder)
         peekItems: () => {
           const d = ppAddBtn.dataset, size = ppSize();
-          return [{ id: size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id, qty: ppQtyVal() }];
+          return [{ id: size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id, qty: ppQtyVal(),
+            name: d.name, colour: d.variant || '', size, unitPrice: +d.price || 0 }];
         },
         getOrder: () => {
           const d = ppAddBtn.dataset;
@@ -2347,7 +2348,9 @@ function kobgAdSource() {
         if (!phoneOK(tel.value)) { say('Entrez un numéro mobile marocain valide (06 ou 07).', true); tel.focus(); return; }
         nBtn.disabled = true;
         nBtn.textContent = 'Envoi…';
-        const r = await sendOrder({ action: 'notify', telephone: phoneLocal(tel.value), items: [{ id: size ? `${ppCat.id}--${slugSize(size)}` : ppCat.id, qty: 1 }],
+        // name / colour / size / price travel too: the server uses them only when it can't read the catalog
+        const r = await sendOrder({ action: 'notify', telephone: phoneLocal(tel.value),
+          items: [{ id: size ? `${ppCat.id}--${slugSize(size)}` : ppCat.id, qty: 1, name: ppCat.name, colour: ppCat.colour || '', size, unitPrice: +ppCat.price || 0 }],
           page: location.pathname.replace(/^\//, '') });
         if (r.ok) {
           nForm.hidden = true;
