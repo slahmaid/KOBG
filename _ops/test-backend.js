@@ -1483,3 +1483,17 @@ test('lead / notify: catalog unreachable — the browser details are kept (clean
   assert.equal(env.post({ action: 'lead', telephone: '0637000000', items: [{ id: RB10, qty: 1, name: '=HYPERLINK("x")', unitPrice: 2390 }] }).ok, true);
   assert.equal(formulas(env).length, 0);
 });
+
+test('catalog: the site refusing Google falls back to the copy in the GitHub repo; setup logs why', () => {
+  const env = makeEnv({ props: { ADMIN_KEY: KEY } });
+  env.fetchFailHost = 'knockoutboxinggear.com';
+  assert.equal(env.post({ action: 'notify', telephone: '0600000000', items: [{ id: 'nope--m', qty: 1 }] }).error, 'bad_item');   // catalog read: unknown id
+  const r = env.post(order({ items: [{ id: RB11 + '--m', qty: 1, unitPrice: 1 }], total: 1 }));
+  assert.equal(r.ok, true);
+  assert.equal(r.total, 1690);                                        // server price from the backup copy
+  env.logs.length = 0;
+  env.run('setup');
+  const log = env.logs.join('\n');
+  assert.match(log, /knockoutboxinggear\.com\/assets\/search-index\.js → Address unavailable/);
+  assert.match(log, /Catalogue lu : https:\/\/raw\.githubusercontent\.com\/.*\(\d+ produits\)/);
+});

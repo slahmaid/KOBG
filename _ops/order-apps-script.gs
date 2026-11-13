@@ -29,9 +29,12 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-11-13.1';
+const VERSION = '2026-11-13.2';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
+// same file read from the GitHub repo when the site can't be reached from Google's servers ('' = no backup)
+const CATALOG_BACKUP_URL = 'https://raw.githubusercontent.com/slahmaid/KOBG/main/assets/search-index.js';
+let catalogErr_ = [], catalogFrom_ = '';                          // last read: what failed, which address worked (for setup's log)
 // keep these three in sync with the CONFIG block of script.js
 const PROMO_CODES = {};                                         // promo codes removed (the 10 % KOBG26 code no longer exists); any code sent is refused
 const SHIPPING_FEE = 0;                                         // delivery is free for every order
@@ -413,10 +416,22 @@ function catalog_() {
   if (hit) { try { return JSON.parse(hit); } catch (e) { /* refetch */ } }
   const props = PropertiesService.getScriptProperties();
   let cat = null;
-  try {
-    const res = UrlFetchApp.fetch(CATALOG_URL + '?v=' + Date.now(), { muteHttpExceptions: true, followRedirects: true });
-    if (res.getResponseCode() === 200) cat = parseCatalog_(res.getContentText('UTF-8'));
-  } catch (e) { cat = null; }
+  catalogErr_ = [];
+  catalogFrom_ = '';
+  // the site first, then the same file straight from the GitHub repo (when the site refuses Google's servers)
+  for (const url of [CATALOG_URL, CATALOG_BACKUP_URL]) {
+    if (!url) continue;
+    try {
+      const res = UrlFetchApp.fetch(url + '?v=' + Date.now(), { muteHttpExceptions: true, followRedirects: true });
+      const code = res.getResponseCode();
+      if (code !== 200) { catalogErr_.push(url + ' → HTTP ' + code); continue; }
+      const text = res.getContentText('UTF-8');
+      cat = parseCatalog_(text);
+      if (cat) { catalogFrom_ = url; break; }
+      catalogErr_.push(url + ' → contenu illisible : ' + String(text).slice(0, 120).replace(/\s+/g, ' '));
+    } catch (e) { catalogErr_.push(url + ' → ' + String(e && e.message || e).slice(0, 200)); }
+  }
+  if (catalogErr_.length) console.warn('Catalogue : ' + catalogErr_.join(' | '));
   if (cat) {
     const s = JSON.stringify(cat);
     try { cache.put('catalog', s, 600); } catch (e) { /* too big for the cache: fetched each time */ }
@@ -1737,13 +1752,18 @@ function setup() {
   leadsSheet_(ss);
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
-  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' », « ' + SHEET_POINTS + ' » et « ' + SHEET_WHEEL + ' » prêts.');
+  console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' », « ' + SHEET_POINTS + ' », « ' + SHEET_WHEEL + ' » et « ' + SHEET_LEADS + ' » prêts.');
   console.log(wheelSecret_(true) ? 'WHEEL_SECRET prêt (signature des tirages de la roue).' : 'ATTENTION : WHEEL_SECRET impossible à créer.');
   console.log(wheelOdds_() ? 'Roue de la chance : probabilités OK (total 100 %), ' + (WHEEL.on ? 'activée.' : 'DÉSACTIVÉE (WHEEL.on = false).')
     : 'ATTENTION : probabilités de la roue invalides (total ≠ 100 % ou case à 0) : la roue refusera de tourner.');
   console.log('E-mails restants aujourd’hui (liens de réinitialisation, notifications) : ' + MailApp.getRemainingDailyQuota());
   console.log(key.length >= LIMITS.adminKeyMin ? 'ADMIN_KEY configurée.' : 'ADMIN_KEY manquante : lancez generateAdminKey().');
-  console.log(catalog_() ? 'Catalogue du site lu : ' + CATALOG_URL : 'ATTENTION : catalogue illisible à ' + CATALOG_URL);
+  CacheService.getScriptCache().remove('catalog');                 // read it now, not a cached copy
+  const cat = catalog_();
+  if (catalogErr_.length) console.log('Lecture du catalogue, erreurs : ' + catalogErr_.join(' | '));
+  console.log(cat && catalogFrom_ ? 'Catalogue lu : ' + catalogFrom_ + ' (' + Object.keys(cat).length + ' produits)'
+    : cat ? 'ATTENTION : catalogue injoignable, dernière copie connue utilisée.'
+    : 'ATTENTION : catalogue illisible (' + CATALOG_URL + (CATALOG_BACKUP_URL ? ' et ' + CATALOG_BACKUP_URL : '') + ') : prix des commandes NON vérifiés.');
 }
 // Times one password hash (ACCT.iter rounds of PBKDF2). Aim for well under a second; lower ACCT.iter if not.
 function benchmarkHash() {

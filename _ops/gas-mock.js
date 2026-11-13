@@ -142,6 +142,7 @@ function makeEnv(opts = {}) {
           return { getResponseCode: () => 200, getContentText: () => '{"events_received":1}' };
         }
         if (env.fetchFail) throw new Error('DNS error');
+        if (env.fetchFailHost && String(url).indexOf(env.fetchFailHost) >= 0) throw new Error('Address unavailable: ' + url);
         const text = env.catalogText != null ? env.catalogText : fs.readFileSync(path.join(ROOT, 'assets/search-index.js'), 'utf8');
         return { getResponseCode: () => 200, getContentText: () => text };
       },
