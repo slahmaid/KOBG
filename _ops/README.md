@@ -24,7 +24,7 @@ The site already posts orders to the Apps Script URL in `script.js` (`ORDER_ENDP
 2. Select all the code in `Code.gs` (or whatever the file is called), delete it, paste the full content of `order-apps-script.gs`, **Save**.
 3. In the function dropdown pick **`setup`** → **Run**. Approve the permissions Google asks for (Sheets, external requests to read the site's catalog, sending e-mail). The execution log should say the tabs are ready and the catalog was read. `setup` also creates the **Clients** tab (customer accounts), the **Points** tab (loyalty ledger) and the **Compte client** / **Points utilisés (DH)** / **Source (pub)** columns at the end of **Commandes**; it is safe to run again.
 4. Pick **`generateAdminKey`** → **Run**. Copy the key printed in the execution log into a password manager. This is the key for `admin.html`. (Or set your own in **Project Settings › Script Properties › `ADMIN_KEY`**, 12+ characters, random.)
-5. Optional: in **Script Properties** add `NOTIFY_EMAIL` = the address that should get an e-mail for every new order.
+5. Every new order is e-mailed to `info@knockoutboxinggear.com` (the `NOTIFY_EMAIL` constant at the top of the script). To use another address without editing the code, add a **Script Property** `NOTIFY_EMAIL`; it takes priority.
 6. **Deploy › Manage deployments ›** pencil icon on the existing deployment **› Version: New version › Deploy**.
    Editing the existing deployment keeps the same `/exec` URL, so `script.js` and `admin.js` need no change.
    (Only if you create a *new* deployment: *Execute as: Me*, *Who has access: Anyone*, then paste the new URL into `ORDER_ENDPOINT` in `script.js` and `ADMIN_ENDPOINT` in `assets/admin.js`.)
@@ -45,6 +45,17 @@ Customers can create an account (optional: guest checkout still works), sign in,
 - **Limits:** 30 sign-ups/hour overall; 5 wrong passwords lock that e-mail for 15 min (a password reset unlocks it); 300 failed sign-ins per 15 min overall pause sign-in; 3 reset e-mails/hour per address and 40/hour overall; up to 10 signed-in devices per account; sessions last 30 days with "Rester connecté", 24 h otherwise; reset links are single-use and expire after 1 h.
 - **Reset link address:** e-mails link to `SITE_URL` + `compte#reset=…`, so keep `SITE_URL` in sync if you move to a custom domain.
 - Test after deploying: create an account on the live site with your own e-mail, place one order while signed in, check that it appears in **Mon compte** and that `Compte client` is filled in the sheet, use "Mot de passe oublié", then set the test order to **Annulée** and delete the test row in **Clients**.
+
+### Follow-ups: onglet « Relances » (unfinished orders + « Prévenez-moi »)
+
+Two kinds of lines land in the **Relances** tab (created by `setup`, or by the first line):
+
+- **Commande non finalisée**: someone typed a valid 06/07 number in an order form (product page or `commande`) but did not confirm. The line keeps the name, city and items typed so far and is updated while they keep typing (one open line per phone, for 7 days). When that phone places an order, **Statut** becomes « Commandé (KOBG-…) » by itself: call only the lines whose Statut is empty, ideally within the hour.
+- **Prévenir au retour en stock**: the « Prévenez-moi » box of a sold-out colour or size (phone, product, colour, size). Call or WhatsApp them when you restock.
+
+Write what you did in **Statut** (« Appelé », « Pas de réponse », « Prévenu »…): a line with a Statut is never changed again. The privacy policy promises **one** call or message per line and deletion **within 3 months**: delete old lines at least once a month.
+
+**Go-live:** paste the new `order-apps-script.gs`, run `setup`, **Deploy › Manage deployments › New version** (same URL), *then* publish the site. Until the script is redeployed, the « Prévenez-moi » box shows "Envoi impossible" with a WhatsApp link, and unfinished orders are simply not saved (orders are not affected).
 
 ### Loyalty points (programme fidélité)
 

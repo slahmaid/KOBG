@@ -1391,3 +1391,82 @@ test('Meta CAPI: Meta being unreachable never blocks the order', () => {
   env.capiFail = true;
   assert.equal(env.post(order()).ok, true);
 });
+
+// ---------- Relances: unfinished orders ('lead') and « Prévenez-moi » ('notify') ----------
+test('lead: an unfinished order is stored once per phone, updated by later sends, marked when the phone orders', () => {
+  const env = env0();
+  const tel = '06 98 76 54 32';
+  let r = env.post({ action: 'lead', telephone: tel, items: [{ id: RB11 + '--m', qty: 1 }], page: 'rb11-evolution-noir' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  r = env.post({ action: 'lead', telephone: tel, nom: 'Sara B.', ville: 'Rabat', items: [{ id: RB11 + '--l', qty: 2 }], page: 'commande' });
+  assert.equal(r.ok, true);
+  let rows = rowsOf(env, 'Relances');
+  assert.deepEqual(rows[0], ['Date', 'Type', 'Téléphone', 'Nom', 'Ville', 'Articles', 'Taille', 'Couleur', 'Total (DH)', 'Page', 'Statut']);
+  assert.equal(rows.length, 2);                                  // header + one line: the second send updated it
+  assert.equal(rows[1][1], 'Commande non finalisée');
+  assert.equal(rows[1][2], '0698765432');                        // leading 0 kept (stored as text)
+  assert.equal(rows[1][3], 'Sara B.');
+  assert.equal(rows[1][5], 'Gants de sac Rival RB11 Evolution x2');
+  assert.equal(rows[1][6], 'L');
+  assert.equal(rows[1][8], 3380);                                // server price, not the browser's
+  assert.equal(rows[1][10], '');
+  // a send without name keeps the name typed before
+  env.post({ action: 'lead', telephone: tel, items: [{ id: RB11 + '--l', qty: 1 }] });
+  assert.equal(rowsOf(env, 'Relances')[1][3], 'Sara B.');
+  // the same phone orders: the line is marked, and a new unfinished form opens a new line
+  const o = env.post(order({ telephone: tel }));
+  assert.equal(o.ok, true);
+  rows = rowsOf(env, 'Relances');
+  assert.equal(rows[1][10], 'Commandé (' + o.orderId + ')');
+  env.post({ action: 'lead', telephone: tel, items: [{ id: RB11 + '--m', qty: 1 }] });
+  assert.equal(rowsOf(env, 'Relances').length, 3);
+});
+
+test('lead: a line the team already handled is never overwritten', () => {
+  const env = env0();
+  env.post({ action: 'lead', telephone: '0611223344', items: [{ id: RB11 + '--m', qty: 1 }] });
+  env.sheets.Relances.rows[1][10] = 'Appelé';
+  env.post({ action: 'lead', telephone: '0611223344', items: [{ id: RB11 + '--xl', qty: 1 }] });
+  const rows = rowsOf(env, 'Relances');
+  assert.equal(rows.length, 3);
+  assert.equal(rows[1][10], 'Appelé');
+  assert.equal(rows[1][6], 'M');
+});
+
+test('notify: one line per phone + product + size; bad phone, item or size refused', () => {
+  const env = env0();
+  const ask = (id, extra = {}) => env.post(Object.assign({ action: 'notify', telephone: '0712345678', items: [{ id, qty: 1 }] }, extra));
+  assert.equal(ask(RB10 + '--m').ok, true);
+  assert.equal(ask(RB10 + '--m').ok, true);                      // asked twice: still one line
+  assert.equal(ask(RB10 + '--l').ok, true);                      // another size: its own line
+  const rows = rowsOf(env, 'Relances');
+  assert.equal(rows.length, 3);
+  assert.equal(rows[1][1], 'Prévenir au retour en stock');
+  assert.equal(rows[1][7], 'Blanc');
+  assert.equal(ask(RB10 + '--m', { telephone: '0512345678' }).error, 'bad_field');
+  assert.equal(ask('nope--m').error, 'bad_item');
+  assert.equal(ask(RB10 + '--xxl').error, 'bad_item');
+  assert.equal(env.post({ action: 'notify', telephone: '0712345678', items: [{ id: RB10 + '--m', qty: 1 }, { id: RB11 + '--m', qty: 1 }] }).error, 'bad_order');
+  // a notify line is not closed by an order (the product was sold out: the team still has to call back)
+  env.post(order({ telephone: '0712345678' }));
+  assert.equal(rowsOf(env, 'Relances')[1][10], '');
+});
+
+test('lead / notify: no formulas reach the sheet, and a phone is rate-limited', () => {
+  const env = env0();
+  env.post({ action: 'lead', telephone: '0699887766', nom: '=HYPERLINK("http://x")', ville: '+cmd', page: '@x', items: [{ id: RB11 + '--m', qty: 1 }] });
+  assert.equal(formulas(env).length, 0);
+  let last;
+  for (let i = 0; i < 25; i++) last = env.post({ action: 'lead', telephone: '0699887766', items: [{ id: RB11 + '--m', qty: 1 }] });
+  assert.equal(last.error, 'too_many');
+});
+
+test('lead: a product-page form with no size picked yet is kept (size empty); notify still needs a valid size', () => {
+  const env = env0();
+  assert.equal(env.post({ action: 'lead', telephone: '0655443322', items: [{ id: RB11, qty: 1 }] }).ok, true);
+  const v = rowsOf(env, 'Relances')[1];
+  assert.equal(v[5], 'Gants de sac Rival RB11 Evolution');
+  assert.equal(v[6], '');
+  assert.equal(env.post({ action: 'notify', telephone: '0655443322', items: [{ id: RB11, qty: 1 }] }).error, 'bad_item');
+  assert.equal(env.post({ action: 'lead', telephone: '0655443322', items: [{ id: 'nope', qty: 1 }] }).error, 'bad_item');
+});

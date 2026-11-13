@@ -4126,6 +4126,179 @@ html:not(.has-wa) .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr
   html:not(.has-wa) .contact-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Sticky WhatsApp button (added by script.js on every page when WHATSAPP_NUMBER is set).
+   Below the header (40), toasts (50+) and the cart drawer / menu (60+); hidden while an overlay is open. */
+.wa-float {
+  --wa-size: 56px;
+  position: fixed; z-index: 35;
+  right: calc(var(--g) * 2 + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--g) * 2 + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center;
+  height: var(--wa-size); min-width: var(--wa-size);
+  padding: 0 calc((var(--wa-size) - 28px) / 2);
+  border-radius: 99px;
+  background: #25d366; color: var(--white);
+  box-shadow: 0 10px 26px -8px rgba(0, 0, 0, .45);
+  transition: transform .35s var(--ease), opacity .25s ease, visibility 0s, bottom .35s var(--ease), background .2s;
+}
+.wa-float svg { width: 28px; height: 28px; flex: none; }
+.wa-float-lbl {
+  max-width: 0; overflow: hidden; white-space: nowrap;
+  font-size: 14px; font-weight: 800;
+  transition: max-width .3s var(--ease), margin .3s var(--ease);
+}
+.wa-float:focus-visible { outline: 3px solid var(--black); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .wa-float:hover { background: #1ebe5a; }
+  .wa-float:hover .wa-float-lbl, .wa-float:focus-visible .wa-float-lbl { max-width: 8em; margin-left: .55em; }
+}
+.wa-float:not(.is-on),
+.menu-open .wa-float, .cart-open .wa-float, html.wheel-open .wa-float, html.sheet-open .wa-float {
+  opacity: 0; visibility: hidden; transform: scale(.6);
+  transition: transform .25s ease, opacity .2s ease, visibility 0s .25s;
+}
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .wa-float { --wa-size: 52px; }
+  /* product pages: sit above the sticky "add to cart" bar while it is shown */
+  body:has(.pp-bar.is-on) .wa-float { bottom: calc(var(--g) * 2 + 80px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { .wa-float, .wa-float-lbl { transition: none; } }
+@media print { .wa-float { display: none; } }
+
+/* =========================================================
+   Conversion pass (2026-11-13): hero trust line, product-page main CTA + size helper,
+   « Prévenez-moi » on sold-out products, cart feedback, checkout helpers
+   ========================================================= */
+.is-gone { display: none !important; }
+
+/* home hero: what makes a cash-on-delivery order safe, right under the headline */
+.hero-trust { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hero-trust li {
+  display: inline-flex; align-items: center; gap: .45em;
+  padding: .45em .8em; border-radius: 99px; background: rgba(0, 0, 0, .72); color: var(--white);
+  font-size: clamp(11px, 1.5vh, 13px); font-weight: 800; font-variation-settings: "wdth" 84;
+  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+}
+.hero-trust li::before {
+  content: ""; width: .55em; height: .3em; margin-top: -.15em;
+  border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg);
+}
+
+/* product page: « Commander maintenant » is the main action; « Ajouter au panier » the second one */
+.pp-buy-now {
+  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+  width: 100%; height: 58px; padding: 0 1.4em; border: 0; border-radius: 99px;
+  background: var(--accent); color: var(--white); cursor: pointer;
+  font: inherit; font-size: 16px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+  transition: background-color .2s, scale .2s ease;
+}
+.pp-buy-now svg { width: 20px; height: 20px; flex: none; }
+.pp-buy-now:hover { background: var(--black); }
+.pp-buy-now:active { scale: .98; }
+.pp-buy-now:focus-visible { outline: 2px solid var(--black); outline-offset: 3px; }
+.pp-buy-now-sub { margin: -8px 0 0; text-align: center; font-size: 12px; font-weight: 700; font-variation-settings: "wdth" 88; color: #555; }
+
+/* size helper: « Votre poids ? » */
+.pp-fit { margin: 0 0 12px; }
+.pp-fit-h { margin: 0 0 6px; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; color: #555; }
+.pp-fit-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-fit-btn {
+  min-height: 36px; padding: 0 .9em; border: 0; border-radius: 99px; background: transparent; color: var(--black);
+  box-shadow: inset 0 0 0 1.5px #b9b9b9; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 700; font-variation-settings: "wdth" 88;
+  transition: box-shadow .2s, background-color .2s, color .2s;
+}
+.pp-fit-btn:hover { box-shadow: inset 0 0 0 1.5px var(--black); }
+.pp-fit-btn[aria-pressed="true"] { background: var(--black); color: var(--white); box-shadow: none; }
+.pp-fit-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pp-fit-msg { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: var(--black); }
+.pp-fit-msg:empty { display: none; }
+@media (pointer: coarse) { .pp-fit-btn { min-height: 44px; } }
+
+/* « Prévenez-moi » (sold-out colour or size) */
+.pp-notify-open {
+  justify-self: start; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 800; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px;
+}
+.pp-notify { display: grid; gap: 10px; padding: clamp(16px, 1.8vw, 22px); border-radius: calc(var(--r) * .7); background: var(--white); }
+.pp-notify[hidden] { display: none; }
+.pp-notify-h { margin: 0; font-size: clamp(20px, 1.8vw, 26px); font-weight: 900; font-variation-settings: "wdth" 80; text-transform: uppercase; line-height: 1; }
+.pp-notify-txt { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.45; color: #444; }
+.pp-notify-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.pp-notify-form[hidden] { display: none; }
+.pp-notify-field { display: grid; gap: 6px; }
+.pp-notify-field > span { font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; color: #555; }
+.pp-notify-field input, .pp-notify-field select {
+  width: 100%; min-height: 50px; padding: 12px 16px; border: 2px solid transparent; border-radius: calc(var(--r) * .55);
+  background: #f1f1f1; color: var(--black); font: inherit; font-size: 16px; font-weight: 600;
+}
+.pp-notify-field input:focus-visible, .pp-notify-field select:focus-visible { outline: none; border-color: var(--black); background: var(--white); }
+.pp-notify-btn {
+  height: 52px; padding: 0 1.4em; border: 0; border-radius: 99px; background: var(--black); color: var(--white); cursor: pointer;
+  font: inherit; font-size: 15px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .04em;
+}
+.pp-notify-btn:hover:not(:disabled) { background: var(--accent); }
+.pp-notify-btn:disabled { opacity: .6; cursor: default; }
+.pp-notify-msg { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.4; color: #1f6b3d; }
+.pp-notify-msg:empty { display: none; }
+.pp-notify-msg.is-bad { color: var(--accent-ink); }
+.pp-notify-msg a { color: inherit; text-decoration: underline; }
+.pp-notify-legal { margin: 0; font-size: 11.5px; font-weight: 600; color: #777; }
+@media (min-width: 561px) {
+  .pp-notify-form { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
+}
+
+/* sold out: what is in stock right now */
+.pp-alt { display: grid; gap: 10px; }
+.pp-alt-h { margin: 0; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .06em; color: #555; }
+.pp-alt-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pp-alt-card {
+  display: flex; align-items: center; gap: 10px; height: 100%; padding: 8px;
+  border-radius: calc(var(--r) * .55); background: var(--white); color: var(--black); text-decoration: none;
+  transition: box-shadow .2s;
+}
+.pp-alt-card:hover { box-shadow: inset 0 0 0 2px var(--black); }
+.pp-alt-card img { flex: none; width: 52px; height: 65px; border-radius: calc(var(--r) * .35); object-fit: cover; background: #ebe9ea; }
+.pp-alt-txt { display: grid; gap: 2px; min-width: 0; }
+.pp-alt-name { font-size: 13px; font-weight: 900; font-variation-settings: "wdth" 80; text-transform: uppercase; line-height: 1.05; }
+.pp-alt-col { font-size: 12px; font-weight: 700; color: #666; }
+.pp-alt-price { font-size: 13px; font-weight: 800; }
+
+/* toast after « + » on a card: a « Commander » link */
+.toast-go {
+  pointer-events: auto; margin-left: 4px; padding: 6px 12px; border-radius: 99px;
+  background: var(--accent); color: var(--white); text-decoration: none;
+}
+.toast-go[hidden] { display: none; }
+.toast-go:hover { background: var(--black); }
+
+/* cart drawer: loyalty text folded, one suggested accessory */
+.cart-pts { font-size: 12px; font-weight: 600; font-variation-settings: "wdth" 88; color: #666; }
+.cart-pts summary { cursor: pointer; font-weight: 800; }
+.cart-pts .cart-note { margin-top: 4px; }
+.cart-upsell {
+  display: flex; align-items: center; gap: 10px; padding: 8px;
+  border-radius: calc(var(--r) * .55); background: var(--white); box-shadow: inset 0 0 0 1px #d4d4d4;
+}
+.cart-upsell[hidden] { display: none; }
+.cart-upsell img { flex: none; width: 40px; height: 50px; border-radius: 6px; object-fit: cover; background: #ebe9ea; }
+.cart-upsell-txt { flex: 1; min-width: 0; margin: 0; font-size: 12.5px; font-weight: 700; line-height: 1.3; }
+.cart-upsell-txt a { color: inherit; font-weight: 800; text-decoration: none; }
+.cart-upsell-txt a:hover { text-decoration: underline; }
+.cart-upsell-k { display: block; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #777; }
+.cart-upsell-add {
+  flex: none; height: 36px; padding: 0 .9em; border: 0; border-radius: 99px; background: var(--black); color: var(--white); cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+}
+.cart-upsell-add:hover { background: var(--accent); }
+@media (pointer: coarse) { .cart-upsell-add { height: 44px; } }
+
+/* checkout helpers */
+.acct-note--guest { margin: -4px 0 0; font-size: 12.5px; }
+.cod-eta { margin: 0; font-size: 12.5px; font-weight: 800; line-height: 1.35; color: #1f6b3d; }
+.cod-eta[hidden] { display: none; }
+.cod-lead-note { color: #777; }
+
 /* =========================================================
    Customer accounts (compte.html + the note above the order forms).
    Same bento language: grey .cod--panel forms, black side card, white order tiles.

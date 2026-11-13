@@ -564,11 +564,21 @@ function kobgAdSource() {
     cartBtn.classList.add('is-bumped');
   }
 
-  function showToast(text) {
+  // withGo: a « Commander » link to the checkout, and more time to tap it
+  let toastGo = null;
+  function showToast(text, withGo) {
     toastTxt.textContent = text;
+    if (withGo && !toastGo && !document.querySelector('[data-checkout]')) {
+      toastGo = document.createElement('a');
+      toastGo.href = 'commande';
+      toastGo.className = 'toast-go';
+      toastGo.textContent = 'Commander';
+      toast.appendChild(toastGo);
+    }
+    if (toastGo) toastGo.hidden = !withGo;
     toast.classList.add('is-visible');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
+    toastTimer = setTimeout(() => toast.classList.remove('is-visible'), withGo ? 5000 : 2400);
   }
 
 
@@ -602,14 +612,61 @@ function kobgAdSource() {
     clearTimeout(addedTimers.get(btn));
     addedTimers.set(btn, setTimeout(() => btn.classList.remove('is-added'), 1400));
 
+    // product page: the cart opens (total + « Acheter maintenant » in view); cards: a toast with a « Commander » link
+    if (d.scope && !document.querySelector('[data-checkout]')) { setTimeout(() => setCart(true), 450); return; }
     const qty = totalQty();
     const label = `${add > 1 ? `${add} × ` : ''}${d.name}${variant ? ` ${variant.toLowerCase()}` : ''}`;
     const done = add > 1 ? 'ajoutés' : 'ajouté';
-    showToast(qty > add ? `${label} ${done} · ${plural(qty)} au panier` : `${label} ${done} au panier`);
+    showToast(qty > add ? `${label} ${done} · ${plural(qty)} au panier` : `${label} ${done} au panier`, true);
   }
 
   document.querySelectorAll('.product-add, .pp-add').forEach((btn) => {
     btn.addEventListener('click', () => addToCart(btn));
+  });
+
+  // Cart drawer: the long loyalty-points text folds into one line; with gloves in the cart, one pair of pads
+  // (in stock, no size to pick) is suggested with a one-tap add.
+  const ptsNote = cartFoot?.querySelector('.cart-note--pts');
+  if (ptsNote) {
+    const det = document.createElement('details');
+    det.className = 'cart-pts';
+    det.innerHTML = `<summary>Points fidélité&nbsp;: ${LOYALTY.reward}&nbsp;DH offerts tous les ${formatDH(LOYALTY.step)}</summary>`;
+    ptsNote.before(det);
+    det.appendChild(ptsNote);
+  }
+  const upsell = document.createElement('div');
+  upsell.className = 'cart-upsell';
+  upsell.hidden = true;
+  cartFoot?.prepend(upsell);
+  const upsellPick = () => {
+    const all = Array.isArray(window.KOBG_SEARCH) ? window.KOBG_SEARCH : [];
+    const inCart = new Set(cart.map((it) => it.id.split('--')[0]));
+    const hasGloves = all.some((p) => inCart.has(p.id) && /^Gants de /.test(p.coll));
+    const hasPads = all.some((p) => inCart.has(p.id) && p.coll === 'Pattes d’ours');
+    if (!hasGloves || hasPads) return null;
+    return all.filter((p) => p.coll === 'Pattes d’ours' && p.inStock && !(p.sizes || []).length && +p.price > 0)
+      .sort((a, b) => a.price - b.price)[0] || null;
+  };
+  renderHooks.push(() => {
+    const p = upsellPick();
+    upsell.hidden = !p;
+    if (!p) { upsell.innerHTML = ''; return; }
+    if (upsell.dataset.id === p.id) return;
+    upsell.dataset.id = p.id;
+    upsell.innerHTML = `<img src="${esc(p.img)}" alt="" width="40" height="50" loading="lazy" decoding="async">
+      <p class="cart-upsell-txt"><span class="cart-upsell-k">Pour l’entraînement</span><a href="${esc(p.url)}">${esc(p.short)} ${esc(p.colour)}</a> <strong>${formatDH(p.price)}</strong></p>
+      <button type="button" class="cart-upsell-add" aria-label="Ajouter ${esc(p.name)} ${esc(p.colour)} au panier">Ajouter</button>`;
+  });
+  upsell.addEventListener('click', (e) => {
+    if (!e.target.closest('.cart-upsell-add')) return;
+    const p = upsellPick();
+    if (!p) return;
+    cart.push({ id: p.id, name: p.name, variant: p.colour || '', price: +p.price, img: p.img || '', qty: 1 });
+    saveCart();
+    render();
+    bumpBadge();
+    try { if (typeof fbq === 'function') fbq('track', 'AddToCart', { content_ids: [p.id], content_name: p.name, content_type: 'product', value: +p.price, currency: 'MAD' }); } catch (err) { /* pixel blocked */ }
+    cartCheckout.focus({ preventScroll: true });
   });
 
   // quantity +/- and remove (event delegation; focus is put back after each re-render).
@@ -745,6 +802,13 @@ function kobgAdSource() {
     else buf.forEach((_, k) => { buf[k] = Math.floor(Math.random() * 256); });
     return `KOBG-${String(d.getFullYear()).slice(2)}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${[...buf].map((b) => abc[b % 32]).join('')}`;
   }
+  // order forms: suggestions for « Ville de livraison » (a datalist: any other city can still be typed)
+  const MA_CITIES = ['Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger', 'Agadir', 'Meknès', 'Oujda', 'Kénitra', 'Tétouan',
+    'Salé', 'Témara', 'Mohammédia', 'El Jadida', 'Safi', 'Béni Mellal', 'Nador', 'Khouribga', 'Settat', 'Berrechid',
+    'Taza', 'Khémisset', 'Larache', 'Ksar El Kébir', 'Guelmim', 'Errachidia', 'Ouarzazate', 'Inezgane', 'Ait Melloul',
+    'Tiznit', 'Taroudant', 'Essaouira', 'Al Hoceïma', 'Berkane', 'Sidi Kacem', 'Sidi Slimane', 'Khénifra', 'Ifrane',
+    'Azrou', 'Bouskoura', 'Dar Bouazza', 'Skhirat', 'Benslimane', 'Fquih Ben Salah', 'Youssoufia', 'Laâyoune', 'Dakhla',
+    'Martil', 'Fnideq', 'M’diq', 'Chefchaouen', 'Ouazzane', 'Midelt', 'Zagora', 'Tan-Tan'];
   const splitVariant = (v) => { const [colour = '', size = ''] = String(v || '').split(' · '); return { colour, size }; };
   const itemsText = (items) => items.map((it) => `${it.qty} × ${it.name}${[it.colour, it.size].filter(Boolean).length ? ` (${[it.colour, it.size].filter(Boolean).join(' · ')})` : ''} — ${plainDH(it.lineTotal)}`).join('\n');
 
@@ -907,10 +971,15 @@ function kobgAdSource() {
     const filled = {};                     // what fill() typed in: replaced if another account signs in, never what the visitor typed
     const fill = () => {
       const s = acctStore.read();
+      // guest: a quiet line under the fields (ordering needs no account); signed in: the account line above them
       if (!s) {
-        note.innerHTML = `Vous avez un compte&nbsp;? <a href="compte?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées, suivre la commande et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
+        if (note.previousElementSibling !== fs) fs.after(note);
+        note.classList.add('acct-note--guest');
+        note.innerHTML = `Déjà un compte&nbsp;? <a href="compte?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
         return;
       }
+      if (note.nextElementSibling !== fs) fs.before(note);
+      note.classList.remove('acct-note--guest');
       const p = s.profile;
       const where = [p.adresse, p.ville].filter(Boolean).join(', ');
       note.innerHTML = `<span class="acct-note-in"><strong>Connecté${p.nom ? ` : ${esc(p.nom)}` : ''}</strong> · commande enregistrée dans <a href="compte">votre compte</a>.</span>${where ? `<span class="acct-note-adr">Adresse enregistrée : ${esc(where)}</span>` : ''}`;
@@ -1055,7 +1124,7 @@ function kobgAdSource() {
   };
   // wires one order form: inline French errors, honeypot, busy state (no double submit), send, then merci.
   // getOrder() returns { items, sub, source } or { blocked: 'message' } (it shows its own hint, e.g. the size).
-  function codForm(form, { getOrder, onSuccess, pxInfo }) {
+  function codForm(form, { getOrder, onSuccess, pxInfo, peekItems }) {
     const submit = form.querySelector('.cod-submit');
     // Meta Pixel: InitiateCheckout once per page, when the visitor starts filling an order form
     const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; try { if (typeof fbq === 'function') { let p = null; try { p = pxInfo ? pxInfo() : null; } catch (err) { p = null; } fbq('track', 'InitiateCheckout', p || {}); } } catch (err) { /* pixel blocked */ } };
@@ -1099,9 +1168,65 @@ function kobgAdSource() {
       lock();
       new MutationObserver(lock).observe(form, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
     }
+    // Ville: suggestions of Moroccan cities (any city can still be typed), then an estimated delivery window from the
+    // shop's own promise (prepared in 24–48 h, delivered in 24–72 h = 2 to 5 days, Sundays not counted).
+    const villeEl = form.elements.ville;
+    if (villeEl && !form.classList.contains('is-oos')) {
+      if (!document.getElementById('kobgCities')) {
+        const dl = document.createElement('datalist');
+        dl.id = 'kobgCities';
+        dl.innerHTML = MA_CITIES.map((c) => `<option value="${esc(c)}"></option>`).join('');
+        document.body.appendChild(dl);
+      }
+      villeEl.setAttribute('list', 'kobgCities');
+      const eta = document.createElement('p');
+      eta.className = 'cod-eta';
+      eta.hidden = true;
+      villeEl.closest('.cod-field')?.appendChild(eta);
+      const addDays = (n) => {
+        const d = new Date();
+        for (let k = 0; k < n;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0) k += 1; }
+        return d;
+      };
+      const day = (d) => d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const showEta = () => {
+        const v = val('ville');
+        eta.hidden = v.length < 2 || !/\p{L}/u.test(v);
+        if (!eta.hidden) eta.textContent = `Livraison à ${v} estimée entre le ${day(addDays(2))} et le ${day(addDays(5))}.`;
+      };
+      villeEl.addEventListener('change', showEta);
+      villeEl.addEventListener('blur', showEta);
+      showEta();
+    }
+    // Unfinished order ("Relances" tab of the order sheet): once a valid mobile number is typed, the form's content is
+    // saved so the team can call back a visitor who leaves without confirming. Sent again only when something changed;
+    // the server marks the line « Commandé » when that number orders. The visitor is told under the phone field.
+    let leadKey = '';
+    const telEl = form.elements.telephone;
+    if (peekItems && telEl && !form.classList.contains('is-oos')) {
+      const note = document.createElement('p');
+      note.className = 'cod-hint cod-lead-note';
+      note.textContent = 'Si la commande n’est pas finalisée, nous pourrons vous rappeler à ce numéro pour vous aider.';
+      telEl.closest('.cod-field')?.appendChild(note);
+      const saveLead = () => {
+        if (busy || !phoneOK(val('telephone')) || val('kobg_hp')) return;
+        let items = [];
+        try { items = peekItems() || []; } catch (err) { items = []; }
+        if (!items.length) return;
+        const payload = { action: 'lead', telephone: phoneLocal(val('telephone')), nom: val('nom'), ville: val('ville'),
+          items: items.map((it) => ({ id: it.id, qty: it.qty })), page: location.pathname.replace(/^\//, '') || 'accueil' };
+        const key = JSON.stringify(payload);
+        if (key === leadKey) return;
+        leadKey = key;
+        sendOrder(payload).then((r) => { if (!r.ok && !r.test) leadKey = ''; });   // retried on the next change
+      };
+      fields.forEach((el) => el.addEventListener('blur', saveLead));
+      form.addEventListener('change', saveLead);
+      window.addEventListener('pagehide', saveLead);
+    }
     // One order number per order: a retry after a timeout or a lost reply re-sends the same number, and the server
     // stores it only once (same number + same phone). Anything changed (items, phone, points, discount) = a new number.
-    let pending = null;                    // { key, id } of the last attempt that did not succeed
+    let pending = null;                   // { key, id } of the last attempt that did not succeed
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (busy) return;
@@ -1226,6 +1351,7 @@ function kobgAdSource() {
       // Meta Pixel: what the InitiateCheckout event describes (same ids as AddToCart)
       pxInfo: () => (cart.length ? { content_ids: cart.map((it) => it.id), content_type: 'product',
         num_items: cart.reduce((n, it) => n + it.qty, 0), value: totalPrice(), currency: 'MAD' } : null),
+      peekItems: () => cart.map((it) => ({ id: it.id, qty: it.qty })),
       getOrder: () => {
         if (!cart.length) return { blocked: 'Votre panier est vide : ajoutez un article avant de commander.' };
         return {
@@ -1297,6 +1423,23 @@ function kobgAdSource() {
   // native scroll-snap track (touch and trackpads just work), arrows that step one
   // card, mouse drag and a thin progress bar. Each instance keeps its own state.
   const glide = () => (reduceMotion.matches ? 'auto' : 'smooth');
+  // Sold-out cards (li.product.is-oos) move to the end of every list, so the first cards a visitor sees can be
+  // ordered. Best-sellers drops them entirely while at least 4 cards remain. The NN/TT counters follow the new order.
+  document.querySelectorAll('.carousel, .product-grid').forEach((list) => {
+    const items = [...list.children].filter((li) => li.classList.contains('product'));
+    if (!items.some((li) => li.classList.contains('is-oos'))) return;
+    const inStock = items.filter((li) => !li.classList.contains('is-oos'));
+    let out = items.filter((li) => li.classList.contains('is-oos'));
+    if (list.closest('#best-sellers') && inStock.length >= 4) { out.forEach((li) => li.remove()); out = []; }
+    const all = [...inStock, ...out];
+    const pad = (n) => String(n).padStart(2, '0');
+    all.forEach((li, i) => {
+      list.appendChild(li);
+      li.style.setProperty('--i', i);
+      const idx = li.querySelector('.product-idx');
+      if (idx) idx.textContent = `${pad(i + 1)}/${pad(all.length)}`;
+    });
+  });
   document.querySelectorAll('.products').forEach(setupCarousel);
 
   function setupCarousel(section) {
@@ -1500,6 +1643,33 @@ function kobgAdSource() {
     io.observe(section);
   });
 
+  // Sticky WhatsApp button, bottom-right on every page (only when WHATSAPP_NUMBER is valid);
+  // its href is set with the other .js-wa links just below.
+  if (WA_DIGITS && !document.querySelector('.wa-float')) {
+    const fab = document.createElement('a');
+    fab.className = 'wa-float js-wa';
+    fab.href = '#';
+    fab.target = '_blank';
+    fab.rel = 'noopener';
+    fab.setAttribute('aria-label', 'Écrivez-nous sur WhatsApp');
+    fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg><span class="wa-float-lbl">WhatsApp</span>';
+    document.body.appendChild(fab);
+    // phones: hidden on the first screen (it would cover the hero's buttons) and while the footer, which has
+    // its own WhatsApp button, is on screen. Desktop: always shown.
+    const footerEl = document.querySelector('.site-footer');
+    let waTick = 0;
+    const waSync = () => {
+      waTick = 0;
+      const nearFooter = !!footerEl && footerEl.getBoundingClientRect().top < window.innerHeight - 40;
+      const on = mobile.matches ? window.scrollY > window.innerHeight * 0.6 && !nearFooter : true;
+      fab.classList.toggle('is-on', on);
+      if (on) fab.removeAttribute('tabindex'); else fab.setAttribute('tabindex', '-1');
+    };
+    window.addEventListener('scroll', () => { if (!waTick) waTick = requestAnimationFrame(waSync); }, { passive: true });
+    window.addEventListener('resize', waSync);
+    waSync();
+  }
+
   // Footer: WhatsApp links + back-to-top
   if (WA_DIGITS) document.querySelectorAll('.js-wa').forEach((a) => {
     const msg = 'Bonjour Knockout Boxing Gear, j’ai une question.';
@@ -1561,7 +1731,8 @@ function kobgAdSource() {
         const list = g.querySelector('.product-grid');
         const items = [...list.children];
         const key = (li) => Number(li.querySelector('[data-price]').dataset.price);
-        items.sort((a, b) => v === 'asc' ? key(a) - key(b) : v === 'desc' ? key(b) - key(a) : a.dataset.order - b.dataset.order);
+        const oos = (li) => (li.classList.contains('is-oos') ? 1 : 0);   // sold out stays last whatever the sort
+        items.sort((a, b) => oos(a) - oos(b) || (v === 'asc' ? key(a) - key(b) : v === 'desc' ? key(b) - key(a) : a.dataset.order - b.dataset.order));
         items.forEach((li) => list.appendChild(li));
       });
     }
@@ -2062,6 +2233,11 @@ function kobgAdSource() {
           return { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '), content_type: 'product',
             num_items: q, value: q * (+d.price || 0), currency: 'MAD' };
         },
+        // unfinished-order capture: the product, with its size once one is picked (no side effects, unlike getOrder)
+        peekItems: () => {
+          const d = ppAddBtn.dataset, size = ppSize();
+          return [{ id: size ? `${d.id}--${size.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : d.id, qty: ppQtyVal() }];
+        },
         getOrder: () => {
           const d = ppAddBtn.dataset;
           const size = ppSize();
@@ -2077,6 +2253,152 @@ function kobgAdSource() {
         },
         onSuccess: () => { if (ppQty) ppQty.value = 1; ppSync(); },
       });
+    }
+
+    const ppActions = ppBuy?.querySelector('.pp-actions');
+    const ppCat = ppCatalogProduct();
+    const ppAllOos = !!ppAddBtn && 'oos' in ppAddBtn.dataset;
+    const slugSize = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    // ---- "Commander maintenant": the main action, straight to the order form below (asks for the size first) ----
+    if (ppActions && ppCod && !ppAllOos && +ppAddBtn?.dataset.price) {
+      const now = document.createElement('button');
+      now.type = 'button';
+      now.className = 'pp-buy-now';
+      now.id = 'ppBuyNow';
+      now.setAttribute('aria-controls', 'codForm');
+      now.innerHTML = `<span>Commander maintenant</span>${ARROW}`;
+      const sub = document.createElement('p');
+      sub.className = 'pp-buy-now-sub';
+      sub.textContent = 'Paiement à la livraison · Livraison gratuite · Sans compte';
+      ppActions.after(now, sub);
+      now.addEventListener('click', () => {
+        if (ppBuy.hasAttribute('data-need-size') && !ppSize()) { ppNeedSize(); return; }
+        smoothTo(ppCod, { block: 'start' });
+        $c('codTitle')?.focus({ preventScroll: true });
+      });
+    }
+
+    // ---- size helper (gloves): "Votre poids" picks the size of the guide's table (Guide des tailles) ----
+    const FIT = [
+      { label: 'Moins de 60 kg', sizes: ['S', '12 oz'] },
+      { label: '60–74 kg', sizes: ['M', '14 oz'] },
+      { label: '75–90 kg', sizes: ['L', '16 oz-s', '16 oz'] },
+      { label: '91 kg et +', sizes: ['XL', '18 oz'] },
+    ];
+    const ppSizeList = ppSizeBox?.querySelector('.pp-size-list');
+    if (ppSizeList && ppCat && /^Gants de (sac|sparring)$/.test(ppCat.coll) && !ppAllOos) {
+      const fit = document.createElement('div');
+      fit.className = 'pp-fit';
+      fit.innerHTML = `<p class="pp-fit-h" id="ppFitH">Votre poids&nbsp;?</p><div class="pp-fit-list" role="group" aria-labelledby="ppFitH">${
+        FIT.map((f, i) => `<button type="button" class="pp-fit-btn" data-fit="${i}" aria-pressed="false">${esc(f.label)}</button>`).join('')
+      }</div><p class="pp-fit-msg" role="status" aria-live="polite"></p>`;
+      ppSizeList.before(fit);
+      const fitMsg = fit.querySelector('.pp-fit-msg');
+      fit.addEventListener('click', (e) => {
+        const b = e.target.closest('.pp-fit-btn');
+        if (!b) return;
+        fit.querySelectorAll('.pp-fit-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        const wanted = FIT[+b.dataset.fit].sizes.filter((s) => ppCat.sizes.includes(s));
+        const inputs = [...document.querySelectorAll('.pp-size-input')];
+        const free = wanted.map((s) => inputs.find((r) => r.value === s && !r.disabled)).find(Boolean);
+        if (free) {
+          free.checked = true;
+          free.dispatchEvent(new Event('change', { bubbles: true }));
+          fitMsg.textContent = `Taille conseillée : ${free.value}.`;
+        } else if (wanted.length) {
+          inputs.forEach((r) => { r.checked = false; });
+          ppSync();
+          fitMsg.textContent = `Taille conseillée : ${wanted.join(' ou ')}, épuisée dans ce coloris pour le moment.`;
+          const open = document.getElementById('ppNotifyOpen');
+          if (open && open.getAttribute('aria-expanded') !== 'true') open.click();
+          const nSel = document.querySelector('#ppNotify select[name="taille"]');
+          if (nSel) nSel.value = wanted.find((s) => [...nSel.options].some((o) => o.value === s)) || nSel.value;
+        } else fitMsg.textContent = 'Ce modèle n’existe pas dans cette taille : écrivez-nous, nous vous conseillons.';
+      });
+    }
+
+    // ---- sold out: « Prévenez-moi » instead of a greyed-out form, and what is in stock right now ----
+    const ppSoldSizes = ppCat?.soldOut || [];
+    if (ppCat && ppBuy && (ppAllOos || ppSoldSizes.length)) {
+      const choices = ppAllOos ? (ppCat.sizes || []) : ppSoldSizes;
+      const box = document.createElement('div');
+      box.className = 'pp-notify';
+      box.id = 'ppNotify';
+      box.innerHTML = `<p class="pp-notify-h">${ppAllOos ? 'Prévenez-moi dès son retour' : 'Votre taille est épuisée&nbsp;?'}</p>
+        <p class="pp-notify-txt">Laissez votre numéro&nbsp;: nous vous appelons ou vous écrivons sur WhatsApp dès que ${ppAllOos ? 'ce coloris revient' : 'cette taille revient'} en stock.</p>
+        <form class="pp-notify-form" novalidate>
+          ${choices.length ? `<label class="pp-notify-field"><span>Taille</span><select name="taille">${choices.length > 1 ? '<option value="">Choisir</option>' : ''}${choices.map((s) => `<option>${esc(s)}</option>`).join('')}</select></label>` : ''}
+          <label class="pp-notify-field pp-notify-field--tel"><span>Téléphone mobile</span><input name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" maxlength="20"></label>
+          <button type="submit" class="pp-notify-btn">Me prévenir</button>
+        </form>
+        <p class="pp-notify-msg" role="status" aria-live="polite"></p>
+        <p class="pp-notify-legal">Votre numéro sert uniquement à vous prévenir du retour de ce produit.</p>`;
+      const nForm = box.querySelector('form');
+      const nMsg = box.querySelector('.pp-notify-msg');
+      const nBtn = box.querySelector('.pp-notify-btn');
+      const say = (html, bad) => { nMsg.innerHTML = html; nMsg.classList.toggle('is-bad', !!bad); };
+      nForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sel = nForm.elements.taille, tel = nForm.elements.telephone;
+        const size = sel ? sel.value : '';
+        if (sel && !size) { say('Choisissez la taille qui vous intéresse.', true); sel.focus(); return; }
+        if (!phoneOK(tel.value)) { say('Entrez un numéro mobile marocain valide (06 ou 07).', true); tel.focus(); return; }
+        nBtn.disabled = true;
+        nBtn.textContent = 'Envoi…';
+        const r = await sendOrder({ action: 'notify', telephone: phoneLocal(tel.value), items: [{ id: size ? `${ppCat.id}--${slugSize(size)}` : ppCat.id, qty: 1 }],
+          page: location.pathname.replace(/^\//, '') });
+        if (r.ok) {
+          nForm.hidden = true;
+          say(`C’est noté&nbsp;: nous vous prévenons au <strong>${esc(phonePretty(tel.value))}</strong> dès le retour${size ? ` de la taille ${esc(size)}` : ''}.`);
+          try { if (typeof fbq === 'function') fbq('track', 'Lead', { content_ids: [ppCat.id], content_name: `${ppCat.name} ${ppCat.colour}` }); } catch (err) { /* pixel blocked */ }
+          return;
+        }
+        nBtn.disabled = false;
+        nBtn.textContent = 'Me prévenir';
+        const waMsg = `Bonjour, prévenez-moi quand ${ppCat.short} ${ppCat.colour}${size ? ` taille ${size}` : ''} revient en stock.`;
+        say(WA_DIGITS
+          ? `Envoi impossible pour le moment. <a href="https://wa.me/${WA_DIGITS}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener">Écrivez-nous sur WhatsApp</a>, nous vous prévenons.`
+          : 'Envoi impossible pour le moment. Écrivez-nous à <a href="mailto:info@knockoutboxinggear.com">info@knockoutboxinggear.com</a>.', true);
+      });
+
+      if (ppAllOos) {
+        // the order form, the buttons and the sticky bar can't be used: take them away
+        ppCod?.classList.add('is-gone');
+        ppActions?.classList.add('is-gone');
+        document.getElementById('ppBar')?.remove();
+        const note = ppBuy.querySelector('.pp-oos-note');
+        (note || ppActions || ppSizeBox)?.after(box);
+        const pool = (Array.isArray(window.KOBG_SEARCH) ? window.KOBG_SEARCH : []).filter((p) => p.inStock && p.id !== ppCat.id);
+        const picks = [...pool.filter((p) => p.short === ppCat.short), ...pool.filter((p) => p.coll === ppCat.coll && p.short !== ppCat.short)].slice(0, 4);
+        if (picks.length) {
+          const alt = document.createElement('div');
+          alt.className = 'pp-alt';
+          alt.innerHTML = `<p class="pp-alt-h" id="ppAltH">Disponible maintenant</p><ul class="pp-alt-list" aria-labelledby="ppAltH">${picks.map((p) => `
+            <li><a class="pp-alt-card" href="${esc(p.url)}"><img src="${esc(p.img)}" alt="" width="64" height="80" loading="lazy" decoding="async">
+              <span class="pp-alt-txt"><span class="pp-alt-name">${esc(p.short)}</span><span class="pp-alt-col">${esc(p.colour)}</span>
+              <span class="pp-alt-price">${formatDH(p.price)}</span></span></a></li>`).join('')}</ul>`;
+          box.after(alt);
+        }
+      } else {
+        // some sizes sold out: a small link under the sizes opens the same box
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'pp-notify-open';
+        open.id = 'ppNotifyOpen';
+        open.setAttribute('aria-expanded', 'false');
+        open.setAttribute('aria-controls', 'ppNotify');
+        open.textContent = `Taille ${ppSoldSizes.join(', ')} épuisée ? Prévenez-moi`;
+        box.hidden = true;
+        ppSizeBox.after(open, box);
+        open.addEventListener('click', () => {
+          const show = box.hidden;
+          box.hidden = !show;
+          open.setAttribute('aria-expanded', String(show));
+          if (show) nForm.elements.taille?.focus();
+        });
+      }
     }
 
     // ---- sticky "Commander" bar (mobile): shown once the buy box's button has scrolled away,

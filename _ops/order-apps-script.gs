@@ -3,7 +3,8 @@
 
    Propriétés du script (Paramètres du projet › Propriétés du script) :
      ADMIN_KEY       clé du panneau admin, 12 caractères minimum (ou lancez generateAdminKey() une fois)
-     NOTIFY_EMAIL    facultatif : adresse qui reçoit un e-mail à chaque nouvelle commande
+     NOTIFY_EMAIL    facultatif : remplace l'adresse qui reçoit un e-mail à chaque nouvelle commande
+                     (par défaut : constante NOTIFY_EMAIL ci-dessous, info@knockoutboxinggear.com)
      SPREADSHEET_ID  facultatif : seulement si le script n'est PAS ouvert depuis le Google Sheet
      META_CAPI_TOKEN facultatif : jeton « API Conversions » du Meta Pixel (Gestionnaire d'évènements › Paramètres ›
                      API Conversions › Générer un jeton). Présent : chaque commande est aussi signalée à Meta par le
@@ -28,7 +29,7 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-11-11.1';
+const VERSION = '2026-11-13.1';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // keep these three in sync with the CONFIG block of script.js
@@ -41,6 +42,8 @@ const LOYALTY = { step: 1500, reward: 50 };
 // Meta Conversions API (server-side Purchase). Same pixel as assets/meta-pixel.js; off until META_CAPI_TOKEN is set.
 const META_PIXEL_ID = '1127670993138595';
 const META_GRAPH_VERSION = 'v23.0';
+// address that gets an e-mail for every new order (a NOTIFY_EMAIL Script Property, if set, replaces it; '' = no e-mail)
+const NOTIFY_EMAIL = 'info@knockoutboxinggear.com';
 // ==================================================
 
 const TZ = 'Africa/Casablanca';
@@ -81,6 +84,7 @@ function doPost(e) {
   const ctx = { authed: false };
   try {
     if (b.action == null) return order_(b);
+    if (b.action === 'lead' || b.action === 'notify') return lead_(b);
     return ACCOUNT_ACTIONS.indexOf(String(b.action)) >= 0 ? account_(b) : admin_(b, ctx);
   } catch (err) {
     console.error(err && err.stack || err);
@@ -192,6 +196,7 @@ function order_(b) {
     const src = adSource_(b.adSource);
     if (src) put(extraCol_(sh, ORDER_SRC_COL, true), src);
     sh.appendRow(row);
+    try { leadsOrdered_(ss, f.tel, id); } catch (e) { console.error(e && e.stack || e); }   // never blocks the order
     if (wheelRow) wheelWrite_(W, wheelRow, { status: WS.used, order: id, note: 'Utilisée sur la commande ' + id });
     let balance = null;
     if (used) balance = addPoints_(ledger, { client: acct.user, order: id, type: 'utilisation', pts: -used, motif: 'Utilisés sur la commande ' + id }).balance;
@@ -212,6 +217,98 @@ function order_(b) {
   notify_(reply.orderId, f, lines, Object.assign({}, t, { points: reply.points, total: reply.total }), warn.concat(acctNote));
   capi_(reply, f, b);
   return ok_(reply);
+}
+
+// ---------- follow-ups (shop), onglet « Relances » ----------
+// action 'lead':   an order form where the visitor typed a valid phone number but did not confirm (sent once the
+//                  phone is valid, again when the form changes). One open line per phone: later sends update it.
+// action 'notify': « Prévenez-moi » on a sold-out colour or size. One line per phone + product + size.
+// When that phone places an order, its open 'lead' lines get Statut « Commandé (N°) », so the team only calls the
+// others. The team writes anything else in Statut (« Appelé », « Pas intéressé »…): such a line is never touched again.
+const SHEET_LEADS = 'Relances';
+const LEAD_HEAD = ['Date', 'Type', 'Téléphone', 'Nom', 'Ville', 'Articles', 'Taille', 'Couleur', 'Total (DH)', 'Page', 'Statut'];
+const LD = { date: 0, type: 1, tel: 2, nom: 3, ville: 4, art: 5, size: 6, colour: 7, total: 8, page: 9, statut: 10 };
+const LEAD_TYPES = { lead: 'Commande non finalisée', notify: 'Prévenir au retour en stock' };
+const LEAD_LIMITS = { perPhone: 20, perPhoneSec: 3600, global: 300, globalSec: 600, mergeMs: 7 * 86400 * 1000 };
+
+function lead_(b) {
+  const kind = b.action === 'notify' ? 'notify' : 'lead';
+  const tel = phone_(b.telephone);
+  if (!tel) return fail_('bad_field', { field: 'telephone' });
+  const nom = clean_(b.nom, 80), ville = clean_(b.ville, 60), page = clean_(b.page, 120);
+  const cat = catalog_();
+  let priced = lines_(b.items, cat);
+  // an unfinished product-page form may have no size picked yet: one known product without its size is kept (size empty)
+  if (priced.error && kind === 'lead' && cat && Array.isArray(b.items) && b.items.length === 1) {
+    const it = b.items[0] && typeof b.items[0] === 'object' ? b.items[0] : {};
+    const id = String(it.id || ''), qty = Number(it.qty);
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && has(cat, id) && Number.isInteger(qty) && qty >= 1 && qty <= LIMITS.qty) {
+      const p = cat[id];
+      priced = { lines: [{ id: id, name: p[2], colour: p[3], size: '', qty: qty, unitPrice: p[0], lineTotal: qty * p[0] }] };
+    }
+  }
+  if (priced.error) return fail_(priced.error, priced.data);
+  const lines = priced.lines;
+  if (kind === 'notify' && lines.length !== 1) return fail_('bad_order');
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return fail_('busy');
+  try {
+    const cache = CacheService.getScriptCache();
+    const kTel = 'rl:l:' + tel, nTel = Number(cache.get(kTel) || 0);
+    if (nTel >= LEAD_LIMITS.perPhone) return fail_('too_many');
+    const nAll = Number(cache.get('rl:lall') || 0);
+    if (nAll >= LEAD_LIMITS.global) return fail_('busy');
+
+    const sh = leadsSheet_(book_());
+    const now = new Date();
+    const row = [now, LEAD_TYPES[kind], "'" + tel, cell_(nom), cell_(ville),
+      listCell_(lines.map((l) => l.name + (l.qty > 1 ? ' x' + l.qty : ''))), listCell_(lines.map((l) => l.size)),
+      listCell_(lines.map((l) => l.colour)), lines.reduce((n, l) => n + l.lineTotal, 0), cell_(page), ''];
+    const n = sh.getLastRow() - 1;
+    const vals = n > 0 ? sh.getRange(2, 1, n, LEAD_HEAD.length).getValues() : [];
+    let at = -1;
+    for (let i = vals.length - 1; i >= 0; i--) {
+      const v = vals[i];
+      if (str_(v[LD.type]) !== LEAD_TYPES[kind] || tel_(v[LD.tel]) !== tel || str_(v[LD.statut])) continue;
+      if (kind === 'lead') {
+        const d = asDate_(v[LD.date]);
+        if (d && now - d < LEAD_LIMITS.mergeMs) at = i;
+      } else if (list_(v[LD.art]) === row[LD.art] && list_(v[LD.size]) === row[LD.size] && list_(v[LD.colour]) === row[LD.colour]) at = i;
+      if (at >= 0) break;
+    }
+    if (at >= 0) {
+      // keep a name / city typed earlier when this send has none
+      if (!nom) row[LD.nom] = vals[at][LD.nom];
+      if (!ville) row[LD.ville] = vals[at][LD.ville];
+      sh.getRange(at + 2, 1, 1, LEAD_HEAD.length).setValues([row]);
+    } else sh.appendRow(row);
+    cache.put(kTel, String(nTel + 1), LEAD_LIMITS.perPhoneSec);
+    cache.put('rl:lall', String(nAll + 1), LEAD_LIMITS.globalSec);
+  } finally {
+    lock.releaseLock();
+  }
+  return ok_({ saved: true });
+}
+function leadsSheet_(ss) {
+  let sh = ss.getSheetByName(SHEET_LEADS);
+  if (!sh) sh = ss.insertSheet(SHEET_LEADS);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, LEAD_HEAD.length).setValues([LEAD_HEAD]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+// an order was stored for this phone (called inside the order lock): its open « Commande non finalisée » lines are done
+function leadsOrdered_(ss, tel, orderId) {
+  const sh = ss.getSheetByName(SHEET_LEADS);
+  if (!sh || sh.getLastRow() < 2) return;
+  const vals = sh.getRange(2, 1, sh.getLastRow() - 1, LEAD_HEAD.length).getValues();
+  vals.forEach((v, i) => {
+    if (str_(v[LD.type]) === LEAD_TYPES.lead && tel_(v[LD.tel]) === tel && !str_(v[LD.statut])) {
+      sh.getRange(i + 2, LD.statut + 1).setValue('Commandé (' + orderId + ')');
+    }
+  });
 }
 
 // Meta Conversions API: the stored order is reported to Meta as a Purchase with the order number as event id, the
@@ -1032,7 +1129,7 @@ function writeGestion_(g, r) {
 
 // ---------- e-mail ----------
 function notify_(id, f, lines, t, warn) {
-  const to = PropertiesService.getScriptProperties().getProperty('NOTIFY_EMAIL');
+  const to = PropertiesService.getScriptProperties().getProperty('NOTIFY_EMAIL') || NOTIFY_EMAIL;
   if (!to) return;
   try {
     MailApp.sendEmail({
@@ -1637,6 +1734,7 @@ function setup() {
   clientsSheet_(ss);
   pointsSheet_(ss);
   wheelSheet_(ss);
+  leadsSheet_(ss);
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('ADMIN_KEY') || '';
   console.log('Onglets « ' + SHEET_ORDERS + ' », « ' + SHEET_ADMIN + ' », « ' + SHEET_CLIENTS + ' », « ' + SHEET_POINTS + ' » et « ' + SHEET_WHEEL + ' » prêts.');
