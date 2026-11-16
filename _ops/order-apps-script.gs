@@ -43,7 +43,7 @@ const FREE_SHIPPING_FROM = 2000;                                 // unused while
 // every full LOYALTY.step DH actually paid on delivered orders (cumulative, the remainder carries over) earns LOYALTY.reward points
 const LOYALTY = { step: 1500, reward: 50 };
 // Meta Conversions API (server-side Purchase). Same pixel as assets/meta-pixel.js; off until META_CAPI_TOKEN is set.
-const META_PIXEL_ID = '1127670993138595';
+const META_PIXEL_ID = '1671515294502023';
 const META_GRAPH_VERSION = 'v23.0';
 // address that gets an e-mail for every new order (a NOTIFY_EMAIL Script Property, if set, replaces it; '' = no e-mail)
 const NOTIFY_EMAIL = 'info@knockoutboxinggear.com';

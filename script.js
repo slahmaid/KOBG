@@ -84,6 +84,20 @@ function kobgPxIds() {
     return o.fbp || o.fbc ? o : undefined;
   } catch (err) { return undefined; }
 }
+
+function kobgPxTrack(event, params, opts) {
+  try {
+    if (typeof fbq !== 'function') return;
+    if (opts) fbq('track', event, params || {}, opts);
+    else fbq('track', event, params || {});
+  } catch (err) { /* pixel blocked */ }
+}
+function kobgPxCustom(event, params) {
+  try {
+    if (typeof fbq !== 'function') return;
+    fbq('trackCustom', event, params || {});
+  } catch (err) { /* pixel blocked */ }
+}
 const AD_SRC_KEY = 'kobg-adsrc-v1';
 const AD_SRC_DAYS = 7;
 function kobgAdSource() {
@@ -606,7 +620,9 @@ function kobgAdSource() {
     saveCart();
     render();
     bumpBadge();
-    try { if (typeof fbq === 'function') fbq('track', 'AddToCart', { content_ids: [id], content_name: d.name, content_type: 'product', value: (+d.price || 0) * add, currency: 'MAD' }); } catch (err) { /* pixel blocked */ }
+    kobgPxTrack('AddToCart', { content_ids: [id], content_name: d.name, content_type: 'product',
+      contents: [{ id, quantity: add, item_price: +d.price || 0 }], num_items: add,
+      value: (+d.price || 0) * add, currency: 'MAD' });
 
     btn.classList.add('is-added');
     clearTimeout(addedTimers.get(btn));
@@ -665,7 +681,9 @@ function kobgAdSource() {
     saveCart();
     render();
     bumpBadge();
-    try { if (typeof fbq === 'function') fbq('track', 'AddToCart', { content_ids: [p.id], content_name: p.name, content_type: 'product', value: +p.price, currency: 'MAD' }); } catch (err) { /* pixel blocked */ }
+    kobgPxTrack('AddToCart', { content_ids: [p.id], content_name: p.name, content_type: 'product',
+      contents: [{ id: p.id, quantity: 1, item_price: +p.price || 0 }], num_items: 1,
+      value: +p.price || 0, currency: 'MAD' });
     cartCheckout.focus({ preventScroll: true });
   });
 
@@ -1127,7 +1145,7 @@ function kobgAdSource() {
   function codForm(form, { getOrder, onSuccess, pxInfo, peekItems }) {
     const submit = form.querySelector('.cod-submit');
     // Meta Pixel: InitiateCheckout once per page, when the visitor starts filling an order form
-    const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; try { if (typeof fbq === 'function') { let p = null; try { p = pxInfo ? pxInfo() : null; } catch (err) { p = null; } fbq('track', 'InitiateCheckout', p || {}); } } catch (err) { /* pixel blocked */ } };
+    const pxCheckout = () => { if (window.kobgPxCheckout) return; window.kobgPxCheckout = true; let p = null; try { p = pxInfo ? pxInfo() : null; } catch (err) { p = null; } kobgPxTrack('InitiateCheckout', p || {}); };
     form.addEventListener('focusin', pxCheckout);
     form.addEventListener('submit', pxCheckout);
     const submitTxt = submit.querySelector('.cod-submit-txt');
@@ -1350,6 +1368,7 @@ function kobgAdSource() {
     codForm($('codForm'), {
       // Meta Pixel: what the InitiateCheckout event describes (same ids as AddToCart)
       pxInfo: () => (cart.length ? { content_ids: cart.map((it) => it.id), content_type: 'product',
+        contents: cart.map((it) => ({ id: it.id, quantity: it.qty, item_price: +it.price || 0 })),
         num_items: cart.reduce((n, it) => n + it.qty, 0), value: totalPrice(), currency: 'MAD' } : null),
       peekItems: () => cart.map((it) => ({ id: it.id, qty: it.qty, name: it.name, ...splitVariant(it.variant), unitPrice: it.price })),
       getOrder: () => {
@@ -1389,11 +1408,13 @@ function kobgAdSource() {
       // Meta Pixel: Purchase, once per order (not on reload, not in test mode)
       try {
         const pk = 'kobg_px_purchase_' + o.orderId;
-        if (!o.test && typeof fbq === 'function' && !localStorage.getItem(pk)) {
-          fbq('track', 'Purchase', {
+        if (!o.test && !localStorage.getItem(pk)) {
+          const items = o.items || [];
+          kobgPxTrack('Purchase', {
             value: +o.total || 0, currency: 'MAD',
-            content_type: 'product', num_items: (o.items || []).reduce((a, it) => a + (+it.qty || 0), 0),
-            contents: (o.items || []).map((it) => ({ id: it.id || it.name, quantity: +it.qty || 1, item_price: +it.unitPrice || 0 }))
+            content_ids: items.map((it) => it.id || it.name),
+            content_type: 'product', num_items: items.reduce((a, it) => a + (+it.qty || 0), 0),
+            contents: items.map((it) => ({ id: it.id || it.name, quantity: +it.qty || 1, item_price: +it.unitPrice || 0 }))
           }, { eventID: o.orderId });
           localStorage.setItem(pk, '1');
         }
@@ -1693,11 +1714,53 @@ function kobgAdSource() {
     // keyboard users land back at the top too (first visible logo link)
     [...document.querySelectorAll('.bar-logo, .nav-logo')].find((l) => l.offsetParent && !l.closest('[inert]'))?.focus({ preventScroll: true });
   });
+  // Meta Pixel: Contact on WhatsApp / phone / e-mail clicks (form submit is handled on the contact page)
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    let name = '';
+    if (a.classList.contains('js-wa') || /(?:^|\/)wa\.me\//i.test(href) || /whatsapp\.com/i.test(href)) name = 'WhatsApp';
+    else if (/^mailto:/i.test(href)) name = 'E-mail';
+    else if (/^tel:/i.test(href)) name = 'Téléphone';
+    else return;
+    kobgPxTrack('Contact', { content_name: name });
+  });
+  // Meta Pixel: CustomizeProduct when a size is chosen, or when a colour swatch is clicked
+  document.addEventListener('change', (e) => {
+    const size = e.target.closest?.('.pp-size-input, .product-size');
+    if (!size || size.disabled || !size.value) return;
+    if (size.classList.contains('pp-size-input') && !size.checked) return;
+    const scope = size.closest('.product, #ppBuy, [data-product]');
+    const d = (scope?.querySelector('.product-add, .pp-add') || document.getElementById('ppAdd'))?.dataset || {};
+    kobgPxTrack('CustomizeProduct', {
+      content_ids: d.id ? [d.id] : undefined,
+      content_name: [d.name, d.variant, size.value].filter(Boolean).join(' '),
+      content_type: 'product',
+      value: +d.price || undefined,
+      currency: d.price ? 'MAD' : undefined,
+    });
+  });
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('.pp-swatches a, a.pp-sw');
+    if (!a || a.getAttribute('aria-current') === 'page') return;
+    const d = document.getElementById('ppAdd')?.dataset || {};
+    const label = (a.getAttribute('title') || a.getAttribute('aria-label') || '').replace(/,\s*couleur actuelle$/i, '').trim();
+    kobgPxTrack('CustomizeProduct', {
+      content_ids: d.id ? [d.id] : undefined,
+      content_name: [d.name, label].filter(Boolean).join(' '),
+      content_type: 'product',
+      currency: 'MAD',
+    });
+  });
   // ---------------------------------------------------------
   // Shop pages (gants, protecteur-corporel): filter chips + price sort + #hash filters
   // ---------------------------------------------------------
   const shop = document.querySelector('[data-shop]');
   if (shop) {
+    const shopPath = (location.pathname.replace(/\/+$/, '').replace(/\.html$/i, '') || '/').toLowerCase();
+    const shopNames = { '/gants': 'Gants', '/accessoires': 'Pattes d’ours & coquilles', '/protecteur-corporel': 'Protecteur corporel' };
+    if (shopNames[shopPath]) kobgPxCustom('ViewCategory', { content_name: shopNames[shopPath], content_category: shopNames[shopPath], content_type: 'product' });
     const groups = [...shop.querySelectorAll('.cat-group')];
     const chips = [...shop.querySelectorAll('.chip[data-filter]')];
     const sortSel = shop.querySelector('#gantsSort');
@@ -1759,6 +1822,7 @@ function kobgAdSource() {
     const d = new FormData(contactForm);
     const subject = `Contact site — ${d.get('nom')}`;
     const body = `${d.get('message')}\n\n${d.get('nom')}\n${d.get('email')}`;
+    kobgPxTrack('Contact', { content_name: 'Formulaire de contact' });
     location.href = `mailto:info@knockoutboxinggear.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     const note = document.getElementById('contactStatus');
     if (note) { note.hidden = false; note.textContent = 'Votre application e-mail vient de s’ouvrir avec votre message : il ne reste qu’à l’envoyer. Rien ne s’est ouvert ? Écrivez-nous directement à info@knockoutboxinggear.com.'; }
@@ -2022,16 +2086,25 @@ function kobgAdSource() {
     const q0 = new URLSearchParams(location.search).get('q') || '';
     pageInput.value = q0;
     showResults(q0);
+    let lastSearch = '';
+    const pxSearch = (raw) => {
+      const s = String(raw || '').trim();
+      if (!s || s === lastSearch) return;
+      lastSearch = s;
+      kobgPxTrack('Search', { search_string: s.slice(0, 200), content_type: 'product' });
+    };
+    pxSearch(q0);
     let typing;
     pageInput.addEventListener('input', () => {
       clearTimeout(typing);
-      typing = setTimeout(() => { showResults(pageInput.value); setUrl(pageInput.value); }, 160);
+      typing = setTimeout(() => { showResults(pageInput.value); setUrl(pageInput.value); pxSearch(pageInput.value); }, 160);
     });
     pageForm.addEventListener('submit', (e) => {
       e.preventDefault();
       clearTimeout(typing);
       showResults(pageInput.value);
       setUrl(pageInput.value);
+      pxSearch(pageInput.value);
       pageInput.blur(); // drop the phone keyboard so the results are visible
     });
   }
@@ -2128,13 +2201,14 @@ function kobgAdSource() {
     const ppQtyVal = () => Math.max(1, Math.min(MAX_QTY, parseInt(ppQty?.value, 10) || 1));
     const ppAddBtn = document.getElementById('ppAdd');
     // Meta Pixel: ViewContent once per product page view (colour variant id, as in the catalog; AddToCart adds the size)
-    try {
+    {
       const d = ppAddBtn?.dataset;
-      if (d?.id && typeof fbq === 'function') {
-        fbq('track', 'ViewContent', { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '),
-          content_type: 'product', value: +d.price || 0, currency: 'MAD' });
+      if (d?.id) {
+        kobgPxTrack('ViewContent', { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '),
+          content_type: 'product', contents: [{ id: d.id, quantity: 1, item_price: +d.price || 0 }],
+          value: +d.price || 0, currency: 'MAD' });
       }
-    } catch (err) { /* pixel blocked */ }
+    }
     // Pass6: live catalog availability near size/CTA (textContent only; updates on size change)
     let ppAvail = document.getElementById('ppAvail');
     if (!ppAvail && ppBuy) {
@@ -2231,6 +2305,7 @@ function kobgAdSource() {
         pxInfo: () => {
           const d = ppAddBtn.dataset, q = ppQtyVal();
           return { content_ids: [d.id], content_name: [d.name, d.variant].filter(Boolean).join(' '), content_type: 'product',
+            contents: [{ id: d.id, quantity: q, item_price: +d.price || 0 }],
             num_items: q, value: q * (+d.price || 0), currency: 'MAD' };
         },
         // unfinished-order capture: the product, with its size once one is picked (no side effects, unlike getOrder)
@@ -2355,7 +2430,7 @@ function kobgAdSource() {
         if (r.ok) {
           nForm.hidden = true;
           say(`C’est noté&nbsp;: nous vous prévenons au <strong>${esc(phonePretty(tel.value))}</strong> dès le retour${size ? ` de la taille ${esc(size)}` : ''}.`);
-          try { if (typeof fbq === 'function') fbq('track', 'Lead', { content_ids: [ppCat.id], content_name: `${ppCat.name} ${ppCat.colour}` }); } catch (err) { /* pixel blocked */ }
+          kobgPxTrack('Lead', { content_ids: [ppCat.id], content_name: `${ppCat.name} ${ppCat.colour}`, content_type: 'product', currency: 'MAD' });
           return;
         }
         nBtn.disabled = false;

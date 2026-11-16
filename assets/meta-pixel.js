@@ -12,11 +12,11 @@ t.src=v;
 var go=function(){s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)};
 if(b.readyState==='complete')go();else f.addEventListener('load',go,{once:true})}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('set', 'autoConfig', false, '1127670993138595');
-fbq('init', '1127670993138595');
+fbq('set', 'autoConfig', false, '1671515294502023');
+fbq('init', '1671515294502023');
 // PageView on every shop page (home, categories, product pages, order page, info pages), so ads can land anywhere
 // and "all website visitors" audiences are complete. No PageView where the <script> tag says data-pageview="off"
-// (admin, compte, merci — which sends only Purchase, from script.js — and 404), nor on the old-address redirect
+// (compte, merci — which sends only Purchase, from script.js — and 404). admin.html no longer loads the pixel. Nor on the old-address redirect
 // stubs (they load assets/go.js and leave at once; the page they lead to sends its own PageView).
 // Product pages also send ViewContent, from script.js.
 var kobgMe = document.currentScript;

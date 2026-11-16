@@ -194,6 +194,7 @@
       ville: v('ville'), adresse: v('adresse'), remember: f.elements.remember.checked,
     });
     if (!res.ok) { refuse(res, ui); if (res.error === 'email_taken') ui.field('email', 'Un compte existe déjà avec cet e-mail.'); return; }
+    try { if (typeof fbq === 'function') fbq('track', 'CompleteRegistration', { content_name: 'Compte client', status: true }); } catch (err) { /* pixel blocked */ }
     const remember = f.elements.remember.checked;
     f.reset(); ui.reset();
     await signedIn(res, remember, 'Compte créé, vous êtes connecté.');
