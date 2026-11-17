@@ -800,7 +800,8 @@ function kobgAdSource() {
 
   // =========================================================
   // Orders: cash-on-delivery forms (product pages + commande). One send function: sendOrder().
-  // Never shows a success that didn't happen: no endpoint = "Commande indisponible", except in test mode.
+  // The thank-you page is shown at once; the order is sent in the background and confirmed again on merci.
+  // No endpoint = "Commande indisponible", except in test mode.
   // =========================================================
   const ORDER_TEST = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
     || new URLSearchParams(location.search).get('test') === '1';
@@ -847,15 +848,17 @@ function kobgAdSource() {
   };
   // POST one order. 'json': text/plain JSON (Apps Script reads e.postData.contents); 'form': urlencoded.
   // Both are "simple" requests: no CORS preflight. Success = HTTP 2xx and the reply isn't {ok:false}.
-  async function sendOrder(payload) {
+  // opts.keepalive: the request keeps going after a thank-you redirect; no abort signal, so unloading
+  // the page can't cancel it. A later retry from merci re-sends the same order number (stored once).
+  async function sendOrder(payload, opts) {
     const url = orderEndpoint();
     if (!url) {
       if (!ORDER_TEST) return { ok: false, error: 'unavailable' };
-      await new Promise((r) => setTimeout(r, 700));
       return { ok: true, test: true };                       // TEST MODE: nothing is sent
     }
-    const ctrl = 'AbortController' in window ? new AbortController() : null;
-    const timer = setTimeout(() => ctrl?.abort(), 20000);
+    const keepalive = !!(opts && opts.keepalive);
+    const ctrl = !keepalive && 'AbortController' in window ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 20000) : 0;
     try {
       let body;
       const headers = { Accept: 'application/json' };
@@ -866,7 +869,7 @@ function kobgAdSource() {
         body = JSON.stringify(payload);
         headers['Content-Type'] = 'text/plain;charset=utf-8';
       }
-      const res = await fetch(url, { method: 'POST', body, headers, signal: ctrl?.signal, redirect: 'follow', credentials: 'omit' });
+      const res = await fetch(url, { method: 'POST', body, headers, signal: ctrl?.signal, redirect: 'follow', credentials: 'omit', keepalive });
       if (!res.ok) return { ok: false, error: 'http' };
       let data = null;
       try { data = await res.json(); } catch (err) { data = null; }
@@ -881,7 +884,7 @@ function kobgAdSource() {
     } catch (err) {
       return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
     } finally {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -1287,31 +1290,20 @@ function kobgAdSource() {
       };
       setBusy(true);
       const acct = acctStore.read();                   // signed in: the order goes to the account (token never stored)
-      const res = await sendOrder(acct ? { ...payload, session: acct.token } : payload);
-      if (!res.ok) {
+      const body = acct ? { ...payload, session: acct.token } : payload;
+      const url = orderEndpoint();
+      if (!url && !ORDER_TEST) {
         setBusy(false);
-        const bad = res.error === 'bad_field' && fields.find((el) => el.name === res.field);
-        if (bad) setErr(bad, 'Vérifiez ce champ.');
-        if (res.error === 'bad_points' && res.balance != null && pts.info()) pts.set({ ...pts.info(), balance: res.balance });
-        if (res.error === 'auth') acctSignedOut();       // the total on screen drops the points / discount at once
-        showAlert(res.error === 'bad_points' && res.balance != null
-          ? `Votre solde de points a changé : ${formatDH(Math.max(0, res.balance))} disponibles. Vérifiez le montant puis confirmez à nouveau.`
-          : ORDER_ERRORS[res.error] || ORDER_ERRORS.network);
-        smoothTo(alertEl, { block: 'center' });
+        showAlert(ORDER_ERRORS.unavailable);
         return;
       }
-      // the server re-prices the order from the catalog: its numbers (and its order number) are the ones that count
-      const srv = res.data && Number.isFinite(res.data.total) ? res.data : null;
-      const done = srv ? {
-        ...payload,
-        orderId: /^KOBG-\d{6}-[A-Z0-9]{4}$/.test(srv.orderId) ? srv.orderId : payload.orderId,
-        items: Array.isArray(srv.items) ? srv.items : payload.items,
-        subtotal: +srv.subtotal || 0, promoCode: srv.promoCode || '', discountPct: +srv.discountPct || 0,
-        discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total, linked: srv.linked === true,
-        points: +srv.points || 0, balance: Number.isFinite(srv.balance) ? srv.balance : null, wheel: +srv.wheel || 0,
-      } : payload;
+      // Thank-you at once: waiting for Apps Script (sheet + e-mail + Meta) made customers cancel.
+      // The same order number is sent in the background (keepalive) and confirmed again on merci
+      // (the server stores a number only once). Client-side validation has already run.
+      const done = { ...payload };
       pending = null;
-      try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !!res.test })); } catch (err) { /* private mode */ }
+      try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ ...done, test: !url, pendingSend: !!url })); } catch (err) { /* private mode */ }
+      if (url) sendOrder(body, { keepalive: true });   // do not await: the redirect must not wait
       onSuccess(done);
       form.reset();
       fields.forEach((el) => setErr(el, ''));
@@ -1381,8 +1373,42 @@ function kobgAdSource() {
           })),
         };
       },
-      onSuccess: () => { coLeaving = true; cart = []; saveCart(); render(); },
+      onSuccess: (done) => {
+        coLeaving = true;
+        try {
+          const cur = JSON.parse(sessionStorage.getItem(LAST_ORDER_KEY) || 'null');
+          if (cur && cur.orderId === done.orderId && cur.pendingSend) {
+            cur.cartBackup = cart.map((it) => ({ id: it.id, name: it.name, variant: it.variant, price: it.price, img: it.img, qty: it.qty }));
+            sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(cur));
+          }
+        } catch (err) { /* private mode */ }
+        cart = [];
+        saveCart();
+        render();
+      },
     });
+  }
+
+  // Re-send a stored order from merci (same number: the server stores it only once). Soft failures are retried.
+  const SOFT_ORDER_ERRORS = { timeout: 1, network: 1, busy: 1, http: 1 };
+  async function confirmStoredOrder(o) {
+    const url = orderEndpoint();
+    if (!url) return { ok: true, test: true, data: null };
+    const acct = acctStore.read();
+    const payload = {
+      orderId: o.orderId, date: o.date, nom: o.nom, telephone: o.telephone, ville: o.ville,
+      items: o.items, itemCount: o.itemCount, subtotal: o.subtotal, promoCode: o.promoCode || '',
+      discountPct: o.discountPct, discount: o.discount, delivery: o.delivery, total: o.total,
+      ...(o.points ? { points: o.points } : {}), currency: o.currency || 'MAD', source: o.source,
+      page: o.page, adSource: o.adSource || undefined, px: o.px || kobgPxIds(),
+    };
+    let res = { ok: false, error: 'network' };
+    for (let i = 0; i < 3; i++) {
+      res = await sendOrder(acct ? { ...payload, session: acct.token } : payload);
+      if (res.ok || !SOFT_ORDER_ERRORS[res.error]) break;
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+    }
+    return res;
   }
 
   // ---- merci: order number + recap (sessionStorage, this visit only) ----
@@ -1393,50 +1419,97 @@ function kobgAdSource() {
     let o = null;
     try { o = JSON.parse(sessionStorage.getItem(LAST_ORDER_KEY) || 'null'); } catch (err) { o = null; }
     if (o && (!o.orderId || (qid && o.orderId !== qid))) o = null;
-    const id = o ? o.orderId : (/^KOBG-\d{6}-[A-Z0-9]{4}$/.test(qid) ? qid : '');
-    if (id) {
-      $('merciId').textContent = id;
-      $('merciNumWrap').hidden = false;
-      document.title = `Merci, commande ${id} — Knockout Boxing Gear`;
-    } else {
-      $('merciTag').textContent = 'Commande';
-      $('merciTitle').textContent = 'Aucune commande récente';
-      $('merciLead').textContent = 'Le récapitulatif n’est gardé que pendant votre visite. Si vous venez de commander, nous vous appelons très vite pour confirmer.';
-    }
-    if (o) {
-      $('merciTest').hidden = !o.test;
-      // Meta Pixel: Purchase, once per order (not on reload, not in test mode)
-      try {
-        const pk = 'kobg_px_purchase_' + o.orderId;
-        if (!o.test && !localStorage.getItem(pk)) {
-          const items = o.items || [];
-          kobgPxTrack('Purchase', {
-            value: +o.total || 0, currency: 'MAD',
-            content_ids: items.map((it) => it.id || it.name),
-            content_type: 'product', num_items: items.reduce((a, it) => a + (+it.qty || 0), 0),
-            contents: items.map((it) => ({ id: it.id || it.name, quantity: +it.qty || 1, item_price: +it.unitPrice || 0 }))
-          }, { eventID: o.orderId });
-          localStorage.setItem(pk, '1');
-        }
-      } catch (err) { /* pixel blocked */ }
-      $('merciItems').innerHTML = (o.items || []).map((it) => `
+    const paintMerci = (order, firePx) => {
+      const id = order ? order.orderId : (/^KOBG-\d{6}-[A-Z0-9]{4}$/.test(qid) ? qid : '');
+      if (id) {
+        $('merciId').textContent = id;
+        $('merciNumWrap').hidden = false;
+        document.title = `Merci, commande ${id} — Knockout Boxing Gear`;
+        $('merciTag').textContent = 'Commande reçue';
+        $('merciTitle').textContent = 'Merci pour votre commande';
+        $('merciLead').textContent = 'Nous vous appelons pour confirmer votre commande avant l’expédition. Vous payez le livreur à la réception.';
+      } else {
+        $('merciTag').textContent = 'Commande';
+        $('merciTitle').textContent = 'Aucune commande récente';
+        $('merciLead').textContent = 'Le récapitulatif n’est gardé que pendant votre visite. Si vous venez de commander, nous vous appelons très vite pour confirmer.';
+      }
+      if (!order) return;
+      $('merciTest').hidden = !order.test;
+      document.querySelectorAll('.acct-note--merci').forEach((el) => el.remove());
+      // Meta Pixel: Purchase, once per confirmed order (not on reload, not in test mode, not before the send lands)
+      if (firePx) {
+        try {
+          const pk = 'kobg_px_purchase_' + order.orderId;
+          if (!order.test && !localStorage.getItem(pk)) {
+            const items = order.items || [];
+            kobgPxTrack('Purchase', {
+              value: +order.total || 0, currency: 'MAD',
+              content_ids: items.map((it) => it.id || it.name),
+              content_type: 'product', num_items: items.reduce((a, it) => a + (+it.qty || 0), 0),
+              contents: items.map((it) => ({ id: it.id || it.name, quantity: +it.qty || 1, item_price: +it.unitPrice || 0 }))
+            }, { eventID: order.orderId });
+            localStorage.setItem(pk, '1');
+          }
+        } catch (err) { /* pixel blocked */ }
+      }
+      $('merciItems').innerHTML = (order.items || []).map((it) => `
         <li class="merci-item"><span class="merci-item-name"><strong>${esc(it.name)}</strong>${[it.colour, it.size].filter(Boolean).length ? `<small>${esc([it.colour, it.size].filter(Boolean).join(' · '))}</small>` : ''}</span>
           <span class="merci-item-qty">${esc(it.qty)} × ${formatDH(+it.unitPrice || 0)}</span><strong class="merci-item-total">${formatDH(+it.lineTotal || 0)}</strong></li>`).join('');
       $('merciTotals').innerHTML = `
-        <p class="cart-line cart-line--sub"><span>Sous-total</span><strong>${formatDH(o.subtotal || 0)}</strong></p>
-        ${o.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${o.promoCode === 'ROUE' ? 'Roue de la chance' : esc(o.promoCode)} (-${esc(o.discountPct)}&nbsp;%)</span><strong>-${formatDH(o.discount)}</strong></p>` : ''}
-        <p class="cart-line"><span>Livraison</span><strong>${o.delivery ? formatDH(o.delivery) : '0\u00a0DH'}</strong></p>
-        ${o.points ? `<p class="cart-line cod-line--pts"><span>Points fidélité</span><strong>-${formatDH(+o.points)}</strong></p>` : ''}
-        <p class="cart-total"><span>À payer à la livraison</span><strong>${formatDH(o.total || 0)}</strong></p>`;
-      $('merciCust').innerHTML = [['Nom', o.nom], ['Téléphone', o.telephone ? phonePretty(o.telephone) : ''], ['Ville', o.ville]]
+        <p class="cart-line cart-line--sub"><span>Sous-total</span><strong>${formatDH(order.subtotal || 0)}</strong></p>
+        ${order.discount ? `<p class="cart-line cod-line--disc"><span>Réduction ${order.promoCode === 'ROUE' ? 'Roue de la chance' : esc(order.promoCode)} (-${esc(order.discountPct)}&nbsp;%)</span><strong>-${formatDH(order.discount)}</strong></p>` : ''}
+        <p class="cart-line"><span>Livraison</span><strong>${order.delivery ? formatDH(order.delivery) : '0\u00a0DH'}</strong></p>
+        ${order.points ? `<p class="cart-line cod-line--pts"><span>Points fidélité</span><strong>-${formatDH(+order.points)}</strong></p>` : ''}
+        <p class="cart-total"><span>À payer à la livraison</span><strong>${formatDH(order.total || 0)}</strong></p>`;
+      $('merciCust').innerHTML = [['Nom', order.nom], ['Téléphone', order.telephone ? phonePretty(order.telephone) : ''], ['Ville', order.ville]]
         .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
       $('merciRecap').hidden = false;
-      if (o.linked) {
-        const p = document.createElement('p');
-        p.className = 'acct-note acct-note--merci';
-        p.innerHTML = `Cette commande est enregistrée dans <a href="compte">votre compte</a> : suivez son statut à tout moment.${o.balance != null ? ` Solde de points fidélité : <strong>${formatDH(Math.max(0, +o.balance))}</strong>.` : ''} Elle vous rapportera des points une fois livrée (${formatDH(LOYALTY.reward)} tous les ${formatDH(LOYALTY.step)} d’achat).`;
-        $('merciCust').after(p);
+      if (order.linked) {
+        const pNote = document.createElement('p');
+        pNote.className = 'acct-note acct-note--merci';
+        pNote.innerHTML = `Cette commande est enregistrée dans <a href="compte">votre compte</a> : suivez son statut à tout moment.${order.balance != null ? ` Solde de points fidélité : <strong>${formatDH(Math.max(0, +order.balance))}</strong>.` : ''} Elle vous rapportera des points une fois livrée (${formatDH(LOYALTY.reward)} tous les ${formatDH(LOYALTY.step)} d’achat).`;
+        $('merciCust').after(pNote);
       }
+    };
+    paintMerci(o, !!(o && !o.pendingSend));
+    if (o && o.pendingSend && !o.test) {
+      const status = document.createElement('p');
+      status.className = 'cod-hint';
+      status.setAttribute('role', 'status');
+      status.textContent = 'Enregistrement de votre commande…';
+      ($('merciNumWrap') || $('merciLead')).after(status);
+      confirmStoredOrder(o).then((res) => {
+        if (res.ok) {
+          const srv = res.data && Number.isFinite(res.data.total) ? res.data : null;
+          const done = srv ? {
+            ...o,
+            orderId: /^KOBG-\d{6}-[A-Z0-9]{4}$/.test(srv.orderId) ? srv.orderId : o.orderId,
+            items: Array.isArray(srv.items) ? srv.items : o.items,
+            subtotal: +srv.subtotal || 0, promoCode: srv.promoCode || '', discountPct: +srv.discountPct || 0,
+            discount: +srv.discount || 0, delivery: +srv.delivery || 0, total: srv.total, linked: srv.linked === true,
+            points: +srv.points || 0, balance: Number.isFinite(srv.balance) ? srv.balance : null, wheel: +srv.wheel || 0,
+            pendingSend: false,
+          } : { ...o, pendingSend: false };
+          delete done.cartBackup;
+          try { sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(done)); } catch (err) { /* private mode */ }
+          status.remove();
+          paintMerci(done, true);
+          return;
+        }
+        if (Array.isArray(o.cartBackup) && o.cartBackup.length) {
+          try { cart = o.cartBackup; saveCart(); render(); } catch (err) { /* ignore */ }
+        }
+        status.className = 'cod-alert';
+        status.hidden = false;
+        status.innerHTML = (ORDER_ERRORS[res.error] || ORDER_ERRORS.network)
+          + (o.cartBackup && o.cartBackup.length
+            ? ' Votre panier a été restauré : vous pouvez <a href="commande">réessayer</a>.'
+            : ' Vous pouvez <a href="merci?commande=' + encodeURIComponent(o.orderId) + '">réessayer d’enregistrer</a>, ou nous écrire à <a href="mailto:info@knockoutboxinggear.com">info@knockoutboxinggear.com</a>.');
+        $('merciTag').textContent = 'Commande';
+        $('merciTitle').textContent = 'Votre commande n’a pas pu être enregistrée';
+        $('merciLead').textContent = 'Elle n’est pas encore arrivée jusqu’à nous. Réessayez, ou contactez-nous avec le numéro affiché.';
+        document.title = 'Commande non enregistrée — Knockout Boxing Gear';
+      });
     }
   }
 

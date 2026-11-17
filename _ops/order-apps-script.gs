@@ -29,7 +29,7 @@
      per spin, account, e-mail and phone number; the won discount is checked again at checkout. */
 
 // ===================== CONFIG =====================
-const VERSION = '2026-11-13.3';
+const VERSION = '2026-11-17.1';
 const SITE_URL = 'https://knockoutboxinggear.com/';             // where the shop is published (custom domain, served at the root)
 const CATALOG_URL = SITE_URL + 'assets/search-index.js';         // source of truth for prices and sizes
 // same file read from the GitHub repo when the site can't be reached from Google's servers ('' = no backup)
@@ -217,9 +217,91 @@ function order_(b) {
   } finally {
     lock.releaseLock();
   }
-  notify_(reply.orderId, f, lines, Object.assign({}, t, { points: reply.points, total: reply.total }), warn.concat(acctNote));
-  capi_(reply, f, b);
+  // Answer as soon as the row is stored. E-mail + Meta CAPI run after the HTTP response when a
+  // trigger can be scheduled; otherwise they run now (tests, or a deploy without ScriptApp scopes).
+  followupOrder_(reply, f, lines, Object.assign({}, t, { points: reply.points, total: reply.total }), warn.concat(acctNote), b);
   return ok_(reply);
+}
+
+function followupOrder_(reply, f, lines, t, warn, b) {
+  const job = { orderId: reply.orderId, nom: f.nom, tel: f.tel, ville: f.ville, lines: lines, t: t, warn: warn || [],
+    px: b && b.px, page: b && b.page };
+  try {
+    if (typeof ScriptApp === 'undefined' || !ScriptApp.newTrigger) {
+      runOrderFollowupJob_(job);
+      return;
+    }
+    const cache = CacheService.getScriptCache();
+    const props = PropertiesService.getScriptProperties();
+    cache.put('fu:' + job.orderId, JSON.stringify(job), 21600);
+    const lk = LockService.getScriptLock();
+    if (lk.tryLock(2000)) {
+      try {
+        let ids = [];
+        try { ids = JSON.parse(props.getProperty('FOLLOWUP_IDS') || '[]'); } catch (e) { ids = []; }
+        if (ids.indexOf(job.orderId) < 0) ids.push(job.orderId);
+        if (ids.length > 40) ids = ids.slice(-40);
+        props.setProperty('FOLLOWUP_IDS', JSON.stringify(ids));
+      } finally { lk.releaseLock(); }
+    }
+    let scheduled = false;
+    const triggers = ScriptApp.getProjectTriggers();
+    for (let i = 0; i < triggers.length; i++) {
+      if (triggers[i].getHandlerFunction() === 'runOrderFollowups_') { scheduled = true; break; }
+    }
+    if (!scheduled) ScriptApp.newTrigger('runOrderFollowups_').timeBased().after(1000).create();
+  } catch (err) {
+    console.warn('follow-up différé impossible, envoi immédiat : ' + (err && err.message || err));
+    try { runOrderFollowupJob_(job); } catch (e) { console.error(e && e.stack || e); }
+  }
+}
+
+function runOrderFollowupJob_(job) {
+  if (!job || !job.orderId) return;
+  notify_(job.orderId, { nom: job.nom, tel: job.tel, ville: job.ville }, job.lines, job.t, job.warn || []);
+  capi_({ orderId: job.orderId, items: job.lines, total: job.t && job.t.total }, { nom: job.nom, tel: job.tel, ville: job.ville }, { px: job.px, page: job.page });
+}
+
+function runOrderFollowups_() {
+  ScriptApp.getProjectTriggers().forEach((t) => {
+    if (t.getHandlerFunction() === 'runOrderFollowups_') {
+      try { ScriptApp.deleteTrigger(t); } catch (e) { /* already gone */ }
+    }
+  });
+  const props = PropertiesService.getScriptProperties();
+  const cache = CacheService.getScriptCache();
+  let ids = [];
+  const lk = LockService.getScriptLock();
+  if (lk.tryLock(10000)) {
+    try {
+      try { ids = JSON.parse(props.getProperty('FOLLOWUP_IDS') || '[]'); } catch (e) { ids = []; }
+      props.deleteProperty('FOLLOWUP_IDS');
+    } finally { lk.releaseLock(); }
+  }
+  const leftover = [];
+  ids.forEach((id) => {
+    const raw = cache.get('fu:' + id);
+    if (!raw) return;
+    try {
+      runOrderFollowupJob_(JSON.parse(raw));
+      cache.remove('fu:' + id);
+    } catch (e) {
+      console.error(e && e.stack || e);
+      leftover.push(id);
+    }
+  });
+  if (leftover.length) {
+    const lk2 = LockService.getScriptLock();
+    if (lk2.tryLock(2000)) {
+      try {
+        let cur = [];
+        try { cur = JSON.parse(props.getProperty('FOLLOWUP_IDS') || '[]'); } catch (e) { cur = []; }
+        leftover.forEach((id) => { if (cur.indexOf(id) < 0) cur.push(id); });
+        props.setProperty('FOLLOWUP_IDS', JSON.stringify(cur));
+      } finally { lk2.releaseLock(); }
+    }
+    try { ScriptApp.newTrigger('runOrderFollowups_').timeBased().after(30000).create(); } catch (e) { /* quota */ }
+  }
 }
 
 // ---------- follow-ups (shop), onglet « Relances » ----------
