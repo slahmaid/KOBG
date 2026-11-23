@@ -40,6 +40,14 @@ const FREE_SHIPPING_FROM = 2000;
 // Display only: the Apps Script (LOYALTY there) credits, checks and deducts the points. Keep both equal.
 const LOYALTY = { step: 1500, reward: 50 };
 
+// Black Friday 2026 ends at 30 Nov 2026 23:59:59 in Morocco (Africa/Casablanca,
+// UTC+1). This is one fixed instant: visitors in any timezone are measured
+// against it. Selling / compare-at prices are NOT auto-reverted after this
+// date; they stay as they are until changed by hand.
+const BF_UNTIL = '2026-11-30T23:59:59+01:00';
+const BF_UNTIL_MS = Date.parse(BF_UNTIL);
+
+
 /* KOBG Pass6: catalog availability copy from existing soldOut/inStock only (not live inventory). */
 function kobgCatalogAvailMessage(product, selectedSize, needSize) {
   if (!product) return 'Disponibilité selon le catalogue.';
@@ -454,6 +462,7 @@ function kobgAdSource() {
   // promo codes were removed: drop a code saved by an older version of the site
   try { localStorage.removeItem(PROMO_STORAGE_KEY); } catch (err) { /* ignore */ }
   try { localStorage.removeItem('kobg-wheel-v1'); } catch (err) { /* ignore */ }
+  try { localStorage.removeItem('kobg-roue-v1'); } catch (err) { /* ignore */ }
   function calcTotals(sub) {
     const shipping = sub === 0 || sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;
     return { sub, pct: 0, discount: 0, shipping, total: sub + shipping, wheel: false, code: '' };
@@ -489,6 +498,7 @@ function kobgAdSource() {
     fitCart();
     renderHooks.forEach((fn) => fn());
   }
+
 
   // Desktop drawer (task 40): the lines are a grid of cards, never an inner scroll box.
   // Try card densities from roomy to compact and, for each, from the preferred column count up to
@@ -2263,7 +2273,7 @@ function kobgAdSource() {
       });
     }
 
-    // ---- size (radios, nothing preselected) + quantity stepper ----
+    // ---- size (radios: first in-stock size selected by default) + quantity stepper ----
     const ppBuy = document.getElementById('ppBuy');
     const ppSizeVal = document.getElementById('ppSizeVal');
     const ppSizeErr = document.getElementById('ppSizeErr');
@@ -2363,14 +2373,68 @@ function kobgAdSource() {
     document.querySelectorAll('.pp-size-input').forEach((r) => r.addEventListener('change', () => {   // sold-out size: never selectable
       if (r.disabled || r.closest('.is-oos')) { r.checked = false; ppSync(); }
     }, true));
-    document.querySelectorAll('.pp-size-input').forEach((r) => r.addEventListener('change', ppSync));
+    document.querySelectorAll('.pp-size-input').forEach((r) => r.addEventListener('change', () => { if (r.checked && !r.disabled) ppRememberSize(r.value); ppSync(); }));
     document.querySelectorAll('.pp-qty-btn').forEach((b) => b.addEventListener('click', () => {
       ppQty.value = Math.max(1, Math.min(MAX_QTY, ppQtyVal() + +b.dataset.step));
       ppSync();
     }));
     ppQty?.addEventListener('input', ppSync);
     ppQty?.addEventListener('change', () => { ppQty.value = ppQtyVal(); ppSync(); });
+
+    // Default size: the first in-stock radio (Épuisé / disabled are skipped). A
+    // taille already chosen — URL ?taille= / ?size=, a listing-card link, or a
+    // colour-switch — is kept when that size is still available on this colorway.
+    // Fully sold-out: nothing is selected, same as before.
+    const sizeKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const ppSizeRadios = () => [...document.querySelectorAll('.pp-size-input')];
+    const ppSizeInStock = () => ppSizeRadios().filter((r) => !r.disabled && !r.closest('.is-oos'));
+    const ppSizeFamily = () => (ppAddBtn?.dataset?.name || '').trim().toLowerCase();
+    const ppPreferredSize = () => {
+      try {
+        const q = new URLSearchParams(location.search);
+        const fromUrl = q.get('taille') || q.get('size');
+        if (fromUrl) return fromUrl;
+        const raw = sessionStorage.getItem('kobg-pp-size');
+        if (!raw) return '';
+        const saved = raw[0] === '{' ? JSON.parse(raw) : { size: raw };
+        const fam = ppSizeFamily();
+        if (saved.family && fam && saved.family !== fam) return '';
+        return saved.size || '';
+      } catch (err) { return ''; }
+    };
+    const ppRememberSize = (size) => {
+      if (!size) return;
+      try {
+        sessionStorage.setItem('kobg-pp-size', JSON.stringify({ size, family: ppSizeFamily() }));
+      } catch (err) { /* private mode */ }
+    };
+    const ppApplyDefaultSize = () => {
+      const stock = ppSizeInStock();
+      ppSizeRadios().forEach((r) => { if (!stock.includes(r) && r.checked) r.checked = false; });
+      if (!stock.length) return '';
+      const want = sizeKey(ppPreferredSize());
+      const preferred = want && stock.find((r) => sizeKey(r.value) === want);
+      const pick = preferred || stock.find((r) => r.checked) || stock[0];
+      stock.forEach((r) => { r.checked = r === pick; });
+      ppRememberSize(pick.value);
+      return pick.value;
+    };
+    ppApplyDefaultSize();
     ppSync();
+    window.addEventListener('pageshow', () => { ppApplyDefaultSize(); ppSync(); });
+
+    // Colour swatches and (site-wide, below) listing cards pass the current size
+    // in ?taille= so the next colorway can keep it, or fall back if it is OOS.
+    document.querySelectorAll('.pp-swatches a[href], a.pp-sw[href]').forEach((a) => {
+      a.addEventListener('click', () => {
+        const size = ppSize();
+        if (!size || a.getAttribute('aria-current') === 'page') return;
+        ppRememberSize(size);
+        const href = a.getAttribute('href') || '';
+        if (/[?&](?:taille|size)=/.test(href)) return;
+        a.setAttribute('href', href + (href.includes('?') ? '&' : '?') + 'taille=' + encodeURIComponent(size));
+      });
+    });
     if (ppCod && ppAddBtn) {
       ppCod.addEventListener('click', (e) => { if (e.target.closest('#codPick')) ppNeedSize(); });
       codForm(ppCod, {
@@ -2417,7 +2481,7 @@ function kobgAdSource() {
       now.className = 'pp-buy-now';
       now.id = 'ppBuyNow';
       now.setAttribute('aria-controls', 'codForm');
-      now.innerHTML = `<span>Commander maintenant</span>${ARROW}`;
+      now.innerHTML = `<span class="pp-buy-now-main"><span>Commander maintenant</span>${ARROW}</span><span class="bf-cta-line"><span class="bf-cta-long">Offre Black Friday · se termine dans </span><span class="bf-cta-short">Black Friday · </span><span data-bf-cd aria-hidden="true"><span class="bf-cd-n" data-u="d">0</span><span class="bf-cd-u">j</span><span class="bf-cd-n" data-u="h">00</span><span class="bf-cd-u">h</span><span class="bf-cd-n" data-u="m">00</span><span class="bf-cd-u">min</span><span class="bf-cd-n" data-u="s">00</span><span class="bf-cd-u">s</span></span></span>`;
       const sub = document.createElement('p');
       sub.className = 'pp-buy-now-sub';
       sub.textContent = 'Paiement à la livraison · Livraison gratuite · Sans compte';
@@ -2594,6 +2658,23 @@ function kobgAdSource() {
   }
 })();
 
+// Listing cards: passing the selected (in-stock) size to the product page so it can be kept on load.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('a.product-link');
+  if (!a) return;
+  const sel = a.closest('.product')?.querySelector('select.product-size');
+  const size = sel?.value || '';
+  const oos = !size || sel.disabled || sel.selectedOptions?.[0]?.disabled || /Épuisé/.test(sel.selectedOptions?.[0]?.textContent || '');
+  if (oos) return;
+  try {
+    const name = (a.closest('.product')?.querySelector('.product-add, .pp-add')?.dataset?.name || '').trim().toLowerCase();
+    sessionStorage.setItem('kobg-pp-size', JSON.stringify({ size, family: name }));
+  } catch (err) { /* private mode */ }
+  const href = a.getAttribute('href') || '';
+  if (/[?&](?:taille|size)=/.test(href)) return;
+  a.setAttribute('href', href + (href.includes('?') ? '&' : '?') + 'taille=' + encodeURIComponent(size));
+});
+
 // Sold-out sizes (Épuisé) are never clickable, focusable or selected: card <select>s fall back to the first in-stock size.
 (() => {
   const isOosOpt = (o) => o && (o.disabled || /Épuisé/.test(o.textContent));
@@ -2702,4 +2783,62 @@ function kobgAdSource() {
     document.head.appendChild(s);
   };
   if (document.readyState === 'complete') load(); else window.addEventListener('load', load, { once: true });
+})();
+
+
+// ============ Black Friday announce bar: end date + countdown ============
+// Ticks once a second by rewriting digit text only (no animation, no flash
+// under prefers-reduced-motion). After BF_UNTIL the bar and its reserved
+// height are removed; compare-at prices are left unchanged.
+(() => {
+  const pad = (n) => (n < 10 ? '0' : '') + n;
+
+  const parts = (now) => {
+    const sec = Math.floor((BF_UNTIL_MS - now) / 1000);
+    if (sec < 0) return null;
+    return {
+      d: String(Math.floor(sec / 86400)),
+      h: pad(Math.floor((sec % 86400) / 3600)),
+      m: pad(Math.floor((sec % 3600) / 60)),
+      s: pad(sec % 60)
+    };
+  };
+
+  const hide = () => {
+    document.documentElement.classList.add('bf-ended');
+    document.documentElement.classList.remove('is-bf');
+    const bar = document.querySelector('.announce-bar');
+    if (bar) {
+      bar.setAttribute('hidden', '');
+      bar.setAttribute('aria-hidden', 'true');
+    }
+  };
+
+  const paint = (el, r) => {
+    const set = (u, v) => {
+      const n = el.querySelector('[data-u="' + u + '"]');
+      if (n && n.textContent !== v) n.textContent = v;
+    };
+    set('d', r.d);
+    set('h', r.h);
+    set('m', r.m);
+    set('s', r.s);
+  };
+
+  const tick = () => {
+    const r = parts(Date.now());
+    if (!r) { hide(); return false; }
+    document.querySelectorAll('[data-bf-cd]').forEach((el) => paint(el, r));
+    return true;
+  };
+
+  const run = () => {
+    if (Date.now() >= BF_UNTIL_MS) { hide(); return; }
+    document.documentElement.classList.add('is-bf');
+    if (!tick()) return;
+    const id = setInterval(() => { if (!tick()) clearInterval(id); }, 1000);
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
 })();

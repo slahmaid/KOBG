@@ -5133,3 +5133,726 @@ html.sheet-open { overflow: hidden; }
   .reviews-list { grid-auto-flow: column; grid-auto-columns: 84%; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
   .review { scroll-snap-align: start; }
 }
+
+/* ==========================================================================
+   KOBG order-form field visibility (2026-11-24)
+   Makes COD / checkout / back-in-stock notify fields clearly bordered so
+   customers can see at a glance where to type.
+   Does NOT restyle header search (.search), the search page, or contact
+   (.field). Account forms reuse .cod-field, so they inherit the same
+   visible borders (intentional consistency).
+   ========================================================================== */
+
+form.cod .cod-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+form.cod .cod-field textarea,
+form.cod .cod-field select,
+.pp-notify-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.pp-notify-field select {
+  border: 2px solid #2a2a2a;
+  background: var(--white);
+  color: var(--black);
+  min-height: 52px;
+  padding: 13px 16px;
+}
+
+form.cod .cod-field textarea,
+.pp-notify-field textarea {
+  min-height: 84px;
+}
+
+form.cod .cod-field input::placeholder,
+form.cod .cod-field textarea::placeholder,
+.pp-notify-field input::placeholder,
+.pp-notify-field textarea::placeholder {
+  color: #4a4a4a;
+  opacity: 1;
+  font-weight: 600;
+}
+
+form.cod .cod-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):hover,
+form.cod .cod-field textarea:hover,
+form.cod .cod-field select:hover,
+.pp-notify-field input:not([type="hidden"]):hover,
+.pp-notify-field select:hover {
+  border-color: var(--black);
+}
+
+form.cod .cod-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus,
+form.cod .cod-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus-visible,
+form.cod .cod-field textarea:focus,
+form.cod .cod-field textarea:focus-visible,
+form.cod .cod-field select:focus,
+form.cod .cod-field select:focus-visible,
+.pp-notify-field input:focus,
+.pp-notify-field input:focus-visible,
+.pp-notify-field select:focus,
+.pp-notify-field select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  background: var(--white);
+}
+
+form.cod .cod-field.is-error input,
+form.cod .cod-field.is-error textarea,
+form.cod .cod-field.is-error select,
+.pp-notify-field.is-error input,
+.pp-notify-field.is-error select {
+  border-color: var(--accent);
+  background: #fff5f5;
+}
+
+form.cod .cod-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):disabled,
+form.cod .cod-field textarea:disabled,
+form.cod .cod-field select:disabled,
+.pp-notify-field input:disabled,
+.pp-notify-field select:disabled {
+  border-color: #5a5a5a;
+  background: #f3f3f3;
+  color: #333;
+  opacity: 1;
+}
+
+/* Promo code (cart drawer + checkout) and loyalty-points amount */
+.cart-promo-input,
+.pts-input {
+  border: 2px solid #2a2a2a;
+  background: var(--white);
+}
+.cart-promo-input::placeholder {
+  color: #4a4a4a;
+  opacity: 1;
+}
+.cart-promo-input:focus,
+.cart-promo-input:focus-visible,
+.pts-input:focus,
+.pts-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+
+/* ==========================================================================
+   KOBG mobile PDP first screen (2026-11-24)
+   On phones in portrait, the size picker and « Commander maintenant » must
+   sit in the first viewport with the title, price and -25 % badge — no
+   scrolling. Done by capping the gallery height, tightening the buy-box
+   spacing, and visually moving size + the CTA up under the price
+   (display:contents on .pp-form so those blocks can be reordered).
+   Swipe, arrows, « Votre poids ? » and WhatsApp are left intact; the
+   floating WhatsApp button stays hidden on the first screen (existing JS)
+   so it cannot cover the CTA. Desktop (min-width: 861px) is unchanged.
+   ========================================================================== */
+
+@media (max-width: 860px) and (orientation: portrait) {
+  /* Cap the photo so the buy box can start on the first screen.
+     Reserve ~350px below the chrome for title, price, size and CTA. */
+  .pp-slide {
+    aspect-ratio: auto;
+    height: min(36vh, 240px, max(160px, calc(100dvh - var(--announce-h) - var(--header-h) - var(--g) * 5 - 350px)));
+    min-height: 160px;
+  }
+  .pp-thumbs { gap: 6px; }
+  .pp-thumb { width: 48px; }
+
+  .pp-buy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 14px 16px;
+  }
+  .pp-buy > .crumbs { display: none; }
+  .pp-buy-head { gap: 4px; }
+  .pp-buy .promo-tag { font-size: 11px; }
+  .pp-brand { font-size: 11px; letter-spacing: .12em; }
+  .pp-h {
+    font-size: clamp(24px, 6.6vw, 32px);
+    line-height: .92;
+  }
+  .pp-h-sub { margin-top: .1em; }
+  .pp-price { column-gap: 10px; row-gap: 2px; }
+  .pp-price strong { font-size: clamp(20px, 5.4vw, 24px); }
+  .pp-price .price-was { font-size: clamp(15px, 4vw, 18px); }
+  .pp-price .price-off { font-size: 12px; padding: .28em .55em; }
+  .pp-save { margin: 0; font-size: 12px; }
+
+  /* Let size + Commander sit directly under the price, ahead of colours
+     and « Ajouter au panier ». The helper stays with the size block. */
+  .pp-form {
+    display: contents;
+    padding-top: 0;
+    border-top: 0;
+    gap: 0;
+  }
+  .pp-buy-head { order: 1; }
+  .pp-size { order: 2; }
+  .pp-buy-now { order: 3; }
+  .pp-buy-now-sub { order: 4; }
+  .pp-form > .pp-opt:not(.pp-size) { order: 5; }
+  .pp-actions { order: 6; }
+  .pp-oos-note, .pp-avail { order: 1; } /* keep with title/price, not above them */
+  .pp-notify-open, .pp-notify, .pp-alt { order: 7; } /* alternatives + notify after the CTA */
+  .pp-buy > .cod { order: 8; }
+  .pp-perks { order: 9; }
+
+  .pp-opt-h { margin: 0 0 6px; }
+  .pp-size {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+  }
+  .pp-size > .pp-opt-h { flex: 1 1 auto; margin-bottom: 6px; }
+  .pp-guide-link {
+    position: static;
+    display: inline-block;
+    margin: 0 0 6px;
+  }
+  .pp-fit { flex: 1 1 100%; margin: 0 0 8px; }
+  .pp-fit-h { margin: 0 0 4px; }
+  .pp-fit-btn { min-height: 32px; padding: 0 .65em; font-size: 12px; }
+  .pp-fit-msg { margin: 4px 0 0; font-size: 12px; }
+  .pp-size-list { flex: 1 1 100%; gap: 6px; }
+  .pp-size-btn span {
+    height: 40px;
+    min-width: 48px;
+    padding: 0 .7em;
+    font-size: 13px;
+  }
+  .pp-size-err { margin-top: 6px; }
+  .pp-swatches { gap: 8px; }
+  .pp-sw { width: 32px; height: 32px; }
+  .pp-buy-now { height: 50px; font-size: 15px; }
+  .pp-buy-now-sub { margin: -2px 0 0; font-size: 11px; }
+}
+
+/* Short phones (iPhone SE / compact Androids): drop thumbnails (swipe +
+   arrows remain) and trim a few non-essential lines so a 2-row size list
+   and a long title still fit with the CTA. */
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 800px) {
+  .pp-thumbs { display: none; }
+  .pp-save { display: none; }
+  .pp-buy-now-sub { display: none; }
+  .pp-slide {
+    height: min(32vh, 200px, max(150px, calc(100dvh - var(--announce-h) - var(--header-h) - var(--g) * 5 - 330px)));
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 860px) and (orientation: portrait) and (pointer: coarse) {
+  /* Override the global 44px coarse-pointer fit chips, which wrap too tall. */
+  .pp-fit-btn { min-height: 32px; }
+}
+
+
+/* --- Black Friday end date + live countdown (v9) ---
+   Compact one-line countdown (j h min s, tabular digits) in the announce
+   bar. After 30 Nov 2026 23:59:59 Africa/Casablanca, html.bf-ended collapses
+   the bar and --announce-core so sticky header offsets stay in sync. */
+.announce-bar-offer {
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+}
+.announce-bar-item--until {
+  letter-spacing: .1em;
+}
+.bf-mon-short { display: none; }
+.announce-bar-cd {
+  display: inline-flex;
+  align-items: baseline;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+.bf-cd-n {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  text-align: right;
+  letter-spacing: .02em;
+}
+.bf-cd-n[data-u="d"] { min-width: 1ch; }
+.bf-cd-n[data-u="h"],
+.bf-cd-n[data-u="m"],
+.bf-cd-n[data-u="s"] { min-width: 2ch; }
+.bf-cd-u {
+  margin: 0 .38em 0 .12em;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+  opacity: .78;
+}
+.bf-cd-u:last-child { margin-right: 0; }
+
+@media (max-width: 420px) {
+  .bf-mon-full { display: none; }
+  .bf-mon-short { display: inline; }
+}
+
+/* Reduced-motion already disables the marquee and centers the message:
+   tighten the line so it still fits a 360px screen without wrapping. */
+@media (prefers-reduced-motion: reduce) and (max-width: 420px) {
+  .announce-bar-msg {
+    font-size: 10px;
+    letter-spacing: .03em;
+    gap: 5px;
+    padding: 0 .35em;
+  }
+  .announce-bar-item--offer { letter-spacing: .06em; padding: .18em .45em .16em; }
+  .announce-bar-item--until { letter-spacing: .05em; }
+  .announce-bar-item--ship { display: none; }
+  .announce-bar-dot:has(+ .announce-bar-item--ship) { display: none; }
+  .bf-cd-u { margin: 0 .2em 0 .06em; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 360px) {
+  .announce-bar-msg { font-size: 9.5px; letter-spacing: .02em; gap: 4px; padding: 0 .25em; }
+}
+
+/* After the deadline: hide the BF bar and drop its reserved height so the
+   sticky header / page offsets collapse with no leftover gap. */
+html.bf-ended {
+  --announce-core: 0px;
+}
+html.bf-ended .announce-bar {
+  display: none;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: none;
+  visibility: hidden;
+}
+
+
+/* --- Black Friday event skin (v10) ---
+   All campaign visuals are gated on html.is-bf (set in the markup, removed
+   by script.js after BF_UNTIL). Prices / compare-at are never changed. */
+.bf-hero,
+.bf-cat-banner,
+.bf-cart-tag,
+.bf-co-note,
+.bf-merci-tag,
+.bf-cta-line { display: none; }
+
+/* Shared tabular countdown (hero, category banners; announce bar keeps its own) */
+.bf-cd {
+  display: inline-flex;
+  align-items: baseline;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  font-weight: 800;
+}
+.bf-cd .bf-cd-n {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  text-align: right;
+  letter-spacing: .02em;
+  min-width: 1.1ch;
+}
+.bf-cd .bf-cd-n[data-u="h"],
+.bf-cd .bf-cd-n[data-u="m"],
+.bf-cd .bf-cd-n[data-u="s"] { min-width: 2ch; }
+.bf-cd .bf-cd-u {
+  margin: 0 .38em 0 .12em;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+  opacity: .78;
+}
+.bf-cd .bf-cd-u:last-child { margin-right: 0; }
+
+/* ===== Homepage hero takeover ===== */
+.is-bf .hero-lead-stack { display: none; }
+.is-bf .panel--feature::before {
+  background:
+    linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.28) 46%, rgba(0,0,0,.4) 100%),
+    linear-gradient(105deg, rgba(90,0,10,.55) 0%, rgba(0,0,0,.08) 48%, rgba(0,0,0,.4) 100%);
+}
+.is-bf .bf-hero {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: calc(var(--r) * 1.05) calc(var(--r) * 1.15) calc(var(--r) * 1.1);
+  gap: .28em;
+  color: var(--white);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.is-bf .bf-hero a { pointer-events: auto; }
+.bf-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(-18deg, rgba(208,32,42,.09) 0 10px, transparent 10px 22px);
+  mix-blend-mode: soft-light;
+  opacity: .7;
+}
+.bf-hero-kicker,
+.bf-hero-title,
+.bf-hero-offer,
+.bf-hero-meta,
+.bf-hero-cta { position: relative; z-index: 1; }
+.bf-hero-kicker {
+  margin: 0 0 .2em;
+  font-size: clamp(9px, 1.15vh, 12px);
+  font-weight: 700;
+  font-variation-settings: "wdth" 90;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #d4b56a;
+}
+.bf-hero-title {
+  margin: 0;
+  font-size: clamp(44px, min(11.5vh, 8vw), 118px);
+  font-weight: 900;
+  font-variation-settings: "wdth" 70;
+  text-transform: uppercase;
+  line-height: .78;
+  letter-spacing: -.04em;
+  text-shadow: 0 4px 28px rgba(0,0,0,.45);
+}
+.bf-hero-title span { display: block; }
+.bf-hero-title-red { color: #ff3b44; }
+.bf-hero-offer {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  margin: .35em 0 .15em;
+}
+.bf-hero-pct {
+  display: inline-flex;
+  align-items: center;
+  padding: .22em .55em .2em;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+  font-size: clamp(18px, 3.2vh, 34px);
+  font-weight: 900;
+  font-variation-settings: "wdth" 80;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  line-height: 1;
+  transform: skewX(-8deg);
+  box-shadow: 0 2px 0 rgba(0,0,0,.25);
+}
+.bf-hero-sur {
+  font-size: clamp(16px, 2.4vh, 26px);
+  font-weight: 800;
+  font-variation-settings: "wdth" 84;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.bf-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .55em 1em;
+  margin: 0 0 .35em;
+  font-size: clamp(13px, 1.7vh, 16px);
+  font-weight: 800;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.bf-hero-cd.bf-cd { font-size: 1em; color: var(--white); }
+.bf-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: .15em 0 0;
+  pointer-events: auto;
+}
+.bf-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.2em;
+  border-radius: 99px;
+  background: var(--white);
+  color: var(--black);
+  font-size: 12px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 84;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-decoration: none;
+  box-shadow: 0 6px 22px rgba(0,0,0,.28);
+  transition: transform .2s var(--ease), background-color .2s ease, color .2s ease;
+}
+.bf-hero-btn:hover { background: #f0f0f0; }
+.bf-hero-btn:active { transform: scale(.97); }
+.bf-hero-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.bf-hero-btn--ghost {
+  background: transparent;
+  color: var(--white);
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.75);
+}
+.bf-hero-btn--ghost:hover { background: rgba(255,255,255,.12); }
+
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px), (max-aspect-ratio: 4/5) {
+  .is-bf .bf-hero {
+    padding: calc(var(--r) * .7) calc(var(--r) * .8) calc(var(--r) * .7);
+    gap: .12em;
+    justify-content: flex-end;
+  }
+  .bf-hero-kicker { font-size: 8px; letter-spacing: .12em; margin: 0; }
+  .bf-hero-title { font-size: clamp(32px, 10vw, 52px); letter-spacing: -.03em; }
+  .bf-hero-offer { margin: .15em 0 .05em; }
+  .bf-hero-pct { font-size: clamp(15px, 4.4vw, 20px); padding: .18em .45em; }
+  .bf-hero-sur { font-size: clamp(13px, 3.6vw, 16px); }
+  .bf-hero-meta { font-size: 11px; gap: .35em .7em; margin: 0 0 .2em; }
+  .bf-hero-btn { min-height: 38px; font-size: 11px; padding: 0 1em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-hero-bg { opacity: .35; }
+  .bf-hero-btn { transition: none; }
+}
+
+/* Tall hero panels: a quiet campaign stamp, not a second takeover */
+.is-bf .panel--tall .panel-label-kicker {
+  color: #5c5c5c;
+}
+.is-bf .panel--tall .panel-label-kicker::before {
+  content: "Black Friday";
+  display: block;
+  margin: 0 0 .4em;
+  font-weight: 800;
+  letter-spacing: .16em;
+  color: var(--accent-ink);
+}
+
+/* ===== Product rail headers ===== */
+.is-bf .bf-rail > .promo-tag {
+  font-size: 0;
+  letter-spacing: 0;
+  color: var(--accent-ink);
+}
+.is-bf .bf-rail > .promo-tag .promo-dot {
+  background: var(--accent);
+  margin-right: .55em;
+}
+.is-bf .bf-rail > .promo-tag::after {
+  content: "Offres Black Friday";
+  font-size: 13px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.is-bf .bf-rail > .promo-tag { margin-bottom: .35em; }
+
+/* ===== Product cards: Black Friday tag alongside existing tags / -25 % ===== */
+.is-bf .product:has(.price-off) .product-tags::before {
+  content: "Black Friday";
+  display: inline-flex;
+  align-items: center;
+  padding: .5em .8em .45em;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 80;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ===== Category slim banner ===== */
+.is-bf .bf-cat-banner {
+  display: block;
+  margin: 0 0 var(--g);
+  padding: 0;
+  background: var(--black);
+  color: var(--white);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.bf-cat-banner-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .45em 1em;
+  margin: 0;
+  padding: .7em 1.1em;
+  font-size: 13px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background:
+    repeating-linear-gradient(-18deg, rgba(208,32,42,.12) 0 8px, transparent 8px 18px);
+}
+.bf-cat-kicker {
+  color: #d4b56a;
+  letter-spacing: .16em;
+}
+.bf-cat-offer {
+  display: inline-flex;
+  align-items: center;
+  padding: .18em .55em .16em;
+  border-radius: 99px;
+  background: var(--accent);
+  letter-spacing: .08em;
+  line-height: 1;
+}
+.bf-cat-banner .bf-cd { font-size: 13px; }
+@media (max-width: 600px) {
+  .bf-cat-banner-inner { font-size: 11px; gap: .35em .7em; padding: .6em .8em; }
+  .bf-cat-banner .bf-cd { font-size: 11px; }
+}
+
+/* Shop pages sit in .sub-main (not .page); give the banner page-side margins */
+.sub-main > .bf-cat-banner {
+  margin: 0 var(--g) var(--g);
+}
+
+/* ===== Product page: label by the price + line in the CTA ===== */
+.is-bf .pp-price:has(.price-off)::before {
+  content: "Black Friday";
+  display: inline-flex;
+  align-items: center;
+  padding: .28em .62em;
+  border-radius: 99px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 80;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  line-height: 1;
+  align-self: center;
+}
+.is-bf .bf-cta-line {
+  display: block;
+  flex: 0 0 auto;
+  order: 3;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.88);
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.is-bf .pp-buy-now {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  height: auto;
+  min-height: 58px;
+  padding: 8px 1.4em 9px;
+  gap: .2em;
+  white-space: normal;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* JS wraps label+icon in .pp-buy-now-main so the BF line can sit under it
+   without growing past the mobile first screen. */
+.is-bf .pp-buy-now-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+@media (max-width: 860px) and (orientation: portrait) {
+  /* Keep the Commander control at the existing 50px ATF height: two compact
+     lines inside the button, no extra layout below it. */
+  .is-bf .pp-buy-now {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 1em;
+    gap: 1px;
+    font-size: 13px;
+  }
+  .is-bf .bf-cta-line { font-size: 9px; letter-spacing: .04em; }
+  .is-bf .bf-cta-long { display: none; }
+  .is-bf .bf-cta-short { display: inline; }
+  .is-bf .bf-cta-line [data-u="s"],
+  .is-bf .bf-cta-line [data-u="s"] + .bf-cd-u { display: none; }
+}
+.bf-cta-short { display: none; }
+
+/* ===== Cart / commande / merci ===== */
+.is-bf .bf-cart-tag {
+  display: block;
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 800;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.is-bf #cartDrawer .cart-head {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+.is-bf .bf-co-note {
+  display: block;
+  margin: .55em 0 0;
+  padding: .55em .8em;
+  border-radius: 8px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  font-variation-settings: "wdth" 88;
+  letter-spacing: .02em;
+  line-height: 1.35;
+}
+.is-bf .bf-co-note strong { color: #ff8a8f; font-weight: 800; }
+.is-bf .merci-hero .promo-tag { color: var(--accent); }
+.is-bf #merciTag::after {
+  content: "  ·  Black Friday";
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.is-bf .bf-hero-meta .bf-cd { color: inherit; }
+.is-bf .bf-cta-line [data-bf-cd] {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+.is-bf .bf-cta-line .bf-cd-n { display: inline-block; min-width: 1.1ch; text-align: right; }
+.is-bf .bf-cta-line .bf-cd-n[data-u="h"],
+.is-bf .bf-cta-line .bf-cd-n[data-u="m"],
+.is-bf .bf-cta-line .bf-cd-n[data-u="s"] { min-width: 2ch; }
+.is-bf .bf-cta-line .bf-cd-u { margin: 0 .28em 0 .08em; text-transform: lowercase; opacity: .9; font-weight: 800; }
+.is-bf .bf-cta-line .bf-cd-u:last-child { margin-right: 0; }
