@@ -5599,7 +5599,7 @@ html.bf-ended .announce-bar {
     gap: .12em;
     justify-content: flex-end;
   }
-  .bf-hero-kicker { font-size: 8px; letter-spacing: .12em; margin: 0; }
+  .bf-hero-kicker { font-size: 11px; letter-spacing: .08em; margin: 0; }
   .bf-hero-title { font-size: clamp(32px, 10vw, 52px); letter-spacing: -.03em; }
   .bf-hero-offer { margin: .15em 0 .05em; }
   .bf-hero-pct { font-size: clamp(15px, 4.4vw, 20px); padding: .18em .45em; }
@@ -5613,39 +5613,8 @@ html.bf-ended .announce-bar {
   .bf-hero-btn { transition: none; }
 }
 
-/* Tall hero panels: a quiet campaign stamp, not a second takeover */
-.is-bf .panel--tall .panel-label-kicker {
-  color: #5c5c5c;
-}
-.is-bf .panel--tall .panel-label-kicker::before {
-  content: "Black Friday";
-  display: block;
-  margin: 0 0 .4em;
-  font-weight: 800;
-  letter-spacing: .16em;
-  color: var(--accent-ink);
-}
-
 /* ===== Product rail headers: Black Friday label removed ===== */
 .is-bf .bf-rail > .promo-tag { display: none; }
-
-/* ===== Product cards: Black Friday tag alongside existing tags / -25 % ===== */
-.is-bf .product:has(.price-off) .product-tags::before {
-  content: "Black Friday";
-  display: inline-flex;
-  align-items: center;
-  padding: .5em .8em .45em;
-  border-radius: 99px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  font-variation-settings: "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  line-height: 1;
-  white-space: nowrap;
-}
 
 /* ===== Category slim banner ===== */
 .is-bf .bf-cat-banner {
@@ -5671,8 +5640,7 @@ html.bf-ended .announce-bar {
   font-variation-settings: "wdth" 88;
   letter-spacing: .08em;
   text-transform: uppercase;
-  background:
-    repeating-linear-gradient(-18deg, rgba(208,32,42,.12) 0 8px, transparent 8px 18px);
+  background: var(--black);
 }
 .bf-cat-kicker {
   color: #d4b56a;
@@ -5697,6 +5665,15 @@ html.bf-ended .announce-bar {
 .sub-main > .bf-cat-banner {
   margin: 0 var(--g) var(--g);
 }
+
+/* Announce bar already carries the campaign on small screens — hide the
+   duplicate category banner so it leaves no gap. */
+@media (max-width: 860px) {
+  .bf-cat-banner,
+  .is-bf .bf-cat-banner,
+  .sub-main > .bf-cat-banner { display: none; margin: 0; }
+}
+
 
 /* ===== Product page: label by the price + line in the CTA ===== */
 .is-bf .pp-price:has(.price-off)::before {
@@ -5759,21 +5736,18 @@ html.bf-ended .announce-bar {
   white-space: nowrap;
   flex: 0 0 auto;
 }
-@media (max-width: 860px) and (orientation: portrait) {
-  /* Keep the Commander control at the existing 50px ATF height: two compact
-     lines inside the button, no extra layout below it. */
+@media (max-width: 860px) {
+  /* Single-line Commander on mobile: the announce bar already counts down.
+     Desktop keeps the BF line under the label. */
+  .is-bf .bf-cta-line { display: none; }
   .is-bf .pp-buy-now {
+    flex-direction: row;
     height: 50px;
     min-height: 50px;
     padding: 0 1em;
-    gap: 1px;
-    font-size: 13px;
+    gap: 0;
+    font-size: 15px;
   }
-  .is-bf .bf-cta-line { font-size: 9px; letter-spacing: .04em; }
-  .is-bf .bf-cta-long { display: none; }
-  .is-bf .bf-cta-short { display: inline; }
-  .is-bf .bf-cta-line [data-u="s"],
-  .is-bf .bf-cta-line [data-u="s"] + .bf-cd-u { display: none; }
 }
 .bf-cta-short { display: none; }
 
