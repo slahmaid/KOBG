@@ -3572,7 +3572,17 @@ a.pp-coll:hover .promo-dot, a.pp-coll:hover .promo-dot::after { background: var(
 .pp-sw:hover { box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 0 0 3px var(--panel), 0 0 0 5px #9a9a9a; }
 .pp-sw[aria-current="page"] { box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 0 0 3px var(--panel), 0 0 0 5px var(--black); }
 .pp-sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
-.pp-guide-link { position: absolute; top: 0; right: 0; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; text-decoration: underline; text-underline-offset: 3px; }
+.pp-size > .pp-opt-h {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.pp-guide-link { display: block; text-align: right; margin: 0 0 10px; font-size: 12px; font-weight: 800; font-variation-settings: "wdth" 84; text-transform: uppercase; letter-spacing: .05em; text-decoration: underline; text-underline-offset: 3px; }
 .pp-guide-link:hover { color: var(--accent); }
 .pp-size-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .pp-size-btn { position: relative; }
@@ -5234,24 +5244,20 @@ form.cod .cod-field select:disabled,
 
 
 /* ==========================================================================
-   KOBG mobile PDP first screen (2026-11-24)
-   On phones in portrait, the size picker and « Commander maintenant » must
-   sit in the first viewport with the title, price and -25 % badge — no
-   scrolling. Done by capping the gallery height, tightening the buy-box
-   spacing, and visually moving size + the CTA up under the price
-   (display:contents on .pp-form so those blocks can be reordered).
-   Swipe, arrows, « Votre poids ? » and WhatsApp are left intact; the
-   floating WhatsApp button stays hidden on the first screen (existing JS)
-   so it cannot cover the CTA. Desktop (min-width: 861px) is unchanged.
+   KOBG mobile PDP (updated 2026-11-25)
+   On phones in portrait the main product photo is full-width and square
+   (1:1), so the glove is not cramped in a short wide box. Thumbnails and
+   arrows stay visible. Size chips + « Commander maintenant » are still
+   moved up under the price (display:contents on .pp-form). Desktop
+   (min-width: 861px) keeps its existing gallery height formula.
    ========================================================================== */
 
 @media (max-width: 860px) and (orientation: portrait) {
-  /* Cap the photo so the buy box can start on the first screen.
-     Reserve ~350px below the chrome for title, price, size and CTA. */
+  /* Fill the content width with a roughly square main image. */
   .pp-slide {
-    aspect-ratio: auto;
-    height: min(36vh, 240px, max(160px, calc(100dvh - var(--announce-h) - var(--header-h) - var(--g) * 5 - 350px)));
-    min-height: 160px;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    min-height: 0;
   }
   .pp-thumbs { gap: 6px; }
   .pp-thumb { width: 48px; }
@@ -5303,16 +5309,12 @@ form.cod .cod-field select:disabled,
     align-items: baseline;
     column-gap: 10px;
   }
-  .pp-size > .pp-opt-h { flex: 1 1 auto; margin-bottom: 6px; }
   .pp-guide-link {
-    position: static;
-    display: inline-block;
+    flex: 1 1 100%;
+    display: block;
+    text-align: right;
     margin: 0 0 6px;
   }
-  .pp-fit { flex: 1 1 100%; margin: 0 0 8px; }
-  .pp-fit-h { margin: 0 0 4px; }
-  .pp-fit-btn { min-height: 32px; padding: 0 .65em; font-size: 12px; }
-  .pp-fit-msg { margin: 4px 0 0; font-size: 12px; }
   .pp-size-list { flex: 1 1 100%; gap: 6px; }
   .pp-size-btn span {
     height: 40px;
@@ -5327,22 +5329,10 @@ form.cod .cod-field select:disabled,
   .pp-buy-now-sub { margin: -2px 0 0; font-size: 11px; }
 }
 
-/* Short phones (iPhone SE / compact Androids): drop thumbnails (swipe +
-   arrows remain) and trim a few non-essential lines so a 2-row size list
-   and a long title still fit with the CTA. */
+/* Short phones: hide the Commander sub-line only. The main photo stays
+   square and the thumbnail row stays visible. */
 @media (max-width: 860px) and (orientation: portrait) and (max-height: 800px) {
-  .pp-thumbs { display: none; }
-  .pp-save { display: none; }
   .pp-buy-now-sub { display: none; }
-  .pp-slide {
-    height: min(32vh, 200px, max(150px, calc(100dvh - var(--announce-h) - var(--header-h) - var(--g) * 5 - 330px)));
-    min-height: 150px;
-  }
-}
-
-@media (max-width: 860px) and (orientation: portrait) and (pointer: coarse) {
-  /* Override the global 44px coarse-pointer fit chips, which wrap too tall. */
-  .pp-fit-btn { min-height: 32px; }
 }
 
 
@@ -5498,10 +5488,7 @@ html.bf-ended .announce-bar {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    repeating-linear-gradient(-18deg, rgba(208,32,42,.09) 0 10px, transparent 10px 22px);
-  mix-blend-mode: soft-light;
-  opacity: .7;
+  background: none;
 }
 .bf-hero-kicker,
 .bf-hero-title,
@@ -5639,26 +5626,8 @@ html.bf-ended .announce-bar {
   color: var(--accent-ink);
 }
 
-/* ===== Product rail headers ===== */
-.is-bf .bf-rail > .promo-tag {
-  font-size: 0;
-  letter-spacing: 0;
-  color: var(--accent-ink);
-}
-.is-bf .bf-rail > .promo-tag .promo-dot {
-  background: var(--accent);
-  margin-right: .55em;
-}
-.is-bf .bf-rail > .promo-tag::after {
-  content: "Offres Black Friday";
-  font-size: 13px;
-  font-weight: 800;
-  font-variation-settings: "wdth" 88;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--accent-ink);
-}
-.is-bf .bf-rail > .promo-tag { margin-bottom: .35em; }
+/* ===== Product rail headers: Black Friday label removed ===== */
+.is-bf .bf-rail > .promo-tag { display: none; }
 
 /* ===== Product cards: Black Friday tag alongside existing tags / -25 % ===== */
 .is-bf .product:has(.price-off) .product-tags::before {

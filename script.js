@@ -2292,20 +2292,10 @@ function kobgAdSource() {
           value: +d.price || 0, currency: 'MAD' });
       }
     }
-    // Pass6: live catalog availability near size/CTA (textContent only; updates on size change)
-    let ppAvail = document.getElementById('ppAvail');
-    if (!ppAvail && ppBuy) {
-      ppAvail = document.createElement('p');
-      ppAvail.id = 'ppAvail';
-      ppAvail.className = 'pp-avail';
-      ppAvail.setAttribute('role', 'status');
-      ppAvail.setAttribute('aria-live', 'polite');
-      const actions = ppBuy.querySelector('.pp-actions');
-      const sizeBox = document.getElementById('ppSize');
-      if (actions && actions.parentNode) actions.parentNode.insertBefore(ppAvail, actions);
-      else if (sizeBox && sizeBox.parentNode) sizeBox.parentNode.insertBefore(ppAvail, sizeBox.nextSibling);
-      else ppBuy.appendChild(ppAvail);
-    }
+    // Catalog availability copy is kept in kobgCatalogAvailMessage (and its
+    // unit test) but is no longer shown on the product page.
+    const ppAvail = null;
+    document.getElementById('ppAvail')?.remove();
     const ppCatalogProduct = () => {
       const id = ppAddBtn?.dataset?.id;
       if (!id || !Array.isArray(window.KOBG_SEARCH)) return null;
@@ -2493,45 +2483,6 @@ function kobgAdSource() {
       });
     }
 
-    // ---- size helper (gloves): "Votre poids" picks the size of the guide's table (Guide des tailles) ----
-    const FIT = [
-      { label: 'Moins de 60 kg', sizes: ['S', '12 oz'] },
-      { label: '60–74 kg', sizes: ['M', '14 oz'] },
-      { label: '75–90 kg', sizes: ['L', '16 oz-s', '16 oz'] },
-      { label: '91 kg et +', sizes: ['XL', '18 oz'] },
-    ];
-    const ppSizeList = ppSizeBox?.querySelector('.pp-size-list');
-    if (ppSizeList && ppCat && /^Gants de (sac|sparring)$/.test(ppCat.coll) && !ppAllOos) {
-      const fit = document.createElement('div');
-      fit.className = 'pp-fit';
-      fit.innerHTML = `<p class="pp-fit-h" id="ppFitH">Votre poids&nbsp;?</p><div class="pp-fit-list" role="group" aria-labelledby="ppFitH">${
-        FIT.map((f, i) => `<button type="button" class="pp-fit-btn" data-fit="${i}" aria-pressed="false">${esc(f.label)}</button>`).join('')
-      }</div><p class="pp-fit-msg" role="status" aria-live="polite"></p>`;
-      ppSizeList.before(fit);
-      const fitMsg = fit.querySelector('.pp-fit-msg');
-      fit.addEventListener('click', (e) => {
-        const b = e.target.closest('.pp-fit-btn');
-        if (!b) return;
-        fit.querySelectorAll('.pp-fit-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        const wanted = FIT[+b.dataset.fit].sizes.filter((s) => ppCat.sizes.includes(s));
-        const inputs = [...document.querySelectorAll('.pp-size-input')];
-        const free = wanted.map((s) => inputs.find((r) => r.value === s && !r.disabled)).find(Boolean);
-        if (free) {
-          free.checked = true;
-          free.dispatchEvent(new Event('change', { bubbles: true }));
-          fitMsg.textContent = `Taille conseillée : ${free.value}.`;
-        } else if (wanted.length) {
-          inputs.forEach((r) => { r.checked = false; });
-          ppSync();
-          fitMsg.textContent = `Taille conseillée : ${wanted.join(' ou ')}, épuisée dans ce coloris pour le moment.`;
-          const open = document.getElementById('ppNotifyOpen');
-          if (open && open.getAttribute('aria-expanded') !== 'true') open.click();
-          const nSel = document.querySelector('#ppNotify select[name="taille"]');
-          if (nSel) nSel.value = wanted.find((s) => [...nSel.options].some((o) => o.value === s)) || nSel.value;
-        } else fitMsg.textContent = 'Ce modèle n’existe pas dans cette taille : écrivez-nous, nous vous conseillons.';
-      });
-    }
-
     // ---- sold out: « Prévenez-moi » instead of a greyed-out form, and what is in stock right now ----
     const ppSoldSizes = ppCat?.soldOut || [];
     if (ppCat && ppBuy && (ppAllOos || ppSoldSizes.length)) {
@@ -2706,25 +2657,6 @@ document.addEventListener('click', (e) => {
   }, true);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   window.addEventListener('pageshow', run);   // back/forward cache can restore a stale selection
-})();
-
-/* "Vous économisez X DH" under the product-page price */
-(function () {
-  function run() {
-    document.querySelectorAll('.pp-price').forEach(function (el) {
-      if (el.querySelector('.pp-save')) return;
-      var now = el.querySelector('strong'), was = el.querySelector('.price-was');
-      if (!now || !was) return;
-      var n = function (t) { return parseInt(String(t).replace(/[^0-9]/g, ''), 10) || 0; };
-      var diff = n(was.lastChild ? was.lastChild.textContent : was.textContent) - n(now.textContent);
-      if (diff <= 0) return;
-      var p = document.createElement('span');
-      p.className = 'pp-save';
-      p.textContent = 'Vous économisez ' + diff.toLocaleString('fr-FR').replace(/\s/g, '\u00a0') + '\u00a0DH';
-      el.appendChild(p);
-    });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
 })();
 
 // ============ customer reviews (home + product pages) ============
