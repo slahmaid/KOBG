@@ -3811,6 +3811,14 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
   border-radius: calc(var(--r) * .8); background: var(--white);
   scroll-margin-top: var(--g);
 }
+/* Visual order before JS moves the nodes (tab order follows once script.js has run):
+   head, signed-in note, fields, Confirmer la commande, guest note, then recap / legal. */
+.cod > * { order: 5; }
+.cod > .cod-head { order: 0; }
+.cod > .acct-note:not(.acct-note--guest) { order: 1; }
+.cod > .cod-fields { order: 2; }
+.cod > .cod-submit { order: 3; }
+.cod > .acct-note--guest { order: 4; }
 .cod--panel { background: var(--panel); border-radius: var(--r); padding: clamp(20px, 3vw, 44px); }
 .cod-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .cod-head .promo-tag { margin: 0; font-size: 12px; }
@@ -4304,13 +4312,13 @@ html:not(.has-wa) .contact-grid { grid-template-columns: repeat(3, minmax(0, 1fr
 @media (pointer: coarse) { .cart-upsell-add { height: 44px; } }
 
 /* checkout helpers */
-.acct-note--guest { margin: -4px 0 0; font-size: 12.5px; }
+.acct-note--guest { margin: 0; font-size: 12.5px; }
 .cod-eta { margin: 0; font-size: 12.5px; font-weight: 800; line-height: 1.35; color: #1f6b3d; }
 .cod-eta[hidden] { display: none; }
 .cod-lead-note { color: #777; }
 
 /* =========================================================
-   Customer accounts (compte.html + the note above the order forms).
+   Customer accounts (compte.html + the signed-in / guest notes on the order forms).
    Same bento language: grey .cod--panel forms, black side card, white order tiles.
    ========================================================= */
 .acct-grid, .acct-dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--g); align-items: start; }

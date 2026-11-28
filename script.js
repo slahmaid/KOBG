@@ -991,10 +991,13 @@ function kobgAdSource() {
   acctPaint();
   window.addEventListener('storage', (e) => { if (e.key === ACCT_KEY || e.key === null) { acctPaint(); acctChanged(); } });
 
-  // order forms: pre-fill from the profile, a one-line "signed in / sign in" note above the fields
+  // order forms: pre-fill from the profile; guest sign-in note under the submit button, signed-in note above the fields
   function acctOrderForm(form) {
     const fs = form.querySelector('.cod-fields');
     if (!fs) return;
+    const submit = form.querySelector('.cod-submit');
+    // Confirmer la commande sits directly under the fields (recap, shipping note, legal stay after it)
+    if (submit && submit.previousElementSibling !== fs) fs.after(submit);
     const note = document.createElement('p');
     note.className = 'acct-note';
     fs.before(note);
@@ -1002,9 +1005,10 @@ function kobgAdSource() {
     const filled = {};                     // what fill() typed in: replaced if another account signs in, never what the visitor typed
     const fill = () => {
       const s = acctStore.read();
-      // guest: a quiet line under the fields (ordering needs no account); signed in: the account line above them
+      // guest: a quiet line under the button (ordering needs no account); signed in: the account line above the fields
       if (!s) {
-        if (note.previousElementSibling !== fs) fs.after(note);
+        if (submit) { if (note.previousElementSibling !== submit) submit.after(note); }
+        else if (note.previousElementSibling !== fs) fs.after(note);
         note.classList.add('acct-note--guest');
         note.innerHTML = `Déjà un compte&nbsp;? <a href="compte?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
         return;
