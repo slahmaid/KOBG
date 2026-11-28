@@ -1231,14 +1231,10 @@ function kobgAdSource() {
     }
     // Unfinished order ("Relances" tab of the order sheet): once a valid mobile number is typed, the form's content is
     // saved so the team can call back a visitor who leaves without confirming. Sent again only when something changed;
-    // the server marks the line « Commandé » when that number orders. The visitor is told under the phone field.
+    // the server marks the line « Commandé » when that number orders.
     let leadKey = '';
     const telEl = form.elements.telephone;
     if (peekItems && telEl && !form.classList.contains('is-oos')) {
-      const note = document.createElement('p');
-      note.className = 'cod-hint cod-lead-note';
-      note.textContent = 'Si la commande n’est pas finalisée, nous pourrons vous rappeler à ce numéro pour vous aider.';
-      telEl.closest('.cod-field')?.appendChild(note);
       const saveLead = () => {
         if (busy || !phoneOK(val('telephone')) || val('kobg_hp')) return;
         let items = [];
