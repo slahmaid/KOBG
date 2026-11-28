@@ -991,21 +991,29 @@ function kobgAdSource() {
   acctPaint();
   window.addEventListener('storage', (e) => { if (e.key === ACCT_KEY || e.key === null) { acctPaint(); acctChanged(); } });
 
-  // order forms: pre-fill from the profile; guest sign-in note under the submit button, signed-in note above the fields
+  // order forms: pre-fill from the profile; guest sign-in note under the submit button (inside the bordered panel), signed-in note above the panel
   function acctOrderForm(form) {
     const fs = form.querySelector('.cod-fields');
     if (!fs) return;
     const submit = form.querySelector('.cod-submit');
-    // Confirmer la commande sits directly under the fields (recap, shipping note, legal stay after it)
-    if (submit && submit.previousElementSibling !== fs) fs.after(submit);
+    // Fields + Confirmer la commande sit in a bordered panel (.cod-box), under the heading.
+    // Recap, shipping note and legal stay after the panel.
+    let wrap = fs.closest('.cod-box');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'cod-box';
+      fs.before(wrap);
+      wrap.appendChild(fs);
+    }
+    if (submit && (submit.parentElement !== wrap || submit.previousElementSibling !== fs)) fs.after(submit);
     const note = document.createElement('p');
     note.className = 'acct-note';
-    fs.before(note);
+    wrap.before(note);
     const back = encodeURIComponent(location.pathname.split('/').pop().replace(/\.html$/, '') || 'accueil');
     const filled = {};                     // what fill() typed in: replaced if another account signs in, never what the visitor typed
     const fill = () => {
       const s = acctStore.read();
-      // guest: a quiet line under the button (ordering needs no account); signed in: the account line above the fields
+      // guest: a quiet line under the button (ordering needs no account); signed in: the account line above the panel
       if (!s) {
         if (submit) { if (note.previousElementSibling !== submit) submit.after(note); }
         else if (note.previousElementSibling !== fs) fs.after(note);
@@ -1013,7 +1021,7 @@ function kobgAdSource() {
         note.innerHTML = `Déjà un compte&nbsp;? <a href="compte?retour=${back}">Connectez-vous</a> pour pré-remplir vos coordonnées et cumuler des points fidélité <span class="acct-note-opt">(facultatif)</span>.`;
         return;
       }
-      if (note.nextElementSibling !== fs) fs.before(note);
+      if (note.nextElementSibling !== wrap) wrap.before(note);
       note.classList.remove('acct-note--guest');
       const p = s.profile;
       const where = [p.adresse, p.ville].filter(Boolean).join(', ');

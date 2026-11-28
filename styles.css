@@ -3812,13 +3812,30 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
   scroll-margin-top: var(--g);
 }
 /* Visual order before JS moves the nodes (tab order follows once script.js has run):
-   head, signed-in note, fields, Confirmer la commande, guest note, then recap / legal. */
+   head, signed-in note, bordered fields+button panel, then recap / legal.
+   The guest note lives inside .cod-box, under the button. */
 .cod > * { order: 5; }
 .cod > .cod-head { order: 0; }
 .cod > .acct-note:not(.acct-note--guest) { order: 1; }
+.cod > .cod-box { order: 2; }
+/* Fallback if the wrapper is not in the markup yet: fields, button, guest note, then recap. */
 .cod > .cod-fields { order: 2; }
 .cod > .cod-submit { order: 3; }
 .cod > .acct-note--guest { order: 4; }
+.cod-box {
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0; margin-top: 2px;
+  padding: clamp(14px, 1.8vw, 20px);
+  border: 2px solid var(--black);
+  border-radius: calc(var(--r) * .7);
+  background: #f4f4f4;
+}
+.cod--panel .cod-box { background: var(--white); }
+.cod-box .cod-field input,
+.cod-box .cod-field textarea { background: var(--white); border-color: #d0d0d0; }
+.cod-box .cod-field input:hover,
+.cod-box .cod-field textarea:hover { border-color: #b5b5b5; }
+.cod-box .acct-note--guest { background: transparent; padding: 0 2px; }
 .cod--panel { background: var(--panel); border-radius: var(--r); padding: clamp(20px, 3vw, 44px); }
 .cod-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .cod-head .promo-tag { margin: 0; font-size: 12px; }
@@ -4020,6 +4037,7 @@ html.lenis, html.lenis.lenis-smooth { scroll-behavior: auto !important; }
   .cod-fields { grid-template-columns: minmax(0, 1fr); }
   .cod { padding: 16px; }
   .cod--panel { padding: 18px 16px; }
+  .cod-box { padding: 14px 12px 16px; gap: 12px; }
   .cod-sum { padding: 14px; }
   .cod-submit { height: 54px; font-size: 15px; }
   .cod-line { font-size: 12px; }
